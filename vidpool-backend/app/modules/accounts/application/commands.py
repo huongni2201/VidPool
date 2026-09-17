@@ -12,13 +12,11 @@ class StartLoginCommand:
 @dataclass(frozen=True)
 class CompleteLoginCommand:
     account_id: AccountId
-    browser_session_id: str
 
 
 @dataclass(frozen=True)
 class CancelLoginCommand:
     account_id: AccountId
-    browser_session_id: str
 
 
 @dataclass(frozen=True)
