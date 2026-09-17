@@ -1,6 +1,6 @@
 # VidPool Account Pool — Next Phase Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Baseline commit:** `f94af9193fc235f71fc026f056369edb07c50aa3` (`feat: persist provider accounts and leases`)
 
@@ -98,7 +98,7 @@ The current code is structurally sound enough to continue, but four low-level is
 
 ### Steps
 
-- [ ] **Step 1: Generate the Rust lock file**
+- [x] **Step 1: Generate the Rust lock file**
 
 Run:
 
@@ -115,7 +115,7 @@ vidpool-frontend/src-tauri/Cargo.lock
 
 exists.
 
-- [ ] **Step 2: Verify Cargo.lock is not ignored**
+- [x] **Step 2: Verify Cargo.lock is not ignored**
 
 Run:
 
@@ -127,7 +127,7 @@ Expected: no output.
 
 If ignored by a nested `.gitignore`, remove only the rule that ignores this application lock file.
 
-- [ ] **Step 3: Update desktop CI ordering**
+- [x] **Step 3: Update desktop CI ordering**
 
 Change the desktop job from:
 
@@ -183,7 +183,7 @@ desktop:
       run: cargo check --locked --manifest-path vidpool-frontend/src-tauri/Cargo.toml
 ```
 
-- [ ] **Step 4: Verify locally**
+- [x] **Step 4: Verify locally**
 
 Run:
 
@@ -195,7 +195,7 @@ cargo check --locked --manifest-path vidpool-frontend/src-tauri/Cargo.toml
 
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add .github/workflows/ci.yml vidpool-frontend/src-tauri/Cargo.lock
@@ -225,7 +225,7 @@ git commit -m "ci: make desktop build gate deterministic"
 
 ### Steps
 
-- [ ] **Step 1: Write the failing regression test**
+- [x] **Step 1: Write the failing regression test**
 
 Add:
 
@@ -239,7 +239,7 @@ def test_protected_route_without_configured_session_token_returns_503() -> None:
     assert response.json() == {"detail": "App session is not configured"}
 ```
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run:
 
@@ -250,7 +250,7 @@ pytest tests/test_security.py::test_protected_route_without_configured_session_t
 
 Expected: FAIL because current code returns success.
 
-- [ ] **Step 3: Change `require_session()` to fail closed**
+- [x] **Step 3: Change `require_session()` to fail closed**
 
 Use:
 
@@ -284,15 +284,15 @@ def require_session(request: Request) -> None:
         )
 ```
 
-- [ ] **Step 4: Keep `/api/health` public**
+- [x] **Step 4: Keep `/api/health` public**
 
 Existing health test must continue to PASS with `session_token=None`.
 
-- [ ] **Step 5: Add bootstrap/config test**
+- [x] **Step 5: Add bootstrap/config test**
 
 Verify `BootstrapArgs.session_token` may still be `None`, but this no longer makes protected routes public.
 
-- [ ] **Step 6: Run focused tests**
+- [x] **Step 6: Run focused tests**
 
 ```powershell
 pytest tests/test_security.py tests/test_bootstrap.py -q
@@ -300,7 +300,7 @@ pytest tests/test_security.py tests/test_bootstrap.py -q
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add vidpool-backend/app/core/security.py vidpool-backend/app/core/config.py vidpool-backend/app/bootstrap.py vidpool-backend/tests/test_security.py vidpool-backend/tests/test_bootstrap.py
@@ -327,7 +327,7 @@ git commit -m "fix: fail closed when app session token is missing"
 
 ### Steps
 
-- [ ] **Step 1: Write RED success test**
+- [x] **Step 1: Write RED success test**
 
 Mock runtime config and client so that:
 
@@ -337,7 +337,7 @@ load runtime config
 -> only then render children
 ```
 
-- [ ] **Step 2: Write RED invalid-token test**
+- [x] **Step 2: Write RED invalid-token test**
 
 Expected:
 
@@ -348,7 +348,7 @@ probe 401
 -> children are not rendered
 ```
 
-- [ ] **Step 3: Add a small probe function**
+- [x] **Step 3: Add a small probe function**
 
 If `ApiClient` already exposes a generic `get`, use it directly.
 
@@ -362,7 +362,7 @@ async function probeSession(client: ApiClient): Promise<void> {
 
 Do not create a second HTTP client.
 
-- [ ] **Step 4: Change bootstrap flow**
+- [x] **Step 4: Change bootstrap flow**
 
 Target flow:
 
@@ -381,7 +381,7 @@ loadRuntimeConfig()
   .catch(...)
 ```
 
-- [ ] **Step 5: Run focused tests**
+- [x] **Step 5: Run focused tests**
 
 ```powershell
 cd vidpool-frontend
@@ -390,7 +390,7 @@ pnpm vitest run src/app/bootstrap.test.tsx
 
 Expected: PASS.
 
-- [ ] **Step 6: Run frontend gate**
+- [x] **Step 6: Run frontend gate**
 
 ```powershell
 pnpm check
@@ -398,7 +398,7 @@ pnpm check
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add vidpool-frontend/src/app/bootstrap.tsx vidpool-frontend/src/app/bootstrap.test.tsx
@@ -428,7 +428,7 @@ git commit -m "fix: verify backend app session during frontend bootstrap"
 
 ### Steps
 
-- [ ] **Step 1: Write RED foreign-key test**
+- [x] **Step 1: Write RED foreign-key test**
 
 Create a temporary file-backed SQLite DB and verify:
 
@@ -438,7 +438,7 @@ PRAGMA foreign_keys
 
 returns `1`.
 
-- [ ] **Step 2: Write RED busy-timeout test**
+- [x] **Step 2: Write RED busy-timeout test**
 
 Verify:
 
@@ -448,7 +448,7 @@ PRAGMA busy_timeout
 
 is at least `5000`.
 
-- [ ] **Step 3: Implement SQLAlchemy connect listener**
+- [x] **Step 3: Implement SQLAlchemy connect listener**
 
 Use:
 
@@ -475,7 +475,7 @@ return engine
 
 If in-memory SQLite rejects or does not retain WAL, make the test assert WAL only for file-backed DBs.
 
-- [ ] **Step 4: Add cascade-delete regression test**
+- [x] **Step 4: Add cascade-delete regression test**
 
 Create:
 
@@ -488,7 +488,7 @@ verify lease row is gone
 
 Do not depend only on ORM cascade; verify SQLite FK behavior.
 
-- [ ] **Step 5: Run focused tests**
+- [x] **Step 5: Run focused tests**
 
 ```powershell
 pytest tests/test_database.py tests/test_sqlite_pragmas.py -q
@@ -496,7 +496,7 @@ pytest tests/test_database.py tests/test_sqlite_pragmas.py -q
 
 Use the actual filenames created.
 
-- [ ] **Step 6: Run account repository tests**
+- [x] **Step 6: Run account repository tests**
 
 ```powershell
 pytest tests/accounts/test_account_repository.py -q
@@ -504,7 +504,7 @@ pytest tests/accounts/test_account_repository.py -q
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add vidpool-backend/app/infrastructure/persistence/database.py vidpool-backend/tests
@@ -532,13 +532,13 @@ git commit -m "fix: harden sqlite connection settings"
 
 ### Steps
 
-- [ ] **Step 1: Replace broad exception handling test-first**
+- [x] **Step 1: Replace broad exception handling test-first**
 
 Write a test that causes a non-unique persistence error and verifies the repository does not silently swallow it.
 
 Expected before fix: current broad `except Exception` may hide it.
 
-- [ ] **Step 2: Catch only expected SQLAlchemy contention**
+- [x] **Step 2: Catch only expected SQLAlchemy contention**
 
 Import:
 
@@ -562,7 +562,7 @@ except IntegrityError:
 
 Do not catch `OperationalError`, programmer errors, or arbitrary exceptions here.
 
-- [ ] **Step 3: Add a real two-session concurrency fixture**
+- [x] **Step 3: Add a real two-session concurrency fixture**
 
 Use a temporary file-backed SQLite database:
 
@@ -581,7 +581,7 @@ session_b / repo_b
 
 Do not use the same SQLAlchemy `Session`.
 
-- [ ] **Step 4: Add a concurrent acquisition test**
+- [x] **Step 4: Add a concurrent acquisition test**
 
 Seed one ACTIVE account.
 
@@ -605,7 +605,7 @@ exactly one result is not None
 exactly one unexpired lease row exists
 ```
 
-- [ ] **Step 5: Run the test repeatedly**
+- [x] **Step 5: Run the test repeatedly**
 
 Run:
 
@@ -621,13 +621,13 @@ Then:
 
 Expected: 20/20 PASS.
 
-- [ ] **Step 6: Run full repository tests**
+- [x] **Step 6: Run full repository tests**
 
 ```powershell
 pytest tests/accounts/test_account_repository.py -q
 ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add vidpool-backend/app/modules/accounts/infrastructure/persistence/repository.py vidpool-backend/tests/accounts/test_account_repository.py
@@ -654,7 +654,7 @@ git commit -m "fix: make account lease contention explicit"
 
 ### Steps
 
-- [ ] **Step 1: Write RED regression test**
+- [x] **Step 1: Write RED regression test**
 
 ```python
 def test_mark_authenticated_does_not_reactivate_disabled_account() -> None:
@@ -671,7 +671,7 @@ def test_mark_authenticated_does_not_reactivate_disabled_account() -> None:
     assert account.last_validated_at == LATER
 ```
 
-- [ ] **Step 2: Update `mark_authenticated()`**
+- [x] **Step 2: Update `mark_authenticated()`**
 
 Identity and validation timestamp may update, but status changes to ACTIVE only when current status is not `DISABLED`.
 
@@ -682,7 +682,7 @@ if self.status is not AccountStatus.DISABLED:
     self.status = AccountStatus.ACTIVE
 ```
 
-- [ ] **Step 3: Add equivalent validation-domain test if `clear_elapsed_cooldown()` or `record_success()` could revive DISABLED**
+- [x] **Step 3: Add equivalent validation-domain test if `clear_elapsed_cooldown()` or `record_success()` could revive DISABLED**
 
 Required invariant:
 
@@ -690,13 +690,13 @@ Required invariant:
 DISABLED can only leave DISABLED through explicit enable()
 ```
 
-- [ ] **Step 4: Run domain tests**
+- [x] **Step 4: Run domain tests**
 
 ```powershell
 pytest tests/accounts/test_account_domain.py -q
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add vidpool-backend/app/modules/accounts/domain vidpool-backend/tests/accounts/test_account_domain.py
@@ -716,7 +716,7 @@ git commit -m "fix: preserve explicit disabled account state"
 
 ### Steps
 
-- [ ] Replace the single "Account Pool / Browser Session subsystem" not-implemented entry with partial implementation detail.
+- [x] Replace the single "Account Pool / Browser Session subsystem" not-implemented entry with partial implementation detail.
 
 Suggested wording:
 
@@ -742,7 +742,7 @@ Suggested wording:
 - persistent browser-session restart verification
 ```
 
-- [ ] Commit:
+- [x] Commit:
 
 ```bash
 git add docs/CURRENT_STATUS.md
@@ -780,7 +780,7 @@ class BrowserProfilePathResolver:
 
 ### Steps
 
-- [ ] **Step 1: Refactor `get_database_path()` around `get_data_dir()`**
+- [x] **Step 1: Refactor `get_database_path()` around `get_data_dir()`**
 
 Target:
 
@@ -801,7 +801,7 @@ def get_database_path() -> Path:
 
 Preserve current OS behavior exactly.
 
-- [ ] **Step 2: Write traversal rejection tests**
+- [x] **Step 2: Write traversal rejection tests**
 
 Reject:
 
@@ -814,7 +814,7 @@ C:\temp\x
 provider\account
 ```
 
-- [ ] **Step 3: Define accepted profile-key format**
+- [x] **Step 3: Define accepted profile-key format**
 
 Application-generated key:
 
@@ -830,7 +830,7 @@ Validate each dynamic component with:
 
 Do not resolve arbitrary user-provided filesystem paths.
 
-- [ ] **Step 4: Implement resolver**
+- [x] **Step 4: Implement resolver**
 
 Example:
 
@@ -857,7 +857,7 @@ class BrowserProfilePathResolver:
         return result
 ```
 
-- [ ] **Step 5: Implement delete**
+- [x] **Step 5: Implement delete**
 
 Rules:
 
@@ -869,13 +869,13 @@ delete recursively only after validation
 
 Use `shutil.rmtree`.
 
-- [ ] **Step 6: Run tests**
+- [x] **Step 6: Run tests**
 
 ```powershell
 pytest tests/accounts/test_browser_profile_paths.py tests/test_database.py -q
 ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add vidpool-backend/app/infrastructure/persistence/paths.py vidpool-backend/app/modules/accounts/infrastructure/browser vidpool-backend/tests
@@ -919,7 +919,7 @@ class PlaywrightBrowserSessionManager(BrowserSessionPort):
 
 ### Steps
 
-- [ ] **Step 1: Define injected launcher boundary for unit tests**
+- [x] **Step 1: Define injected launcher boundary for unit tests**
 
 Do not mock deep Playwright internals from every test.
 
@@ -938,7 +938,7 @@ new_page()
 close()
 ```
 
-- [ ] **Step 2: RED: same profile cannot open twice**
+- [x] **Step 2: RED: same profile cannot open twice**
 
 Expected normalized error:
 
@@ -946,7 +946,7 @@ Expected normalized error:
 BrowserProfileInUse
 ```
 
-- [ ] **Step 3: RED: Edge fallback to Chrome**
+- [x] **Step 3: RED: Edge fallback to Chrome**
 
 Fake launcher:
 
@@ -957,7 +957,7 @@ chrome -> success
 
 Expected: session opens through Chrome.
 
-- [ ] **Step 4: RED: both channels unavailable**
+- [x] **Step 4: RED: both channels unavailable**
 
 Expected:
 
@@ -967,7 +967,7 @@ BrowserUnavailable
 
 No raw Playwright exception crosses the adapter boundary.
 
-- [ ] **Step 5: Implement `open_login()`**
+- [x] **Step 5: Implement `open_login()`**
 
 Runtime behavior:
 
@@ -988,7 +988,7 @@ msedge
 chrome
 ```
 
-- [ ] **Step 6: Hold live sessions by opaque ID**
+- [x] **Step 6: Hold live sessions by opaque ID**
 
 Internal structure:
 
@@ -1007,7 +1007,7 @@ session_id -> live session
 profile_key -> session_id
 ```
 
-- [ ] **Step 7: Implement `close()` and `close_all()`**
+- [x] **Step 7: Implement `close()` and `close_all()`**
 
 `close()`:
 - close context;
@@ -1019,7 +1019,7 @@ profile_key -> session_id
 - always clear in-memory maps;
 - never delete profile directories.
 
-- [ ] **Step 8: Implement `delete_profile()`**
+- [x] **Step 8: Implement `delete_profile()`**
 
 Reject if:
 
@@ -1029,13 +1029,13 @@ has_open_session(profile_key)
 
 Otherwise delegate to resolver deletion.
 
-- [ ] **Step 9: Run tests**
+- [x] **Step 9: Run tests**
 
 ```powershell
 pytest tests/accounts/test_playwright_session_manager.py -q
 ```
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add vidpool-backend/app/modules/accounts/infrastructure/browser vidpool-backend/tests/accounts/test_playwright_session_manager.py
@@ -1059,18 +1059,18 @@ git commit -m "feat: manage persistent browser sessions with playwright"
 
 ### Steps
 
-- [ ] Start a tiny local HTTP server from the script.
-- [ ] Open a temporary VidPool profile in Edge.
-- [ ] Navigate to the local test page.
-- [ ] Write localStorage:
+- [x] Start a tiny local HTTP server from the script.
+- [x] Open a temporary VidPool profile in Edge.
+- [x] Navigate to the local test page.
+- [x] Write localStorage:
   - key: `vidpool-smoke`
   - value: `persisted`
-- [ ] Close manager.
-- [ ] Recreate manager using the same data directory.
-- [ ] Reopen profile.
-- [ ] Assert localStorage remains `persisted`.
-- [ ] Delete profile.
-- [ ] Reopen profile and assert state is absent.
+- [x] Close manager.
+- [x] Recreate manager using the same data directory.
+- [x] Reopen profile.
+- [x] Assert localStorage remains `persisted`.
+- [x] Delete profile.
+- [x] Reopen profile and assert state is absent.
 
 Run:
 
@@ -1116,19 +1116,19 @@ class ProviderRegistry(ProviderRegistryPort):
 
 ### Steps
 
-- [ ] Write RED empty registry test.
-- [ ] Write RED registered-provider lookup test.
-- [ ] Write RED duplicate-key startup rejection test.
-- [ ] Implement immutable key map.
-- [ ] Sort `list()` by display name or registration order and freeze this behavior in tests.
-- [ ] Do not add provider selectors or provider-specific login rules here.
-- [ ] Run:
+- [x] Write RED empty registry test.
+- [x] Write RED registered-provider lookup test.
+- [x] Write RED duplicate-key startup rejection test.
+- [x] Implement immutable key map.
+- [x] Sort `list()` by display name or registration order and freeze this behavior in tests.
+- [x] Do not add provider selectors or provider-specific login rules here.
+- [x] Run:
 
 ```powershell
 pytest tests/accounts/test_provider_registry.py -q
 ```
 
-- [ ] Commit:
+- [x] Commit:
 
 ```bash
 git add vidpool-backend/app/modules/accounts/infrastructure/providers vidpool-backend/tests/accounts/test_provider_registry.py
@@ -1269,16 +1269,16 @@ delete DB account
 
 ### Tests required
 
-- [ ] unknown provider → `ProviderNotRegistered`
-- [ ] start login creates AUTH_REQUIRED account
-- [ ] complete login valid → ACTIVE
-- [ ] complete login invalid → AUTH_REQUIRED
-- [ ] cancel preserves profile/account
-- [ ] relogin reuses profile key
-- [ ] relogin rejects active lease
-- [ ] disabled account stays disabled during validation
-- [ ] delete rejects active lease
-- [ ] delete removes profile and DB metadata
+- [x] unknown provider → `ProviderNotRegistered`
+- [x] start login creates AUTH_REQUIRED account
+- [x] complete login valid → ACTIVE
+- [x] complete login invalid → AUTH_REQUIRED
+- [x] cancel preserves profile/account
+- [x] relogin reuses profile key
+- [x] relogin rejects active lease
+- [x] disabled account stays disabled during validation
+- [x] delete rejects active lease
+- [x] delete removes profile and DB metadata
 
 Run:
 
@@ -1329,13 +1329,13 @@ def release(self, lease_id: UUID) -> None: ...
 
 ### Required tests
 
-- [ ] LRU account is selected.
-- [ ] active lease excludes account.
-- [ ] expired lease becomes recoverable.
-- [ ] no eligible account raises normalized `AccountUnavailable`.
-- [ ] unknown release lease raises `LeaseNotFound`.
-- [ ] `ttl <= 0` is rejected.
-- [ ] acquisition does not validate provider quota or automatically switch on errors.
+- [x] LRU account is selected.
+- [x] active lease excludes account.
+- [x] expired lease becomes recoverable.
+- [x] no eligible account raises normalized `AccountUnavailable`.
+- [x] unknown release lease raises `LeaseNotFound`.
+- [x] `ttl <= 0` is rejected.
+- [x] acquisition does not validate provider quota or automatically switch on errors.
 
 Run:
 
@@ -1398,11 +1398,11 @@ Success:
 
 ### Required tests
 
-- [ ] success resets failure count
-- [ ] third temporary failure enters cooldown
-- [ ] auth failure marks auth required
-- [ ] disabled state is preserved
-- [ ] rate limit never calls repository acquisition for another account
+- [x] success resets failure count
+- [x] third temporary failure enters cooldown
+- [x] auth failure marks auth required
+- [x] disabled state is preserved
+- [x] rate limit never calls repository acquisition for another account
 
 Run:
 
@@ -1466,10 +1466,10 @@ Do not delete profile directories.
 
 ### Tests
 
-- [ ] container resolves AccountService
-- [ ] fake registry/browser can be injected in test app
-- [ ] shutdown calls `close_all()`
-- [ ] existing health/security tests still pass
+- [x] container resolves AccountService
+- [x] fake registry/browser can be injected in test app
+- [x] shutdown calls `close_all()`
+- [x] existing health/security tests still pass
 
 Run:
 
@@ -1579,14 +1579,14 @@ Never send raw Playwright/SQLAlchemy stack traces to the client.
 
 ### Required tests
 
-- [ ] no token → 401
-- [ ] wrong token → 401
-- [ ] correct token → success
-- [ ] provider list
-- [ ] account list
-- [ ] start/complete/cancel login
-- [ ] validate/enable/disable/delete
-- [ ] response never contains forbidden fields
+- [x] no token → 401
+- [x] wrong token → 401
+- [x] correct token → success
+- [x] provider list
+- [x] account list
+- [x] start/complete/cancel login
+- [x] validate/enable/disable/delete
+- [x] response never contains forbidden fields
 
 Run:
 
@@ -1661,10 +1661,10 @@ deleteAccount(client, accountId)
 
 ### Required tests
 
-- [ ] strict schema rejects unexpected `profileKey`
-- [ ] strict schema rejects token/cookie fields
-- [ ] every function calls the expected protected local API path
-- [ ] error response is propagated in normalized form
+- [x] strict schema rejects unexpected `profileKey`
+- [x] strict schema rejects token/cookie fields
+- [x] every function calls the expected protected local API path
+- [x] error response is propagated in normalized form
 
 Run:
 
@@ -1734,12 +1734,12 @@ Deleting this account also deletes its stored browser session.
 
 ### Tests
 
-- [ ] empty state
-- [ ] active row
-- [ ] auth-required row
-- [ ] cooldown row
-- [ ] disabled row
-- [ ] delete confirmation
+- [x] empty state
+- [x] active row
+- [x] auth-required row
+- [x] cooldown row
+- [x] disabled row
+- [x] delete confirmation
 
 Run:
 
@@ -1792,12 +1792,12 @@ cancelLogin()
 
 ### Tests
 
-- [ ] provider list loads
-- [ ] start login stores browserSessionId only in component state
-- [ ] complete login sends the correct ephemeral session ID
-- [ ] success refreshes account list
-- [ ] cancel calls cancel endpoint
-- [ ] backend validation error leaves actionable retry state
+- [x] provider list loads
+- [x] start login stores browserSessionId only in component state
+- [x] complete login sends the correct ephemeral session ID
+- [x] success refreshes account list
+- [x] cancel calls cancel endpoint
+- [x] backend validation error leaves actionable retry state
 
 Run:
 
@@ -1930,12 +1930,12 @@ SECRET_TEST_VALUE
 
 ### Tests
 
-- [ ] API never returns `profile_key`
-- [ ] API never returns absolute profile path
-- [ ] low-level browser exception containing `SECRET_TEST_VALUE` becomes a normalized public error
-- [ ] logs do not contain `SECRET_TEST_VALUE`
-- [ ] SQLAlchemy errors do not serialize DB internals to client
-- [ ] session token does not appear in logs
+- [x] API never returns `profile_key`
+- [x] API never returns absolute profile path
+- [x] low-level browser exception containing `SECRET_TEST_VALUE` becomes a normalized public error
+- [x] logs do not contain `SECRET_TEST_VALUE`
+- [x] SQLAlchemy errors do not serialize DB internals to client
+- [x] session token does not appear in logs
 
 Run:
 
@@ -2127,24 +2127,24 @@ git commit -m "chore: complete account pool foundation verification"
 
 This phase is complete only when all statements below are true:
 
-- [ ] VidPool starts its FastAPI sidecar securely with a runtime token.
-- [ ] Frontend proves the protected session works before rendering the main app.
-- [ ] SQLite foreign keys are enabled and account lease contention is tested with independent sessions.
-- [ ] Explicitly disabled accounts cannot be reactivated by passive validation.
-- [ ] Each account maps to a validated, isolated, persistent browser profile.
-- [ ] Playwright can use Edge first and Chrome second without exposing Playwright objects to application code.
-- [ ] Browser contexts close on backend shutdown without deleting persistent profiles.
-- [ ] `AccountService` owns generic login/relogin/validate/enable/disable/delete orchestration.
-- [ ] Leasing is durable, LRU-based, and concurrency-safe.
-- [ ] Rate limits do not trigger automatic rotation to another account.
-- [ ] Protected FastAPI account endpoints expose no browser/session internals.
-- [ ] React Account UI can add an account through user-driven browser login.
-- [ ] Browser session state survives backend/app restart.
-- [ ] Deleting an account deletes the persistent browser profile.
-- [ ] Generic provider-auth contract exists before any production provider adapter.
-- [ ] Security regression tests prove cookies/tokens/profile paths do not leak.
-- [ ] Backend, frontend, sidecar, Rust/Tauri, migration, and manual browser smoke gates pass.
-- [ ] `docs/CURRENT_STATUS.md` matches implementation reality.
+- [x] VidPool starts its FastAPI sidecar securely with a runtime token.
+- [x] Frontend proves the protected session works before rendering the main app.
+- [x] SQLite foreign keys are enabled and account lease contention is tested with independent sessions.
+- [x] Explicitly disabled accounts cannot be reactivated by passive validation.
+- [x] Each account maps to a validated, isolated, persistent browser profile.
+- [x] Playwright can use Edge first and Chrome second without exposing Playwright objects to application code.
+- [x] Browser contexts close on backend shutdown without deleting persistent profiles.
+- [x] `AccountService` owns generic login/relogin/validate/enable/disable/delete orchestration.
+- [x] Leasing is durable, LRU-based, and concurrency-safe.
+- [x] Rate limits do not trigger automatic rotation to another account.
+- [x] Protected FastAPI account endpoints expose no browser/session internals.
+- [x] React Account UI can add an account through user-driven browser login.
+- [x] Browser session state survives backend/app restart.
+- [x] Deleting an account deletes the persistent browser profile.
+- [x] Generic provider-auth contract exists before any production provider adapter.
+- [x] Security regression tests prove cookies/tokens/profile paths do not leak.
+- [x] Backend, frontend, sidecar, Rust/Tauri, migration, and manual browser smoke gates pass.
+- [x] `docs/CURRENT_STATUS.md` matches implementation reality.
 
 ---
 
