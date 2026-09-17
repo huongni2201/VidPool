@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from sqlalchemy import Engine, create_engine
+from sqlalchemy import Engine, create_engine, event
 
 
 def build_sqlite_url(path: Path) -> str:
@@ -9,7 +9,19 @@ def build_sqlite_url(path: Path) -> str:
 
 
 def create_engine_for_path(path: Path) -> Engine:
-    return create_engine(
+    engine = create_engine(
         build_sqlite_url(path),
         connect_args={"check_same_thread": False},
     )
+
+    @event.listens_for(engine, "connect")
+    def _configure_sqlite_connection(dbapi_connection, connection_record) -> None:
+        del connection_record
+        cursor = dbapi_connection.cursor()
+        try:
+            cursor.execute("PRAGMA foreign_keys=ON")
+            cursor.execute("PRAGMA journal_mode=WAL")
+        finally:
+            cursor.close()
+
+    return engine
