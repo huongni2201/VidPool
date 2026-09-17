@@ -59,8 +59,13 @@ This file distinguishes target architecture from implemented reality.
 - controlled API error mapping for `InvalidAccountState` domain conflicts (HTTP 409 Conflict)
 - verified account mutation vs lease concurrency invariants with multi-threaded SQLite WAL tests and coordinator synchronization
 - backend static analysis CI gates with Ruff and Pyright enforced in GitHub Actions (`.github/workflows/ci.yml`)
-- provider auth port contract test harness (`test_provider_contract.py`)
+- consolidated provider auth port contract test harness (`test_provider_auth_contract.py`)
 - structured event and debug logging for browser and account lifecycles
+- explicit backend bootstrap configuration precedence (CLI > environment > defaults) without fallback dev-token
+- testable browser automation boundary protocol (`BrowserAutomationRuntime`) for provider adapters
+- production Dreamina browser auth adapter (`DreaminaAuthAdapter`) and probe (`DreaminaAuthProbe`) for Seedance-capable accounts
+- Dreamina provider registration in default Account Pool container (`/api/providers`)
+- opt-in guarded live Dreamina session smoke test harness (`test_dreamina_live.py`)
 
 ## Not Implemented Yet
 
@@ -70,9 +75,10 @@ The repository currently does not contain production implementation for:
 - Story Engine
 - Story Memory
 - Character continuity engine
-- production provider auth adapters (e.g. Seedance, Gemini)
+- production Gemini provider auth adapter
 - durable job worker
 - provider execution jobs
+- Seedance video submission/poll/download execution adapter
 - durable job integration with account leases
 - TTS/audio engine
 - forced alignment
