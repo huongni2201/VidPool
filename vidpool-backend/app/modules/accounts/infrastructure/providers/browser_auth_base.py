@@ -1,11 +1,29 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import Any, Protocol, TypeVar
+
 from app.modules.accounts.application.ports import (
     ProviderAuthPort,
     ProviderIdentity,
     SessionValidation,
 )
-from app.modules.accounts.infrastructure.browser.runtime import BrowserRuntime
+
+T = TypeVar("T")
+
+
+class BrowserAutomationRuntime(Protocol):
+    def run_active(
+        self,
+        profile_key: str,
+        operation: Callable[[Any], T],
+    ) -> T: ...
+
+    def run_persisted_profile(
+        self,
+        profile_key: str,
+        operation: Callable[[Any], T],
+    ) -> T: ...
 
 
 class BrowserBackedAuthAdapter(ProviderAuthPort):
@@ -17,7 +35,7 @@ class BrowserBackedAuthAdapter(ProviderAuthPort):
 
     def __init__(
         self,
-        browser_runtime: BrowserRuntime,
+        browser_runtime: BrowserAutomationRuntime,
     ) -> None:
         self._browser = browser_runtime
 
