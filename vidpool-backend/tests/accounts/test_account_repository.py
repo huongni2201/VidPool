@@ -174,3 +174,31 @@ def test_repository_expired_lease_is_cleaned_and_recovered(db_session: Session) 
     res2 = repo.acquire_lru("test-provider", "job:recovered", now=now + timedelta(minutes=2), expires_at=now + timedelta(minutes=7))
     assert res2 is not None
     assert res2[0].id == acc.id
+
+
+def test_repository_acquire_lru_propagates_unexpected_db_error(db_session: Session) -> None:
+    repo = SQLAlchemyAccountRepository(session=db_session)
+    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=timezone.utc)
+
+    acc = ProviderAccount.create("test-provider", "profile/io-fail", now=now)
+    acc.mark_authenticated("IO User", "io", now=now)
+    repo.add(acc)
+
+    from sqlalchemy.exc import OperationalError
+    real_commit = db_session.commit
+    commit_count = 0
+
+    def mock_commit():
+        nonlocal commit_count
+        commit_count += 1
+        # First commit is for cleaning expired leases (step 1 in acquire_lru)
+        if commit_count == 1:
+            return real_commit()
+        # Second commit is when persisting candidate lease (step 2)
+        raise OperationalError("INSERT ...", {}, Exception("disk I/O error"))
+
+    db_session.commit = mock_commit
+
+    with pytest.raises(OperationalError):
+        repo.acquire_lru("test-provider", "job:error", now=now, expires_at=now + timedelta(minutes=5))
+

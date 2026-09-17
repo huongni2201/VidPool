@@ -3,6 +3,7 @@ from typing import Sequence
 import uuid
 
 from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.modules.accounts.application.ports import AccountRepositoryPort
@@ -113,7 +114,7 @@ class SQLAlchemyAccountRepository(AccountRepositoryPort):
                 candidate.last_used_at = now
                 self._session.commit()
                 return (account_from_model(candidate), lease_from_model(lease_model))
-            except Exception:
+            except IntegrityError:
                 self._session.rollback()
                 continue
 
