@@ -177,9 +177,14 @@ class FakeProviderRegistry(ProviderRegistryPort):
 
     def list(self) -> list[ProviderDefinition]:
         return [
-            ProviderDefinition(key=k, display_name=k.title(), auth_kind="browser_session")
-            for k in self._adapters.keys()
+            ProviderDefinition(
+                key=k,
+                display_name=getattr(a, "display_name", k.title()),
+                auth_kind=getattr(a, "auth_kind", "browser_session"),
+            )
+            for k, a in self._adapters.items()
         ]
+
 
     def get_auth(self, provider_key: str) -> ProviderAuthPort | None:
         return self._adapters.get(provider_key)
