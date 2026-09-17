@@ -2,13 +2,14 @@ from pathlib import Path
 from typing import Any
 import pytest
 
-from app.modules.accounts.application.ports import BrowserSessionHandle, BrowserSessionPort
+from app.modules.accounts.application.ports import BrowserSessionPort
 from app.modules.accounts.domain.errors import (
     BrowserLaunchFailed,
     BrowserProfileInUse,
     BrowserUnavailable,
 )
 from app.modules.accounts.infrastructure.browser.playwright_session import (
+    BrowserSessionHandle,
     PlaywrightBrowserSessionManager,
 )
 from app.modules.accounts.infrastructure.browser.profile_paths import (

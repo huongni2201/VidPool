@@ -8,12 +8,6 @@ from ..domain.lease import AccountLease
 from ..domain.values import AccountId
 
 
-@dataclass(frozen=True)
-class BrowserSessionHandle:
-    id: str
-    profile_key: str
-
-
 @runtime_checkable
 class BrowserSessionPort(Protocol):
     def open_login(
@@ -22,13 +16,15 @@ class BrowserSessionPort(Protocol):
         provider_key: str,
         profile_key: str,
         login_url: str,
-    ) -> BrowserSessionHandle: ...
+    ) -> None: ...
 
-    def close(self, session_id: str) -> None: ...
+    def close_profile(self, profile_key: str) -> None: ...
+
     def has_open_session(self, profile_key: str) -> bool: ...
-    def delete_profile(self, profile_key: str) -> None: ...
-    def close_all(self) -> None: ...
 
+    def delete_profile(self, profile_key: str) -> None: ...
+
+    def close_all(self) -> None: ...
 
 
 @dataclass(frozen=True)
@@ -48,14 +44,14 @@ class ProviderAuthPort(Protocol):
 
     def login_url(self) -> str: ...
 
-    def validate_session(
+    def validate_active_session(
         self,
-        session: BrowserSessionHandle,
+        profile_key: str,
     ) -> SessionValidation: ...
 
     def resolve_identity(
         self,
-        session: BrowserSessionHandle,
+        profile_key: str,
     ) -> ProviderIdentity: ...
 
     def validate_persisted_session(

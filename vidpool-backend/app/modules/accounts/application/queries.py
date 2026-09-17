@@ -20,7 +20,6 @@ class AccountView:
 @dataclass(frozen=True)
 class StartLoginResult:
     account_id: AccountId
-    browser_session_id: str
     status: str = "waiting_for_user"
 
 

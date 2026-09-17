@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import logging
 import uuid
 
 from ..domain.account import ProviderAccount
@@ -7,6 +8,7 @@ from ..domain.errors import (
     AccountNotFound,
     AccountUnavailable,
     BrowserProfileInUse,
+    BrowserSessionNotOpen,
     LeaseNotFound,
     ProviderNotRegistered,
     SessionInvalid,
@@ -14,12 +16,13 @@ from ..domain.errors import (
 from ..domain.values import AccountId, AccountStatus
 from .ports import (
     AccountRepositoryPort,
-    BrowserSessionHandle,
     BrowserSessionPort,
     ProviderDefinition,
     ProviderRegistryPort,
 )
 from .queries import AccountLeaseView, AccountView, StartLoginResult
+
+logger = logging.getLogger(__name__)
 
 
 def _to_view(account: ProviderAccount) -> AccountView:
@@ -78,24 +81,30 @@ class AccountService:
             account_id=account_id,
             now=now,
         )
-        self._accounts.add(account)
 
-        session_handle = self._browser.open_login(
-            provider_key=provider_key,
-            profile_key=profile_key,
-            login_url=auth_adapter.login_url(),
-        )
+        try:
+            self._browser.open_login(
+                provider_key=provider_key,
+                profile_key=profile_key,
+                login_url=auth_adapter.login_url(),
+            )
+            self._accounts.add(account)
+        except Exception:
+            self._browser.close_profile(profile_key)
+            try:
+                self._browser.delete_profile(profile_key)
+            except Exception:
+                logger.exception("Failed to clean profile after login start failure")
+            raise
 
         return StartLoginResult(
             account_id=account_id,
-            browser_session_id=session_handle.id,
             status="waiting_for_user",
         )
 
     def complete_login(
         self,
         account_id: AccountId,
-        browser_session_id: str,
         now: datetime | None = None,
     ) -> AccountView:
         account = self._accounts.get(account_id)
@@ -106,37 +115,44 @@ class AccountService:
         if auth_adapter is None:
             raise ProviderNotRegistered(f"Provider '{account.provider_key}' is not registered")
 
-        handle = BrowserSessionHandle(id=browser_session_id, profile_key=account.profile_key)
-        validation = auth_adapter.validate_session(handle)
+        if not self._browser.has_open_session(account.profile_key):
+            raise BrowserSessionNotOpen(f"No active browser session for '{account.profile_key}'")
 
-        if not validation.valid:
-            self._browser.close(browser_session_id)
-            raise SessionInvalid("Browser session validation failed")
+        try:
+            validation = auth_adapter.validate_active_session(account.profile_key)
 
-        identity = auth_adapter.resolve_identity(handle)
-        current_time = now or datetime.now(timezone.utc)
-        if account.status is not AccountStatus.DISABLED:
-            account.status = AccountStatus.ACTIVE
-        account.display_name = identity.display_name
-        account.external_identity = identity.external_identity
-        account.last_validated_at = current_time
-        account.updated_at = current_time
-        account.cooldown_until = None
+            if not validation.valid:
+                current_time = now or datetime.now(timezone.utc)
+                account.status = AccountStatus.AUTH_REQUIRED
+                account.updated_at = current_time
+                self._accounts.save(account)
+                raise SessionInvalid("Browser session validation failed")
 
-        self._accounts.save(account)
-        self._browser.close(browser_session_id)
-        return _to_view(account)
+            identity = auth_adapter.resolve_identity(account.profile_key)
+            current_time = now or datetime.now(timezone.utc)
+            account.display_name = identity.display_name
+            account.external_identity = identity.external_identity
+            account.last_validated_at = current_time
+            account.updated_at = current_time
+            account.cooldown_until = None
+
+            if account.status is not AccountStatus.DISABLED:
+                account.status = AccountStatus.ACTIVE
+
+            self._accounts.save(account)
+            return _to_view(account)
+        finally:
+            self._browser.close_profile(account.profile_key)
 
     def cancel_login(
         self,
         account_id: AccountId,
-        browser_session_id: str,
     ) -> AccountView:
         account = self._accounts.get(account_id)
         if account is None:
             raise AccountNotFound(f"Account '{account_id}' not found")
 
-        self._browser.close(browser_session_id)
+        self._browser.close_profile(account.profile_key)
         return _to_view(account)
 
     def start_relogin(
@@ -152,11 +168,14 @@ class AccountService:
         if self._accounts.has_active_lease(account_id, current_time):
             raise AccountInUse(f"Account '{account_id}' is currently leased")
 
+        if self._browser.has_open_session(account.profile_key):
+            raise BrowserProfileInUse(f"Browser profile '{account.profile_key}' is already open")
+
         auth_adapter = self._providers.get_auth(account.provider_key)
         if auth_adapter is None:
             raise ProviderNotRegistered(f"Provider '{account.provider_key}' is not registered")
 
-        session_handle = self._browser.open_login(
+        self._browser.open_login(
             provider_key=account.provider_key,
             profile_key=account.profile_key,
             login_url=auth_adapter.login_url(),
@@ -164,7 +183,6 @@ class AccountService:
 
         return StartLoginResult(
             account_id=account_id,
-            browser_session_id=session_handle.id,
             status="waiting_for_user",
         )
 
@@ -241,8 +259,12 @@ class AccountService:
                 f"Cannot delete account '{account_id}' while a browser session is active"
             )
 
-        self._browser.delete_profile(account.profile_key)
         self._accounts.delete(account_id)
+
+        try:
+            self._browser.delete_profile(account.profile_key)
+        except Exception:
+            logger.exception("Account deleted but browser profile cleanup failed")
 
     # --- Leasing ---
 

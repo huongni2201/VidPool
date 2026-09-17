@@ -4,7 +4,6 @@ import uuid
 
 from app.modules.accounts.application.ports import (
     AccountRepositoryPort,
-    BrowserSessionHandle,
     BrowserSessionPort,
     ProviderAuthPort,
     ProviderDefinition,
@@ -13,6 +12,7 @@ from app.modules.accounts.application.ports import (
     SessionValidation,
 )
 from app.modules.accounts.domain.account import ProviderAccount
+from app.modules.accounts.domain.errors import BrowserProfileInUse
 from app.modules.accounts.domain.lease import AccountLease
 from app.modules.accounts.domain.values import AccountId, AccountStatus
 
@@ -110,7 +110,7 @@ class FakeAccountRepository(AccountRepositoryPort):
 
 class FakeBrowserSessionManager(BrowserSessionPort):
     def __init__(self) -> None:
-        self.open_sessions: dict[str, BrowserSessionHandle] = {}
+        self.open_profiles: set[str] = set()
         self.deleted_profiles: list[str] = []
 
     def open_login(
@@ -119,27 +119,26 @@ class FakeBrowserSessionManager(BrowserSessionPort):
         provider_key: str,
         profile_key: str,
         login_url: str,
-    ) -> BrowserSessionHandle:
-        session_id = f"session-{uuid.uuid4()}"
-        handle = BrowserSessionHandle(id=session_id, profile_key=profile_key)
-        self.open_sessions[profile_key] = handle
-        return handle
+    ) -> None:
+        if profile_key in self.open_profiles:
+            raise BrowserProfileInUse(
+                f"Browser profile '{profile_key}' is already open"
+            )
 
-    def close(self, session_id: str) -> None:
-        for key, handle in list(self.open_sessions.items()):
-            if handle.id == session_id:
-                del self.open_sessions[key]
+        self.open_profiles.add(profile_key)
+
+    def close_profile(self, profile_key: str) -> None:
+        self.open_profiles.discard(profile_key)
 
     def has_open_session(self, profile_key: str) -> bool:
-        return profile_key in self.open_sessions
+        return profile_key in self.open_profiles
 
     def delete_profile(self, profile_key: str) -> None:
-        self.open_sessions.pop(profile_key, None)
+        self.open_profiles.discard(profile_key)
         self.deleted_profiles.append(profile_key)
 
     def close_all(self) -> None:
-        self.open_sessions.clear()
-
+        self.open_profiles.clear()
 
 
 class FakeProviderAuthAdapter(ProviderAuthPort):
@@ -158,10 +157,16 @@ class FakeProviderAuthAdapter(ProviderAuthPort):
     def login_url(self) -> str:
         return f"https://auth.{self.provider_key}.example.com/login"
 
-    def validate_session(self, session: BrowserSessionHandle) -> SessionValidation:
+    def validate_active_session(
+        self,
+        profile_key: str,
+    ) -> SessionValidation:
         return SessionValidation(valid=self.valid_session)
 
-    def resolve_identity(self, session: BrowserSessionHandle) -> ProviderIdentity:
+    def resolve_identity(
+        self,
+        profile_key: str,
+    ) -> ProviderIdentity:
         return ProviderIdentity(
             display_name=self.display_name,
             external_identity=self.external_identity,

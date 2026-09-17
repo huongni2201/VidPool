@@ -27,6 +27,13 @@ class InvalidProfileKey(AccountDomainError):
     """Raised when a profile key is malformed or attempts directory traversal."""
 
 
+AccountError = AccountDomainError
+
+
+class BrowserSessionNotOpen(AccountDomainError):
+    """Raised when an operation requires an active browser session that is not open."""
+
+
 class BrowserProfileInUse(AccountDomainError):
     """Raised when attempting to open an already open browser profile."""
 

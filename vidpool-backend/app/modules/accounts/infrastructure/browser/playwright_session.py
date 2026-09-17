@@ -5,7 +5,13 @@ from pathlib import Path
 from typing import Any
 import uuid
 
-from app.modules.accounts.application.ports import BrowserSessionHandle, BrowserSessionPort
+from app.modules.accounts.application.ports import BrowserSessionPort
+
+
+@dataclass(frozen=True)
+class BrowserSessionHandle:
+    id: str
+    profile_key: str
 from app.modules.accounts.domain.errors import (
     BrowserLaunchFailed,
     BrowserProfileInUse,

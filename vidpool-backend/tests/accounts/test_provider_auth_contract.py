@@ -2,7 +2,6 @@ from urllib.parse import urlparse
 import pytest
 
 from app.modules.accounts.application.ports import (
-    BrowserSessionHandle,
     ProviderAuthPort,
     ProviderIdentity,
     SessionValidation,
@@ -27,14 +26,14 @@ def _verify_provider_auth_contract(adapter: ProviderAuthPort) -> None:
     assert isinstance(persisted_validation.valid, bool)
 
     # 4. In active session validation
-    handle = BrowserSessionHandle(id="sess-1", profile_key="browser-profile/test/1")
-    session_validation = adapter.validate_session(handle)
+    profile_key = "browser-profile/test/1"
+    session_validation = adapter.validate_active_session(profile_key)
     assert isinstance(session_validation, SessionValidation)
     assert isinstance(session_validation.valid, bool)
 
     # 5. Resolve identity
     if session_validation.valid:
-        identity = adapter.resolve_identity(handle)
+        identity = adapter.resolve_identity(profile_key)
         assert isinstance(identity, ProviderIdentity)
         assert isinstance(identity.display_name, str)
         assert isinstance(identity.external_identity, str)
@@ -66,6 +65,5 @@ def test_contract_detects_non_https_url() -> None:
 
 def test_contract_detects_invalid_session() -> None:
     adapter = FakeProviderAuthAdapter(valid_session=False)
-    handle = BrowserSessionHandle(id="sess-1", profile_key="browser-profile/test/1")
-    assert adapter.validate_session(handle).valid is False
+    assert adapter.validate_active_session("browser-profile/test/1").valid is False
     assert adapter.validate_persisted_session("browser-profile/test/1").valid is False
