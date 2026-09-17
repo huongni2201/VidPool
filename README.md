@@ -7,7 +7,7 @@ Its target workflow converts long-form stories into structured story memory, nar
 ## Target Stack
 
 ```text
-Desktop shell : Tauri v2
+Desktop shell : Tauri v2 (Windows x64)
 Frontend      : React + Vite + TypeScript + Tailwind CSS
 Backend       : FastAPI
 Persistence   : SQLite + SQLAlchemy 2.x + Alembic
@@ -16,6 +16,11 @@ Worker        : Durable SQLite-backed job worker
 Media         : FFmpeg + ffprobe
 Secrets       : OS credential store / keyring
 ```
+
+## Platform Support
+
+VidPool is desktop-first with current verified support focused on **Windows x64** (`x86_64-pc-windows-msvc`, NSIS installer). Support for macOS and Linux is planned but not currently claimed or verified.
+
 
 ## Backend Architecture
 

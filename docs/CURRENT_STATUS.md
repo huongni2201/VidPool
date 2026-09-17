@@ -27,7 +27,7 @@ This file distinguishes target architecture from implemented reality.
 - restricted localhost CORS
 - per-session local API token validation
 - temporary protected session probe endpoint (`/api/session/probe`)
-- desktop CI compile/package gate
+- desktop CI compile/package gate (verified for Windows x64 / NSIS)
 
 ## Not Implemented Yet
 
