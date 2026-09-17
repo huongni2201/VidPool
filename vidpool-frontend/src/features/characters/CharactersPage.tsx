@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { WaveformVisualizer } from "@/components/shared/WaveformVisualizer"
+import { demoAvatars } from "@/assets/demo"
 
 export function CharactersPage() {
   const [selectedCharacter, setSelectedCharacter] = useState("Mai")
@@ -10,38 +11,38 @@ export function CharactersPage() {
       id: "c1",
       name: "Mai",
       role: "Nhân vật chính",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+      avatar: demoAvatars[0],
     },
     {
       id: "c2",
       name: "Linh",
       role: "Nhân vật chính",
-      avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80",
+      avatar: demoAvatars[1],
     },
     {
       id: "c3",
       name: "Minh",
       role: "Nhân vật chính",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80",
+      avatar: demoAvatars[2],
     },
     {
       id: "c4",
       name: "Bạch Thanh Hạ",
       role: "Phụ",
-      avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300&auto=format&fit=crop&q=80",
+      avatar: demoAvatars[3],
     },
     {
       id: "c5",
       name: "Lục Viễn Thu",
       role: "Phụ",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80",
+      avatar: demoAvatars[1],
     },
     {
       id: "c6",
       name: "Người dẫn chuyện",
       role: "Khác",
       isNarrator: true,
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+      avatar: demoAvatars[0],
     },
   ]
 
@@ -49,32 +50,32 @@ export function CharactersPage() {
     {
       label: "Front",
       sub: "(Chính diện)",
-      image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+      image: demoAvatars[0],
     },
     {
       label: "3/4 Left",
       sub: "(Nghiêng trái)",
-      image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80",
+      image: demoAvatars[1],
     },
     {
       label: "3/4 Right",
       sub: "(Nghiêng phải)",
-      image: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=300&auto=format&fit=crop&q=80",
+      image: demoAvatars[2],
     },
     {
       label: "Profile",
       sub: "(Nghiêng ngang)",
-      image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80",
+      image: demoAvatars[3],
     },
     {
       label: "Full Body",
       sub: "(Toàn thân)",
-      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80",
+      image: demoAvatars[0],
     },
     {
       label: "Outfit / Biểu cảm",
       sub: "(Trang phục / Cảm xúc)",
-      image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+      image: demoAvatars[1],
     },
   ]
 
@@ -207,7 +208,7 @@ export function CharactersPage() {
               {/* Master Reference Avatar (4 cols) */}
               <div className="col-span-4 relative rounded-xl overflow-hidden bg-black/40 border border-border">
                 <img
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80"
+                  src={demoAvatars[0]}
                   alt="Master Reference"
                   className="size-full object-cover aspect-[4/5]"
                 />

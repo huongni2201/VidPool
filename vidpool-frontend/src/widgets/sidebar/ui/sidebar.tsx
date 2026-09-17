@@ -1,6 +1,7 @@
-import { Link, useLocation } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { ROUTES } from "@/shared/constants"
 import { useProjectStore } from "@/entities/project"
+import { avatar1 } from "@/assets/demo"
 
 export interface SidebarProps {
   backendStatus?: "ok" | "pending" | "error"
@@ -19,7 +20,8 @@ export function Sidebar({
   projectName: propProjectName,
 }: SidebarProps) {
   const location = useLocation()
-  const { projectName: storeProjectName } = useProjectStore()
+  const navigate = useNavigate()
+  const { projectName: storeProjectName, closeProject } = useProjectStore()
   const projectName = propProjectName || storeProjectName || "Thanh Xuân Trở Lại"
 
   const isWorkspace =
@@ -193,9 +195,12 @@ export function Sidebar({
         {isWorkspace ? (
           <>
             {/* Back to Project Hub Button (CapCut style) */}
-            <Link
-              to={ROUTES.DASHBOARD}
-              className="group mb-2 flex items-center gap-2.5 rounded-xl border border-border bg-card/60 px-3 py-2 text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:bg-card hover:text-foreground transition-all"
+            <button
+              onClick={() => {
+                closeProject()
+                navigate(ROUTES.DASHBOARD)
+              }}
+              className="group mb-2 flex items-center gap-2.5 rounded-xl border border-border bg-card/60 px-3 py-2 text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:bg-card hover:text-foreground transition-all cursor-pointer w-full text-left"
             >
               <svg
                 className="size-4 transition-transform group-hover:-translate-x-0.5"
@@ -211,7 +216,7 @@ export function Sidebar({
                 />
               </svg>
               <span>Màn hình dự án</span>
-            </Link>
+            </button>
 
             {/* Active Project Card */}
             <div className="mb-2 rounded-xl border border-primary/25 bg-primary/10 p-2.5">
@@ -377,7 +382,7 @@ export function Sidebar({
         <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 transition-all hover:bg-studio-hover">
           <div className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 ring-2 ring-indigo-500/30">
             <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
+              src={avatar1}
               alt="Avatar"
               className="size-full object-cover"
               onError={(e) => {

@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { ROUTES } from "@/shared/constants"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { demoProjects, demoAvatars } from "@/assets/demo"
 
 interface BeatScene {
   id: number
@@ -29,12 +30,12 @@ export function VisualBeatPage() {
       title: "Cô gái thức dậy",
       prompt: "Cô gái trẻ thức dậy trong phòng ngủ, ánh nắng buổi sáng chiếu qua rèm cửa, không khí ấm áp, đời thường, chân thực, soft light, cinematic, high quality",
       character: "Mai",
-      characterAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+      characterAvatar: demoAvatars[0],
       dialogue: "Một ngày mới lại bắt đầu...",
       duration: "00:03",
       cameraAngle: "Cận cảnh",
       status: "Đã tạo",
-      thumb: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
+      thumb: demoProjects[0],
     },
     {
       id: 2,
@@ -42,12 +43,12 @@ export function VisualBeatPage() {
       title: "Nhìn ra khung cửa sổ",
       prompt: "Cô gái nhìn ra khung cửa sổ, ánh mắt suy tư, gió nhẹ thoảng qua mái tóc",
       character: "Minh",
-      characterAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+      characterAvatar: demoAvatars[1],
       dialogue: "Hôm nay... sẽ khác.",
       duration: "00:05",
       cameraAngle: "Trung cảnh",
       status: "Đang tạo",
-      thumb: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&auto=format&fit=crop&q=80",
+      thumb: demoProjects[1],
     },
     {
       id: 3,
@@ -59,7 +60,7 @@ export function VisualBeatPage() {
       duration: "00:04",
       cameraAngle: "Toàn cảnh",
       status: "Chờ tạo",
-      thumb: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&auto=format&fit=crop&q=80",
+      thumb: demoProjects[2],
     },
     {
       id: 4,
@@ -67,12 +68,12 @@ export function VisualBeatPage() {
       title: "Bước ra khỏi nhà",
       prompt: "Cô gái mang balo, bước ra khỏi nhà, nắng sớm ngập tràn lối đi",
       character: "Mai",
-      characterAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+      characterAvatar: demoAvatars[0],
       dialogue: "Đi thôi!",
       duration: "00:04",
       cameraAngle: "Trung cảnh",
       status: "Đã tạo",
-      thumb: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&auto=format&fit=crop&q=80",
+      thumb: demoProjects[3],
     },
     {
       id: 5,
@@ -80,12 +81,12 @@ export function VisualBeatPage() {
       title: "Gặp lại người quen",
       prompt: "Cô gái tình cờ gặp lại người bạn cũ trên phố, hai người nhìn nhau bất ngờ",
       character: "Mai & Minh",
-      characterAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+      characterAvatar: demoAvatars[0],
       dialogue: "Lâu rồi không gặp cậu!",
       duration: "00:06",
       cameraAngle: "Trung cảnh",
       status: "Đã tạo",
-      thumb: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&auto=format&fit=crop&q=80",
+      thumb: demoProjects[0],
     },
     {
       id: 6,
@@ -93,12 +94,12 @@ export function VisualBeatPage() {
       title: "Cuộc trò chuyện chân thành",
       prompt: "Hai người ngồi trên sân thượng, trò chuyện dưới ánh chiều tà ấm áp",
       character: "Mai & Minh",
-      characterAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+      characterAvatar: demoAvatars[1],
       dialogue: "Cậu... vẫn như ngày xưa nhỉ?",
       duration: "00:08",
       cameraAngle: "Cận cảnh",
       status: "Đang tạo",
-      thumb: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80",
+      thumb: demoProjects[1],
     },
     {
       id: 7,
@@ -106,12 +107,12 @@ export function VisualBeatPage() {
       title: "Những suy nghĩ",
       prompt: "Cô gái nhìn về phía xa, suy tư về tương lai và những ước mơ còn dang dở",
       character: "Mai",
-      characterAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+      characterAvatar: demoAvatars[0],
       dialogue: "Mình thật sự muốn làm gì?",
       duration: "00:05",
       cameraAngle: "Cận cảnh",
       status: "Chờ tạo",
-      thumb: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
+      thumb: demoProjects[2],
     },
     {
       id: 8,
@@ -123,7 +124,7 @@ export function VisualBeatPage() {
       duration: "00:06",
       cameraAngle: "Toàn cảnh",
       status: "Chờ tạo",
-      thumb: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&auto=format&fit=crop&q=80",
+      thumb: demoProjects[3],
     },
   ]
 

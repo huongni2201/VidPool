@@ -4,6 +4,7 @@ import { ROUTES } from "@/shared/constants"
 import { useProjectStore } from "@/entities/project"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { CreateProjectDialog } from "@/features/project-create"
+import { demoProjects } from "@/assets/demo"
 
 interface ProjectItem {
   id: string
@@ -38,7 +39,7 @@ export function ProjectsPage() {
       characters: 3,
       updated: "Cập nhật 2 giờ trước",
       tags: ["Drama", "Thanh xuân", "Cảm xúc"],
-      cover: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80",
+      cover: demoProjects[0],
     },
     {
       id: "p2",
@@ -52,7 +53,7 @@ export function ProjectsPage() {
       characters: 2,
       updated: "Cập nhật 1 giờ trước",
       tags: ["Tình cảm", "Mùa hè", "Cinematic"],
-      cover: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&auto=format&fit=crop&q=80",
+      cover: demoProjects[1],
     },
     {
       id: "p3",
@@ -64,7 +65,7 @@ export function ProjectsPage() {
       characters: 2,
       updated: "Cập nhật 1 ngày trước",
       tags: ["Đời sống", "Minimal", "Vlog"],
-      cover: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80",
+      cover: demoProjects[2],
     },
     {
       id: "p4",
@@ -76,7 +77,7 @@ export function ProjectsPage() {
       characters: 1,
       updated: "Cập nhật 2 ngày trước",
       tags: ["Động vật", "Đời sống", "Cute"],
-      cover: "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&auto=format&fit=crop&q=80",
+      cover: demoProjects[3],
     },
     {
       id: "p5",
@@ -90,7 +91,7 @@ export function ProjectsPage() {
       characters: 2,
       updated: "Cập nhật 3 giờ trước",
       tags: ["Anime", "Story", "Fantasy"],
-      cover: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80",
+      cover: demoProjects[0],
     },
     {
       id: "p6",
@@ -102,7 +103,7 @@ export function ProjectsPage() {
       characters: 1,
       updated: "Cập nhật 5 giờ trước",
       tags: ["Horror", "Bí ẩn", "Dark"],
-      cover: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=600&auto=format&fit=crop&q=80",
+      cover: demoProjects[1],
     },
     {
       id: "p7",
@@ -114,7 +115,7 @@ export function ProjectsPage() {
       characters: 3,
       updated: "Cập nhật 1 ngày trước",
       tags: ["Cinematic", "Thành phố", "Tâm trạng"],
-      cover: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=600&auto=format&fit=crop&q=80",
+      cover: demoProjects[2],
     },
     {
       id: "p8",
@@ -126,7 +127,7 @@ export function ProjectsPage() {
       characters: 1,
       updated: "Cập nhật 2 ngày trước",
       tags: ["Lofi", "Music", "Chill"],
-      cover: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&auto=format&fit=crop&q=80",
+      cover: demoProjects[3],
     },
     {
       id: "p9",
@@ -140,7 +141,7 @@ export function ProjectsPage() {
       characters: 2,
       updated: "Cập nhật 4 giờ trước",
       tags: ["Tình cảm", "Mưa", "Tâm trạng"],
-      cover: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=600&auto=format&fit=crop&q=80",
+      cover: demoProjects[0],
     },
   ]
 

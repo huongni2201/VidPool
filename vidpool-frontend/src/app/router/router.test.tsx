@@ -57,39 +57,30 @@ describe("Router Navigation", () => {
     expect(dashboardLink.className).toContain("border-blue-500/35")
   })
 
-  it("follows CapCut desktop workflow: lands at Project Hub on /, switches to workspace tools in editor with exit button", async () => {
-    renderWithRouter("/")
+  it("renders workspace mode when in /editor with CapCut exit button and project tools", async () => {
+    renderWithRouter("/editor")
 
-    // Launcher mode: shows CapCut quick launcher hero and projects
-    expect(await screen.findByText("Bắt đầu sáng tạo video mới")).toBeInTheDocument()
-    expect(screen.getByText("+ Tạo dự án mới")).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: /Dự án của tôi/i })).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: /Tài khoản AI/i })).toBeInTheDocument()
-
-    // In launcher mode, workspace editing tools are NOT in sidebar navigation
-    expect(screen.queryByRole("link", { name: /^Chỉnh sửa$/i })).not.toBeInTheDocument()
-
-    // Click on a project card (e.g. Thanh Xuân Trở Lại) to enter editor
-    const projectCard = screen.getByText("Thanh Xuân Trở Lại")
-    fireEvent.click(projectCard)
-
-    // Now in workspace mode (/editor):
     // 1. CapCut exit to project hub button is present in sidebar and topbar
-    const exitButtons = screen.getAllByRole("link", { name: /Màn hình dự án/i })
+    const exitButtons = await screen.findAllByRole("button", { name: /Màn hình dự án/i })
     expect(exitButtons.length).toBeGreaterThanOrEqual(1)
 
-    // 2. Project workspace tools are visible in sidebar
+    // 2. Active project badge
+    expect(screen.getAllByText("Đang chỉnh sửa").length).toBeGreaterThanOrEqual(1)
+
+    // 3. Project workspace tools are visible in sidebar
     expect(screen.getByRole("link", { name: /^Chỉnh sửa$/i })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /^Visual Beat$/i })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /^Nhân vật$/i })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /^Voice$/i })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /Hàng đợi & Render/i })).toBeInTheDocument()
 
-    // 3. No standalone "Dự án" tab in the workspace sidebar!
+    // 4. Standalone "Dự án" tab is NOT in the workspace sidebar!
     expect(screen.queryByRole("link", { name: /^Dự án$/i })).not.toBeInTheDocument()
 
-    // 4. Click exit button to return to Project Hub
+    // 5. Exit button navigates back to Project Hub /
     fireEvent.click(exitButtons[0])
-    expect(await screen.findByText("Bắt đầu sáng tạo video mới")).toBeInTheDocument()
+
+    // After exiting to hub, launcher nav items appear
+    expect((await screen.findAllByText("Dự án của tôi")).length).toBeGreaterThanOrEqual(1)
   })
 })

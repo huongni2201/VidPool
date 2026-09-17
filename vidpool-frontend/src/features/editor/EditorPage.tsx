@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { WaveformVisualizer } from "@/components/shared/WaveformVisualizer"
+import { demoProjects } from "@/assets/demo"
 
 export function EditorPage() {
   const [isPlaying, setIsPlaying] = useState(false)
@@ -20,7 +21,7 @@ export function EditorPage() {
       title: "Cô gái thức dậy",
       duration: "00:04",
       desc: "Một ngày mới lại bắt đầu...",
-      thumb: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+      thumb: demoProjects[0],
     },
     {
       id: 2,
@@ -28,7 +29,7 @@ export function EditorPage() {
       title: "Trên đường đến trường",
       duration: "00:06",
       desc: "Thành phố buổi sáng thật đẹp.",
-      thumb: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200&auto=format&fit=crop&q=80",
+      thumb: demoProjects[1],
     },
     {
       id: 3,
@@ -36,7 +37,7 @@ export function EditorPage() {
       title: "Gặp lại người quen",
       duration: "00:05",
       desc: "Cậu... đã quay lại rồi sao?",
-      thumb: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=200&auto=format&fit=crop&q=80",
+      thumb: demoProjects[2],
     },
     {
       id: 4,
@@ -44,7 +45,7 @@ export function EditorPage() {
       title: "Hoàng hôn buông xuống",
       duration: "00:06",
       desc: "Những cảm xúc khó tả...",
-      thumb: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80",
+      thumb: demoProjects[3],
     },
   ]
 
@@ -123,7 +124,7 @@ export function EditorPage() {
           <div className="relative flex-1 w-full flex items-center justify-center overflow-hidden">
             <div className="relative aspect-video max-h-full w-auto mx-auto rounded-xl overflow-hidden bg-black flex items-center justify-center border border-border shadow-2xl">
               <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=1200&auto=format&fit=crop&q=80"
+                src={demoProjects[0]}
                 alt="Video Scene"
                 className="size-full object-cover"
               />
@@ -485,15 +486,15 @@ export function EditorPage() {
               </div>
               <div className="flex-1 h-11 flex gap-1">
                 <div className="w-48 h-full rounded-lg border border-blue-500/40 bg-card flex items-center overflow-hidden hover:border-blue-400 transition-colors cursor-pointer">
-                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" className="h-full w-14 object-cover" />
+                  <img src={demoProjects[0]} className="h-full w-14 object-cover" />
                   <span className="text-[10px] text-blue-200 px-2 truncate">01_thuc_day.mp4</span>
                 </div>
                 <div className="w-64 h-full rounded-lg border border-blue-500/60 bg-secondary flex items-center overflow-hidden shadow-sm shadow-blue-500/15 ring-1 ring-blue-500/30 cursor-pointer">
-                  <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80" className="h-full w-14 object-cover" />
+                  <img src={demoProjects[1]} className="h-full w-14 object-cover" />
                   <span className="text-[10px] text-blue-100 font-semibold px-2 truncate">02_den_truong.mp4</span>
                 </div>
                 <div className="w-56 h-full rounded-lg border border-blue-500/40 bg-card flex items-center overflow-hidden hover:border-blue-400 transition-colors cursor-pointer">
-                  <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=100&auto=format&fit=crop&q=80" className="h-full w-14 object-cover" />
+                  <img src={demoProjects[2]} className="h-full w-14 object-cover" />
                   <span className="text-[10px] text-blue-200 px-2 truncate">03_gap_lai.mp4</span>
                 </div>
               </div>

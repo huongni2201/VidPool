@@ -1,18 +1,21 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { ROUTES, type AppRoute } from "@/shared/constants"
-import { useProjectStore } from "@/entities/project"
 import { StatCard } from "@/components/shared/StatCard"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { CreateProjectDialog } from "@/features/project-create"
+import { demoProjects, demoAvatars } from "@/assets/demo"
 
 export function DashboardPage() {
   const navigate = useNavigate()
-  const { openProject } = useProjectStore()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
 
   const handleNavigate = (route: AppRoute) => {
     navigate(route)
+  }
+
+  const openProject = (_title?: string) => {
+    navigate(ROUTES.EDITOR)
   }
 
   const recentProjects = [
@@ -21,35 +24,35 @@ export function DashboardPage() {
       name: "Thanh Xuân Trở Lại",
       meta: "12 video • Cập nhật 2 giờ trước",
       status: "Đang chỉnh sửa",
-      cover: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      cover: demoProjects[0],
     },
     {
       id: "p2",
       name: "Những Ngày Bình Yên",
       meta: "8 video • Cập nhật 1 ngày trước",
       status: "Đã hoàn thành",
-      cover: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
+      cover: demoProjects[1],
     },
     {
       id: "p3",
       name: "Đường Về Nhà",
       meta: "6 video • Cập nhật 2 ngày trước",
       status: "Đang xử lý",
-      cover: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+      cover: demoProjects[2],
     },
     {
       id: "p4",
       name: "Thành Phố Lên Đèn",
       meta: "10 video • Cập nhật 3 ngày trước",
       status: "Tạm dừng",
-      cover: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80",
+      cover: demoProjects[3],
     },
     {
       id: "p5",
       name: "Một Ngày Khác",
       meta: "4 video • Cập nhật 5 ngày trước",
       status: "Đã hoàn thành",
-      cover: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150&auto=format&fit=crop&q=80",
+      cover: demoProjects[0],
     },
   ]
 
@@ -58,25 +61,25 @@ export function DashboardPage() {
       name: "Mai",
       role: "Nữ • Trẻ trung",
       count: "12 video",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+      avatar: demoAvatars[0],
     },
     {
       name: "Linh",
       role: "Nữ • Hiện đại",
       count: "8 video",
-      avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80",
+      avatar: demoAvatars[1],
     },
     {
       name: "Minh",
       role: "Nam • Trầm",
       count: "6 video",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80",
+      avatar: demoAvatars[2],
     },
     {
       name: "Bạch Thanh Hạ",
       role: "Custom Clone",
       count: "4 video",
-      avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=120&auto=format&fit=crop&q=80",
+      avatar: demoAvatars[3],
     },
   ]
 
@@ -88,7 +91,7 @@ export function DashboardPage() {
       percent: 78,
       time: "2 phút trước",
       status: "Đang chạy",
-      thumb: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&auto=format&fit=crop&q=80",
+      thumb: demoProjects[0],
     },
     {
       id: "j2",
@@ -97,7 +100,7 @@ export function DashboardPage() {
       percent: 100,
       time: "12 phút trước",
       status: "Hoàn thành",
-      thumb: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&auto=format&fit=crop&q=80",
+      thumb: demoProjects[1],
     },
     {
       id: "j3",
@@ -106,7 +109,7 @@ export function DashboardPage() {
       percent: 45,
       time: "28 phút trước",
       status: "Đang xử lý",
-      thumb: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=80&auto=format&fit=crop&q=80",
+      thumb: demoProjects[2],
     },
   ]
 

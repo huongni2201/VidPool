@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { WaveformVisualizer } from "@/components/shared/WaveformVisualizer"
+import { demoAvatars } from "@/assets/demo"
 
 interface VoiceItem {
   id: string
@@ -25,7 +26,7 @@ export function VoicePage() {
       gender: "Nữ",
       language: "Vietnamese",
       style: "Tự nhiên",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80",
+      avatar: demoAvatars[0],
     },
     {
       id: "v2",
@@ -33,7 +34,7 @@ export function VoicePage() {
       gender: "Nam",
       language: "Vietnamese",
       style: "Chín chắn",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80",
+      avatar: demoAvatars[1],
     },
     {
       id: "v3",
@@ -41,7 +42,7 @@ export function VoicePage() {
       gender: "Nữ",
       language: "Vietnamese",
       style: "Trẻ trung",
-      avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80",
+      avatar: demoAvatars[2],
     },
     {
       id: "v4",
@@ -49,7 +50,7 @@ export function VoicePage() {
       gender: "Custom",
       language: "Vietnamese",
       style: "Cinematic",
-      avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=120&auto=format&fit=crop&q=80",
+      avatar: demoAvatars[3],
     },
     {
       id: "v5",
@@ -57,7 +58,7 @@ export function VoicePage() {
       gender: "Custom",
       language: "Vietnamese",
       style: "Trầm ấm",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80",
+      avatar: demoAvatars[1],
     },
     {
       id: "v6",
@@ -65,7 +66,7 @@ export function VoicePage() {
       gender: "Nam",
       language: "English",
       style: "Chuyên nghiệp",
-      avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=120&auto=format&fit=crop&q=80",
+      avatar: demoAvatars[2],
     },
     {
       id: "v7",
@@ -73,7 +74,7 @@ export function VoicePage() {
       gender: "Nữ",
       language: "English",
       style: "Tự nhiên",
-      avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80",
+      avatar: demoAvatars[3],
     },
     {
       id: "v8",
@@ -230,7 +231,7 @@ export function VoicePage() {
           {/* Voice Portrait Banner */}
           <div className="flex items-center gap-3 rounded-xl border border-border bg-secondary/50 p-3">
             <img
-              src={currentVoice.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80"}
+              src={currentVoice.avatar || demoAvatars[0]}
               alt={currentVoice.name}
               className="size-16 rounded-xl object-cover border border-border"
             />

@@ -82,4 +82,27 @@ describe("Architecture Import Boundaries", () => {
       expect(exists, `${subDir} should not exist`).toBe(false)
     }
   })
+
+  it("forbids remote image URLs like Unsplash to ensure Tauri CSP safety", async () => {
+    const allFiles = await getSourceFiles(srcRoot)
+    const violations: { file: string; match: string }[] = []
+
+    const remoteImagePattern = /images\.unsplash\.com/
+
+    for (const file of allFiles) {
+      if (file.endsWith("import-boundaries.test.ts")) {
+        continue
+      }
+
+      const content = await fs.readFile(file, "utf-8")
+      if (remoteImagePattern.test(content)) {
+        violations.push({
+          file: path.relative(srcRoot, file),
+          match: "images.unsplash.com",
+        })
+      }
+    }
+
+    expect(violations).toEqual([])
+  })
 })

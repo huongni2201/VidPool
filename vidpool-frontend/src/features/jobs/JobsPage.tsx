@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { WaveformVisualizer } from "@/components/shared/WaveformVisualizer"
+import { demoProjects, demoAvatars } from "@/assets/demo"
 
 export type JobType = "video" | "voice" | "subtitle" | "render" | "analysis"
 
@@ -39,7 +40,7 @@ export function JobsPage() {
       progress: 68,
       remainingTime: "12 phút còn lại",
       status: "Đang chạy",
-      thumb: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=600&auto=format&fit=crop&q=80",
+      thumb: demoProjects[0],
       model: "SeaArt Video (S2V) Pro",
       resolution: "1920 × 1080 (16:9)",
       duration: "00:16",
@@ -59,7 +60,7 @@ export function JobsPage() {
       progress: 45,
       remainingTime: "6 phút còn lại",
       status: "Đang chạy",
-      characterAvatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=300&auto=format&fit=crop&q=80",
+      characterAvatar: demoAvatars[1],
       characterName: "Linh (Nữ miền Nam, 21 tuổi)",
       dialogueText: "Cậu... đã quay lại rồi sao? Mình cứ ngỡ sẽ không bao giờ gặp lại cậu ở nơi này nữa.",
       model: "VoiceStudio Neural TTS v2",
@@ -115,7 +116,7 @@ export function JobsPage() {
       progress: 10,
       remainingTime: "35 phút còn lại",
       status: "Đang chạy",
-      thumb: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&auto=format&fit=crop&q=80",
+      thumb: demoProjects[2],
       model: "Seedance Multi-Frame V2",
       resolution: "1920 × 1080",
       duration: "00:30",
@@ -620,7 +621,7 @@ export function JobsPage() {
                   <div className="flex items-center gap-3">
                     <div className="relative size-14 shrink-0 rounded-xl overflow-hidden border border-purple-500/40 shadow-md">
                       <img
-                        src={selectedJob.characterAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80"}
+                        src={selectedJob.characterAvatar || demoAvatars[0]}
                         alt="Voice"
                         className="size-full object-cover"
                       />
