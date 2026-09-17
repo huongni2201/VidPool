@@ -41,11 +41,49 @@ describe("Bootstrap", () => {
     expect(screen.queryByText("Child Content")).not.toBeInTheDocument()
   })
 
-  it("renders children with ApiClientProvider when config resolves successfully", async () => {
+  it("shows error state when session probe fails (401/503/error)", async () => {
+    vi.mocked(loadRuntimeConfig).mockResolvedValue({
+      apiBaseUrl: "http://127.0.0.1:8123",
+      sessionToken: "invalid-token",
+    })
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ detail: "Invalid app session" }),
+    })
+    vi.stubGlobal("fetch", fetchMock)
+
+    render(
+      <Bootstrap>
+        <ProbeChild />
+      </Bootstrap>,
+    )
+
+    expect(await screen.findByText("Backend unavailable")).toBeInTheDocument()
+    expect(screen.queryByText("Loaded with client: function")).not.toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://127.0.0.1:8123/api/session/probe",
+      expect.objectContaining({
+        headers: { Authorization: "Bearer invalid-token" },
+      }),
+    )
+
+    vi.unstubAllGlobals()
+  })
+
+  it("renders children with ApiClientProvider only after session probe succeeds", async () => {
     vi.mocked(loadRuntimeConfig).mockResolvedValue({
       apiBaseUrl: "http://127.0.0.1:8123",
       sessionToken: "test-token-value-of-sufficient-length",
     })
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ status: "ok" }),
+    })
+    vi.stubGlobal("fetch", fetchMock)
 
     render(
       <Bootstrap>
@@ -56,5 +94,13 @@ describe("Bootstrap", () => {
     expect(
       await screen.findByText("Loaded with client: function"),
     ).toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://127.0.0.1:8123/api/session/probe",
+      expect.objectContaining({
+        headers: { Authorization: "Bearer test-token-value-of-sufficient-length" },
+      }),
+    )
+
+    vi.unstubAllGlobals()
   })
 })

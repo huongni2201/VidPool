@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react"
+import { sessionProbeSchema } from "@/lib/api"
 import { createApiClient, type ApiClient } from "@/lib/api-client"
 import { loadRuntimeConfig, type RuntimeConfig } from "@/runtime/runtime-config"
 import { ApiClientProvider } from "./api-client-context"
@@ -15,9 +16,13 @@ export function Bootstrap({ children }: { children: ReactNode }) {
     let active = true
 
     loadRuntimeConfig()
-      .then((config) => {
+      .then(async (config) => {
+        const client = createApiClient(config)
+        await client.get("/api/session/probe", sessionProbeSchema)
+        return { config, client }
+      })
+      .then(({ config, client }) => {
         if (active) {
-          const client = createApiClient(config)
           setState({ status: "ready", config, client })
         }
       })
