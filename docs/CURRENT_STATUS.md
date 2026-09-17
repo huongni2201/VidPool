@@ -28,6 +28,10 @@ This file distinguishes target architecture from implemented reality.
 - per-session local API token validation
 - temporary protected session probe endpoint (`/api/session/probe`)
 - desktop CI compile/package gate (verified for Windows x64 / NSIS)
+- Account Pool domain model
+- Account Pool application ports/fakes
+- Account Pool SQLAlchemy persistence models/repository
+- Account Pool Alembic schema for provider accounts and leases
 
 ## Not Implemented Yet
 
@@ -47,7 +51,13 @@ The repository currently does not contain production implementation for:
 - FFmpeg render pipeline
 - quality-control pipeline
 - OS keyring integration
-- Account Pool / Browser Session subsystem
+- Account Pool runtime wiring
+- persistent browser session manager
+- production provider auth adapters
+- account login/relogin lifecycle
+- account management API
+- account management frontend
+- durable job integration with account leases
 
 ## Documentation Semantics
 
