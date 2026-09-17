@@ -1,4 +1,5 @@
 import argparse
+import os
 import sys
 from dataclasses import dataclass
 
@@ -67,11 +68,18 @@ def parse_args(argv: list[str] | None = None) -> BootstrapArgs:
 
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
+    session_token = args.session_token or os.getenv("VIDPOOL_SESSION_TOKEN") or "dev-token"
+    allowed_origins = args.allowed_origins
+    if not args.allowed_origins and os.getenv("VIDPOOL_ALLOWED_ORIGINS"):
+        from app.core.config import _parse_origins
+
+        allowed_origins = _parse_origins(os.getenv("VIDPOOL_ALLOWED_ORIGINS"))
+
     config = AppConfig(
         host=args.host,
         port=args.port,
-        session_token=args.session_token,
-        allowed_origins=args.allowed_origins,
+        session_token=session_token,
+        allowed_origins=allowed_origins,
     )
     app = create_app(config)
     uvicorn.run(
