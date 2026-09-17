@@ -220,3 +220,61 @@ def test_repository_save_raises_not_found_for_deleted_account(db_session: Sessio
     assert repo.get(account.id) is None
 
 
+def test_concurrent_acquire_never_leases_same_account_twice(tmp_path: Path) -> None:
+    from app.infrastructure.persistence.database import create_engine_for_path
+    from app.modules.accounts.infrastructure.persistence.models import AccountLeaseModel
+    from sqlalchemy import func, select
+    import threading
+
+    db_path = tmp_path / "concurrent_lease.db"
+    engine = create_engine_for_path(db_path)
+    Base.metadata.create_all(engine)
+
+    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=timezone.utc)
+
+    # Seed 1 single active account
+    with Session(engine) as seed_session:
+        repo = SQLAlchemyAccountRepository(session=seed_session)
+        acc = ProviderAccount.create("test-provider", "profile/conc-1", now=now)
+        acc.mark_authenticated("User Conc", "conc", now=now)
+        repo.add(acc)
+
+    barrier = threading.Barrier(2)
+    successful_acquires: list[tuple[str, ProviderAccount]] = []
+    errors: list[Exception] = []
+
+    def run_worker(owner_id: str) -> None:
+        with Session(engine) as worker_session:
+            worker_repo = SQLAlchemyAccountRepository(session=worker_session)
+            try:
+                barrier.wait(timeout=5)
+                res = worker_repo.acquire_lru(
+                    provider_key="test-provider",
+                    owner_id=owner_id,
+                    now=now,
+                    expires_at=now + timedelta(minutes=5),
+                )
+                if res is not None:
+                    successful_acquires.append((owner_id, res[0]))
+            except Exception as e:
+                errors.append(e)
+
+    t1 = threading.Thread(target=run_worker, args=("job:worker-1",))
+    t2 = threading.Thread(target=run_worker, args=("job:worker-2",))
+
+    t1.start()
+    t2.start()
+    t1.join(timeout=10)
+    t2.join(timeout=10)
+
+    assert errors == []
+    assert len(successful_acquires) == 1
+
+    with Session(engine) as verify_session:
+        persisted_lease_count = verify_session.scalar(
+            select(func.count()).select_from(AccountLeaseModel)
+        )
+        assert persisted_lease_count == 1
+
+
+
