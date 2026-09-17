@@ -96,6 +96,7 @@ def main() -> None:
         "--hidden-import=uvicorn.protocols.websockets.auto",
         "--hidden-import=uvicorn.lifespan",
         "--hidden-import=uvicorn.lifespan.on",
+        "--collect-all=playwright",
         "--distpath",
         str(dist_dir),
         "--workpath",
