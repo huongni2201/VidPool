@@ -15,6 +15,8 @@ export function AccountsPage() {
     deleteAccount,
     invalidate,
     isPending,
+    error,
+    clearError,
   } = useAccountActions()
 
   return (
@@ -28,6 +30,23 @@ export function AccountsPage() {
         </div>
         <Button onClick={() => setLoginTarget({ kind: "add" })}>+ Add account</Button>
       </div>
+
+      {error && (
+        <div
+          role="alert"
+          className="flex items-center justify-between rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs text-destructive"
+        >
+          <span>{error.message}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearError}
+            className="h-5 px-1.5 text-xs text-destructive hover:bg-destructive/20"
+          >
+            ✕
+          </Button>
+        </div>
+      )}
 
       {isLoading && (
         <div className="rounded-lg border border-border p-8 text-center text-sm text-muted-foreground">

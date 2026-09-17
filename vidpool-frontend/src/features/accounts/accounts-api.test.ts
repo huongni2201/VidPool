@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from "vitest"
 import type { ApiClient } from "@/lib/api-client"
 import {
   cancelLogin,
+  cancelNewLogin,
+  cancelRelogin,
   completeLogin,
   deleteAccount,
   disableAccount,
@@ -133,9 +135,19 @@ describe("Account API client and schemas", () => {
     await getAccount(mockClient, accId)
     expect(mockClient.get).toHaveBeenCalledWith(`/api/accounts/${accId}`, expect.anything())
 
+    await cancelNewLogin(mockClient, accId)
+    expect(mockClient.post).toHaveBeenCalledWith(
+      `/api/accounts/${accId}/login/cancel`,
+    )
+
     await cancelLogin(mockClient, accId)
     expect(mockClient.post).toHaveBeenCalledWith(
       `/api/accounts/${accId}/login/cancel`,
+    )
+
+    await cancelRelogin(mockClient, accId)
+    expect(mockClient.post).toHaveBeenCalledWith(
+      `/api/accounts/${accId}/relogin/cancel`,
       undefined,
       expect.anything(),
     )

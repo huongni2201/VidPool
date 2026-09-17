@@ -197,16 +197,51 @@ def test_complete_login_requires_open_browser_profile() -> None:
         service.complete_login(start.account_id, now=LATER)
 
 
-def test_cancel_login_preserves_account_and_closes_browser() -> None:
+def test_cancel_new_login_deletes_account_and_profile() -> None:
     service, repo, browser, _ = _build_service()
 
     start = service.start_login("provider-x", now=NOW)
-    view = service.cancel_login(start.account_id)
-
-    assert view.status is AccountStatus.AUTH_REQUIRED
     account = repo.get(start.account_id)
     assert account is not None
+    profile_key = account.profile_key
+    assert browser.has_open_session(profile_key)
+
+    service.cancel_new_login(start.account_id)
+
+    assert repo.get(start.account_id) is None
+    assert not browser.has_open_session(profile_key)
+    assert profile_key in browser.deleted_profiles
+
+
+def test_cancel_new_login_rejects_active_account() -> None:
+    service, repo, _, _ = _build_service()
+
+    start = service.start_login("provider-x", now=NOW)
+    service.complete_login(start.account_id, now=NOW)
+
+    with pytest.raises(InvalidAccountState):
+        service.cancel_new_login(start.account_id)
+
+    assert repo.get(start.account_id) is not None
+
+
+def test_cancel_relogin_preserves_account_and_profile() -> None:
+    service, repo, browser, _ = _build_service()
+
+    start = service.start_login("provider-x", now=NOW)
+    service.complete_login(start.account_id, now=NOW)
+    service.report_auth_failure(start.account_id, now=LATER)
+
+    service.start_relogin(start.account_id, now=LATER)
+    account = repo.get(start.account_id)
+    assert account is not None
+    assert browser.has_open_session(account.profile_key)
+
+    view = service.cancel_relogin(start.account_id)
+    assert view.status is AccountStatus.AUTH_REQUIRED
+    assert repo.get(start.account_id) is not None
     assert not browser.has_open_session(account.profile_key)
+    assert account.profile_key not in browser.deleted_profiles
 
 
 def test_cancel_login_closes_only_accounts_own_profile() -> None:
@@ -221,10 +256,12 @@ def test_cancel_login_closes_only_accounts_own_profile() -> None:
     assert browser.has_open_session(acc1.profile_key)
     assert browser.has_open_session(acc2.profile_key)
 
-    service.cancel_login(start1.account_id)
+    service.cancel_new_login(start1.account_id)
 
     assert not browser.has_open_session(acc1.profile_key)
     assert browser.has_open_session(acc2.profile_key)
+    assert acc1.profile_key in browser.deleted_profiles
+    assert acc2.profile_key not in browser.deleted_profiles
 
 
 def test_complete_login_closes_only_accounts_own_profile() -> None:
@@ -250,8 +287,9 @@ def test_start_relogin_reuses_existing_profile_key() -> None:
     service, repo, browser, _ = _build_service()
 
     start1 = service.start_login("provider-x", now=NOW)
+    service.complete_login(start1.account_id, now=NOW)
+    service.report_auth_failure(start1.account_id, now=LATER)
     account1 = repo.get(start1.account_id)
-    service.cancel_login(start1.account_id)
 
     start2 = service.start_relogin(start1.account_id, now=LATER)
     assert start2.account_id == start1.account_id
@@ -262,8 +300,20 @@ def test_start_relogin_rejects_existing_open_browser() -> None:
     service, repo, browser, _ = _build_service()
 
     start = service.start_login("provider-x", now=NOW)
+    service.complete_login(start.account_id, now=NOW)
+    service.report_auth_failure(start.account_id, now=LATER)
+    account = repo.get(start.account_id)
+    assert account is not None
+
+    # Open browser session manually to simulate an already-open session
+    browser.open_login(
+        provider_key="provider-x",
+        profile_key=account.profile_key,
+        login_url="https://login",
+    )
+
     with pytest.raises(BrowserProfileInUse):
-        service.start_relogin(start.account_id, now=NOW)
+        service.start_relogin(start.account_id, now=LATER)
 
 
 def test_start_relogin_rejects_active_lease() -> None:
@@ -370,8 +420,9 @@ def test_delete_account_removes_profile_and_record() -> None:
     service, repo, browser, _ = _build_service()
 
     start = service.start_login("provider-x", now=NOW)
+    service.complete_login(start.account_id, now=NOW)
     account = repo.get(start.account_id)
-    service.cancel_login(start.account_id)
+    assert account is not None
 
     service.delete_account(start.account_id, now=NOW)
 
@@ -417,7 +468,7 @@ def test_delete_account_keeps_record_when_repository_delete_fails() -> None:
     )
 
     start = service.start_login("provider-x", now=NOW)
-    service.cancel_login(start.account_id)
+    service.complete_login(start.account_id, now=NOW)
 
     with pytest.raises(RuntimeError, match="Delete DB failed"):
         service.delete_account(start.account_id, now=NOW)
@@ -441,7 +492,7 @@ def test_delete_account_does_not_restore_record_when_profile_cleanup_fails() -> 
     )
 
     start = service.start_login("provider-x", now=NOW)
-    service.cancel_login(start.account_id)
+    service.complete_login(start.account_id, now=NOW)
 
     # DB deletion succeeds, disk cleanup failure is caught and logged
     service.delete_account(start.account_id, now=NOW)

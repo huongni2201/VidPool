@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query"
 import { useApiClient } from "@/app/api-client-context"
 import { Button } from "@/components/ui/button"
 import {
-  cancelLogin,
+  cancelNewLogin,
+  cancelRelogin,
   completeLogin,
   listProviders,
   startLogin,
@@ -137,14 +138,23 @@ export function AddAccountDialog({
   }
 
   const handleCancelWaiting = async () => {
-    if (accountId) {
-      try {
-        await cancelLogin(client, accountId)
-      } catch {
-        // Ignore cancel errors
-      }
+    if (!accountId) {
+      handleClose()
+      return
     }
-    handleClose()
+
+    try {
+      if (target?.kind === "relogin") {
+        await cancelRelogin(client, accountId)
+      } else {
+        await cancelNewLogin(client, accountId)
+      }
+      onSuccess()
+    } catch {
+      // Ignore cancel errors
+    } finally {
+      handleClose()
+    }
   }
 
   const handleClose = () => {

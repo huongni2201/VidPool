@@ -15,24 +15,14 @@ from app.modules.accounts.domain.errors import (
 )
 from app.modules.accounts.domain.values import AccountId, AccountStatus
 
+from .mappers import account_to_view
 from .ports import BrowserSessionPort, ProviderRegistryPort
 from .queries import AccountView, StartLoginResult
 from .uow import AccountUnitOfWorkPort
 
 logger = logging.getLogger(__name__)
 
-
-def _to_view(account: ProviderAccount) -> AccountView:
-    return AccountView(
-        id=account.id,
-        provider_key=account.provider_key,
-        display_name=account.display_name,
-        external_identity=account.external_identity,
-        status=account.status,
-        last_used_at=account.last_used_at,
-        last_validated_at=account.last_validated_at,
-        cooldown_until=account.cooldown_until,
-    )
+_to_view = account_to_view
 
 
 class AccountLoginService:
@@ -157,7 +147,38 @@ class AccountLoginService:
         finally:
             self._browser.close_profile(profile_key)
 
-    def cancel_login(
+    def cancel_new_login(
+        self,
+        account_id: AccountId,
+    ) -> None:
+        with self._uow_factory() as uow:
+            account = uow.accounts.get(account_id)
+            if account is None:
+                raise AccountNotFound(f"Account '{account_id}' not found")
+            if (
+                account.status is not AccountStatus.AUTH_REQUIRED
+                or account.last_validated_at is not None
+            ):
+                raise InvalidAccountState(
+                    f"Cannot cancel new login for account '{account_id}' because it is not a provisional account."
+                )
+            profile_key = account.profile_key
+
+        self._browser.close_profile(profile_key)
+
+        with self._uow_factory() as uow:
+            uow.accounts.delete(account_id)
+            uow.commit()
+
+        try:
+            self._browser.delete_profile(profile_key)
+        except Exception:
+            logger.exception(
+                "Provisional account %s deleted from DB but profile cleanup failed",
+                account_id,
+            )
+
+    def cancel_relogin(
         self,
         account_id: AccountId,
     ) -> AccountView:
@@ -170,6 +191,12 @@ class AccountLoginService:
 
         self._browser.close_profile(profile_key)
         return view
+
+    def cancel_login(
+        self,
+        account_id: AccountId,
+    ) -> AccountView:
+        return self.cancel_relogin(account_id)
 
     def start_relogin(
         self,

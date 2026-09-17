@@ -1,9 +1,9 @@
 import logging
+import threading
 import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 
-from app.modules.accounts.domain.account import ProviderAccount
 from app.modules.accounts.domain.errors import (
     AccountInUse,
     AccountNotFound,
@@ -14,6 +14,7 @@ from app.modules.accounts.domain.values import AccountId
 from .health_service import AccountHealthService
 from .lease_service import AccountLeaseService
 from .login_service import AccountLoginService
+from .mappers import account_to_view
 from .ports import (
     BrowserSessionPort,
     ProviderDefinition,
@@ -24,18 +25,7 @@ from .uow import AccountUnitOfWorkPort
 
 logger = logging.getLogger(__name__)
 
-
-def _to_view(account: ProviderAccount) -> AccountView:
-    return AccountView(
-        id=account.id,
-        provider_key=account.provider_key,
-        display_name=account.display_name,
-        external_identity=account.external_identity,
-        status=account.status,
-        last_used_at=account.last_used_at,
-        last_validated_at=account.last_validated_at,
-        cooldown_until=account.cooldown_until,
-    )
+_to_view = account_to_view
 
 
 class AccountService:
@@ -53,6 +43,7 @@ class AccountService:
         self._uow_factory = uow_factory
         self._browser = browser
         self._providers = providers
+        self._mutation_lock = threading.RLock()
         self._login_service = login_service or AccountLoginService(
             uow_factory=uow_factory,
             browser=browser,
@@ -105,54 +96,56 @@ class AccountService:
         account_id: AccountId,
         now: datetime | None = None,
     ) -> AccountView:
-        current_time = now or datetime.now(UTC)
-        with self._uow_factory() as uow:
-            account = uow.accounts.get(account_id)
-            if account is None:
-                raise AccountNotFound(f"Account '{account_id}' not found")
+        with self._mutation_lock:
+            current_time = now or datetime.now(UTC)
+            with self._uow_factory() as uow:
+                account = uow.accounts.get(account_id)
+                if account is None:
+                    raise AccountNotFound(f"Account '{account_id}' not found")
 
-            if uow.accounts.has_active_lease(account_id, current_time):
-                raise AccountInUse(
-                    f"Cannot disable account '{account_id}' while an active lease exists"
-                )
+                if uow.accounts.has_active_lease(account_id, current_time):
+                    raise AccountInUse(
+                        f"Cannot disable account '{account_id}' while an active lease exists"
+                    )
 
-            account.disable(now=current_time)
-            uow.accounts.save(account)
-            uow.commit()
-            logger.info("account_disabled account_id=%s", account_id)
-            return _to_view(account)
+                account.disable(now=current_time)
+                uow.accounts.save(account)
+                uow.commit()
+                logger.info("account_disabled account_id=%s", account_id)
+                return _to_view(account)
 
     def delete_account(
         self,
         account_id: AccountId,
         now: datetime | None = None,
     ) -> None:
-        current_time = now or datetime.now(UTC)
-        with self._uow_factory() as uow:
-            account = uow.accounts.get(account_id)
-            if account is None:
-                raise AccountNotFound(f"Account '{account_id}' not found")
+        with self._mutation_lock:
+            current_time = now or datetime.now(UTC)
+            with self._uow_factory() as uow:
+                account = uow.accounts.get(account_id)
+                if account is None:
+                    raise AccountNotFound(f"Account '{account_id}' not found")
 
-            if uow.accounts.has_active_lease(account_id, current_time):
-                raise AccountInUse(
-                    f"Cannot delete account '{account_id}' while an active lease exists"
-                )
+                if uow.accounts.has_active_lease(account_id, current_time):
+                    raise AccountInUse(
+                        f"Cannot delete account '{account_id}' while an active lease exists"
+                    )
 
-            profile_key = account.profile_key
+                profile_key = account.profile_key
 
-            if self._browser.has_open_session(profile_key):
-                raise BrowserProfileInUse(
-                    f"Cannot delete account '{account_id}' while a browser session is active"
-                )
+                if self._browser.has_open_session(profile_key):
+                    raise BrowserProfileInUse(
+                        f"Cannot delete account '{account_id}' while a browser session is active"
+                    )
 
-            uow.accounts.delete(account_id)
-            uow.commit()
-            logger.info("account_deleted account_id=%s", account_id)
+                uow.accounts.delete(account_id)
+                uow.commit()
+                logger.info("account_deleted account_id=%s", account_id)
 
-        try:
-            self._browser.delete_profile(profile_key)
-        except Exception:
-            logger.exception("Account deleted but browser profile cleanup failed")
+            try:
+                self._browser.delete_profile(profile_key)
+            except Exception:
+                logger.exception("Account deleted but browser profile cleanup failed")
 
     # --- Delegations to Login Service ---
 
@@ -171,6 +164,19 @@ class AccountService:
     ) -> AccountView:
         return self._login_service.complete_login(account_id, now=now)
 
+    def cancel_new_login(
+        self,
+        account_id: AccountId,
+    ) -> None:
+        with self._mutation_lock:
+            return self._login_service.cancel_new_login(account_id)
+
+    def cancel_relogin(
+        self,
+        account_id: AccountId,
+    ) -> AccountView:
+        return self._login_service.cancel_relogin(account_id)
+
     def cancel_login(
         self,
         account_id: AccountId,
@@ -182,7 +188,8 @@ class AccountService:
         account_id: AccountId,
         now: datetime | None = None,
     ) -> StartLoginResult:
-        return self._login_service.start_relogin(account_id, now=now)
+        with self._mutation_lock:
+            return self._login_service.start_relogin(account_id, now=now)
 
     # --- Delegations to Lease Service ---
 
@@ -193,7 +200,8 @@ class AccountService:
         ttl: timedelta,
         now: datetime | None = None,
     ) -> AccountLeaseView:
-        return self._lease_service.acquire(provider_key, owner_id, ttl, now=now)
+        with self._mutation_lock:
+            return self._lease_service.acquire(provider_key, owner_id, ttl, now=now)
 
     def release(self, lease_id: uuid.UUID) -> None:
         return self._lease_service.release(lease_id)

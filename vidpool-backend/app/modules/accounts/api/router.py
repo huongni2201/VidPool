@@ -10,6 +10,7 @@ from app.modules.accounts.domain.errors import (
     BrowserProfileInUse,
     BrowserSessionNotOpen,
     BrowserUnavailable,
+    InvalidAccountState,
     InvalidProfileKey,
     ProviderNotRegistered,
     SessionInvalid,
@@ -48,7 +49,16 @@ def parse_account_id(account_id: str) -> AccountId:
 def _handle_error(exc: Exception) -> None:
     if isinstance(exc, (ProviderNotRegistered, AccountNotFound)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
-    if isinstance(exc, (AccountInUse, SessionInvalid, BrowserProfileInUse, BrowserSessionNotOpen)):
+    if isinstance(
+        exc,
+        (
+            AccountInUse,
+            SessionInvalid,
+            BrowserProfileInUse,
+            BrowserSessionNotOpen,
+            InvalidAccountState,
+        ),
+    ):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
     if isinstance(exc, BrowserUnavailable):
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
@@ -137,14 +147,28 @@ def complete_login(
         raise
 
 
-@router.post("/accounts/{account_id}/login/cancel", response_model=AccountResponse)
+@router.post("/accounts/{account_id}/login/cancel", status_code=status.HTTP_204_NO_CONTENT)
 def cancel_login(
+    account_id: str,
+    service: AccountService = Depends(get_account_service),
+) -> Response:
+    parsed_id = parse_account_id(account_id)
+    try:
+        service.cancel_new_login(parsed_id)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+    except Exception as exc:
+        _handle_error(exc)
+        raise
+
+
+@router.post("/accounts/{account_id}/relogin/cancel", response_model=AccountResponse)
+def cancel_relogin(
     account_id: str,
     service: AccountService = Depends(get_account_service),
 ) -> AccountResponse:
     parsed_id = parse_account_id(account_id)
     try:
-        view = service.cancel_login(parsed_id)
+        view = service.cancel_relogin(parsed_id)
         return _serialize_account(view)
     except Exception as exc:
         _handle_error(exc)

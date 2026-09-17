@@ -1,5 +1,7 @@
 # VidPool — Detailed Fix Plan After Latest Code Review
 
+**Status:** SUPERSEDED / COMPLETED  
+**Superseded by:** `2026-09-17-vidpool-latest-code-review-fix-plan.md`  
 **Date:** 2026-09-17  
 **Reviewed commit:** `ba90e70ee0214d39737d6812db48a62cd55241a5`  
 **Scope:** Account Pool foundation, BrowserRuntime, Unit of Work, frontend account flows, CI/clean-code gates  

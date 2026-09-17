@@ -2,7 +2,6 @@ import logging
 from collections.abc import Callable
 from datetime import UTC, datetime
 
-from app.modules.accounts.domain.account import ProviderAccount
 from app.modules.accounts.domain.errors import (
     AccountInUse,
     AccountNotFound,
@@ -10,24 +9,14 @@ from app.modules.accounts.domain.errors import (
 )
 from app.modules.accounts.domain.values import AccountId, AccountStatus
 
+from .mappers import account_to_view
 from .ports import ProviderRegistryPort
 from .queries import AccountView
 from .uow import AccountUnitOfWorkPort
 
 logger = logging.getLogger(__name__)
 
-
-def _to_view(account: ProviderAccount) -> AccountView:
-    return AccountView(
-        id=account.id,
-        provider_key=account.provider_key,
-        display_name=account.display_name,
-        external_identity=account.external_identity,
-        status=account.status,
-        last_used_at=account.last_used_at,
-        last_validated_at=account.last_validated_at,
-        cooldown_until=account.cooldown_until,
-    )
+_to_view = account_to_view
 
 
 class AccountHealthService:

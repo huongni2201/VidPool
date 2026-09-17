@@ -52,8 +52,14 @@ This file distinguishes target architecture from implemented reality.
 - serialized browser profile deletion on owner thread and graceful shutdown lifecycle
 - domain-encapsulated account status transitions (`record_success`, `record_validation`, `record_auth_failure`, etc.)
 - specialized account application services (`AccountLoginService`, `AccountLeaseService`, `AccountHealthService`) coordinated by `AccountService` facade
+- centralized application query mapping (`account_to_view` in `application/mappers.py`)
 - frontend relogin and validation retry UX flows with custom hooks (`useAccounts`, `useAccountActions`)
-- backend static analysis gates with Ruff and Pyright (`pyproject.toml`)
+- user-visible frontend mutation error feedback with inline alerts and dismissal in `AccountsPage`
+- explicit separation of new-login cancellation (`cancel_new_login` deleting provisional record & profile with 204 response) vs relogin cancellation (`cancel_relogin` preserving existing record)
+- controlled API error mapping for `InvalidAccountState` domain conflicts (HTTP 409 Conflict)
+- verified account mutation vs lease concurrency invariants with multi-threaded SQLite WAL tests and coordinator synchronization
+- backend static analysis CI gates with Ruff and Pyright enforced in GitHub Actions (`.github/workflows/ci.yml`)
+- provider auth port contract test harness (`test_provider_contract.py`)
 - structured event and debug logging for browser and account lifecycles
 
 ## Not Implemented Yet

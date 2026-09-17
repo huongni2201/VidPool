@@ -122,8 +122,9 @@ pub fn start_backend_with_retry(
 
         let api_base_url = format_api_base_url(port);
 
-        let child = spawn_sidecar(app, port, session_token)
-            .map_err(|e| format!("Attempt {attempt}: {e}"))?;
+        let child = spawn_sidecar(app, port, session_token).map_err(|e| {
+            format!("Attempt {attempt}: failed to spawn backend sidecar on port {port}: {e}")
+        })?;
 
         match wait_for_backend_ready(&api_base_url, readiness_timeout) {
             Ok(()) => Ok(StartedBackend {
@@ -131,9 +132,9 @@ pub fn start_backend_with_retry(
                 child,
             }),
             Err(error) => {
-                let _ = child.kill();
+                let kill_result = child.kill();
                 Err(format!(
-                    "Attempt {attempt}: backend did not become ready: {error}"
+                    "Attempt {attempt}: backend sidecar on port {port} did not become ready within {readiness_timeout:?}: {error}; child termination result: {kill_result:?}"
                 ))
             }
         }

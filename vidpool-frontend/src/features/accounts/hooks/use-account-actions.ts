@@ -7,6 +7,11 @@ import {
   validateAccount,
 } from "../accounts-api"
 
+export interface AccountActionError {
+  action: "validate" | "enable" | "disable" | "delete"
+  message: string
+}
+
 export function useAccountActions() {
   const client = useApiClient()
   const queryClient = useQueryClient()
@@ -33,6 +38,24 @@ export function useAccountActions() {
     onSuccess: invalidate,
   })
 
+  const clearError = () => {
+    validateMutation.reset()
+    enableMutation.reset()
+    disableMutation.reset()
+    deleteMutation.reset()
+  }
+
+  const error: AccountActionError | null =
+    validateMutation.error
+      ? { action: "validate", message: validateMutation.error.message }
+      : enableMutation.error
+      ? { action: "enable", message: enableMutation.error.message }
+      : disableMutation.error
+      ? { action: "disable", message: disableMutation.error.message }
+      : deleteMutation.error
+      ? { action: "delete", message: deleteMutation.error.message }
+      : null
+
   const isPending =
     validateMutation.isPending ||
     enableMutation.isPending ||
@@ -40,11 +63,25 @@ export function useAccountActions() {
     deleteMutation.isPending
 
   return {
-    validateAccount: (id: string) => validateMutation.mutate(id),
-    enableAccount: (id: string) => enableMutation.mutate(id),
-    disableAccount: (id: string) => disableMutation.mutate(id),
-    deleteAccount: (id: string) => deleteMutation.mutate(id),
+    validateAccount: (id: string) => {
+      clearError()
+      validateMutation.mutate(id)
+    },
+    enableAccount: (id: string) => {
+      clearError()
+      enableMutation.mutate(id)
+    },
+    disableAccount: (id: string) => {
+      clearError()
+      disableMutation.mutate(id)
+    },
+    deleteAccount: (id: string) => {
+      clearError()
+      deleteMutation.mutate(id)
+    },
     invalidate,
     isPending,
+    error,
+    clearError,
   }
 }

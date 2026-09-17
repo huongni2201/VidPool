@@ -235,9 +235,10 @@ describe("AddAccountDialog component", () => {
     }
 
     const onClose = vi.fn()
+    const onSuccess = vi.fn()
 
     render(
-      <AddAccountDialog open={true} onClose={onClose} onSuccess={vi.fn()} />,
+      <AddAccountDialog open={true} onClose={onClose} onSuccess={onSuccess} />,
       { wrapper: createWrapper(mockClient) }
     )
 
@@ -253,10 +254,58 @@ describe("AddAccountDialog component", () => {
 
     await waitFor(() => {
       expect(mockClient.post).toHaveBeenCalledWith(
-        "/api/accounts/123e4567-e89b-12d3-a456-426614174000/login/cancel",
+        "/api/accounts/123e4567-e89b-12d3-a456-426614174000/login/cancel"
+      )
+      expect(onSuccess).toHaveBeenCalled()
+      expect(onClose).toHaveBeenCalled()
+    })
+  })
+
+  it("handles cancel button during relogin waiting state and calls cancelRelogin", async () => {
+    const accountId = "123e4567-e89b-12d3-a456-426614174000"
+    const mockClient: ApiClient = {
+      get: vi.fn().mockResolvedValue([]),
+      post: vi.fn().mockImplementation((path: string) => {
+        if (path === `/api/accounts/${accountId}/relogin/start`) {
+          return Promise.resolve({
+            accountId,
+            status: "waiting_for_user",
+          })
+        }
+        if (path === `/api/accounts/${accountId}/relogin/cancel`) {
+          return Promise.resolve({})
+        }
+        return Promise.resolve({})
+      }),
+      delete: vi.fn(),
+    }
+
+    const onClose = vi.fn()
+    const onSuccess = vi.fn()
+
+    render(
+      <AddAccountDialog
+        open={true}
+        target={{ kind: "relogin", accountId }}
+        onClose={onClose}
+        onSuccess={onSuccess}
+      />,
+      { wrapper: createWrapper(mockClient) }
+    )
+
+    expect(
+      await screen.findByText(/hoàn tất đăng nhập trong cửa sổ trình duyệt/i)
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: /hủy bỏ/i }))
+
+    await waitFor(() => {
+      expect(mockClient.post).toHaveBeenCalledWith(
+        `/api/accounts/${accountId}/relogin/cancel`,
         undefined,
         expect.anything()
       )
+      expect(onSuccess).toHaveBeenCalled()
       expect(onClose).toHaveBeenCalled()
     })
   })
@@ -412,5 +461,45 @@ describe("AddAccountDialog component", () => {
       await screen.findByText(/hoàn tất đăng nhập trong cửa sổ trình duyệt/i)
     ).toBeInTheDocument()
     expect(completeCallCount).toBe(1)
+  })
+
+  it("surfaces mutation errors and allows dismissing them", async () => {
+    const mockClient: ApiClient = {
+      get: vi.fn().mockResolvedValue([
+        {
+          id: "123e4567-e89b-12d3-a456-426614174000",
+          providerKey: "seedance",
+          displayName: "Seedance User",
+          externalIdentity: "user@test.ai",
+          status: "active",
+          lastUsedAt: null,
+          lastValidatedAt: null,
+          cooldownUntil: null,
+        },
+      ]),
+      post: vi.fn().mockRejectedValue(new Error("Cannot disable account while active lease exists")),
+      delete: vi.fn(),
+    }
+
+    render(<AccountsPage />, { wrapper: createWrapper(mockClient) })
+
+    expect(await screen.findByText("Seedance User")).toBeInTheDocument()
+
+    const disableBtn = screen.getByRole("button", { name: /disable/i })
+    fireEvent.click(disableBtn)
+
+    expect(
+      await screen.findByText(/cannot disable account while active lease exists/i)
+    ).toBeInTheDocument()
+
+    // Dismiss error
+    const dismissBtn = screen.getByRole("button", { name: "✕" })
+    fireEvent.click(dismissBtn)
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/cannot disable account while active lease exists/i)
+      ).not.toBeInTheDocument()
+    })
   })
 })

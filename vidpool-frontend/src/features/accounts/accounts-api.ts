@@ -52,15 +52,29 @@ export async function completeLogin(
   )
 }
 
-export async function cancelLogin(
+export async function cancelNewLogin(
+  client: ApiClient,
+  accountId: string,
+): Promise<void> {
+  await client.post(`/api/accounts/${accountId}/login/cancel`)
+}
+
+export async function cancelRelogin(
   client: ApiClient,
   accountId: string,
 ): Promise<AccountSummary> {
   return client.post(
-    `/api/accounts/${accountId}/login/cancel`,
+    `/api/accounts/${accountId}/relogin/cancel`,
     undefined,
     accountSummarySchema,
   )
+}
+
+export async function cancelLogin(
+  client: ApiClient,
+  accountId: string,
+): Promise<void> {
+  return cancelNewLogin(client, accountId)
 }
 
 export async function startRelogin(

@@ -135,7 +135,7 @@ def test_complete_login_requires_no_browser_session_id() -> None:
     assert res_complete.json()["status"] == "active"
 
 
-def test_cancel_login_requires_no_browser_session_id() -> None:
+def test_cancel_new_login_deletes_account_and_returns_204() -> None:
     client, _, _ = _build_test_client()
     res_start = client.post(
         "/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER
@@ -143,8 +143,37 @@ def test_cancel_login_requires_no_browser_session_id() -> None:
     account_id = res_start.json()["accountId"]
 
     res_cancel = client.post(f"/api/accounts/{account_id}/login/cancel", headers=AUTH_HEADER)
+    assert res_cancel.status_code == 204
+
+    # Account should be removed from database
+    res_get = client.get(f"/api/accounts/{account_id}", headers=AUTH_HEADER)
+    assert res_get.status_code == 404
+
+
+def test_cancel_relogin_preserves_account_and_returns_200() -> None:
+    client, _, _ = _build_test_client()
+    res_start = client.post(
+        "/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER
+    )
+    account_id = res_start.json()["accountId"]
+    client.post(f"/api/accounts/{account_id}/login/complete", headers=AUTH_HEADER)
+
+    # Disable and enable to put in auth_required
+    client.post(f"/api/accounts/{account_id}/disable", headers=AUTH_HEADER)
+    client.post(f"/api/accounts/{account_id}/enable", headers=AUTH_HEADER)
+
+    # Start relogin
+    res_rel = client.post(f"/api/accounts/{account_id}/relogin/start", headers=AUTH_HEADER)
+    assert res_rel.status_code == 200
+
+    # Cancel relogin
+    res_cancel = client.post(f"/api/accounts/{account_id}/relogin/cancel", headers=AUTH_HEADER)
     assert res_cancel.status_code == 200
     assert res_cancel.json()["status"] == "auth_required"
+
+    # Account still exists
+    res_get = client.get(f"/api/accounts/{account_id}", headers=AUTH_HEADER)
+    assert res_get.status_code == 200
 
 
 def test_missing_browser_profile_returns_409() -> None:
@@ -177,6 +206,26 @@ def test_error_mapping() -> None:
     # Invalid UUID format -> 404
     r_bad_id = client.get("/api/accounts/not-a-uuid", headers=AUTH_HEADER)
     assert r_bad_id.status_code == 404
+
+    # Relogin on ACTIVE account -> 409 Conflict
+    res_start = client.post(
+        "/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER
+    )
+    acc_id = res_start.json()["accountId"]
+    client.post(f"/api/accounts/{acc_id}/login/complete", headers=AUTH_HEADER)
+
+    r_relogin_active = client.post(f"/api/accounts/{acc_id}/relogin/start", headers=AUTH_HEADER)
+    assert r_relogin_active.status_code == 409
+    assert "relogin" in r_relogin_active.json()["detail"].lower()
+
+    # Relogin on DISABLED account -> 409 Conflict
+    client.post(f"/api/accounts/{acc_id}/disable", headers=AUTH_HEADER)
+    r_relogin_disabled = client.post(f"/api/accounts/{acc_id}/relogin/start", headers=AUTH_HEADER)
+    assert r_relogin_disabled.status_code == 409
+
+    # Cancel new login on non-provisional account -> 409 Conflict
+    r_cancel_active = client.post(f"/api/accounts/{acc_id}/login/cancel", headers=AUTH_HEADER)
+    assert r_cancel_active.status_code == 409
 
 
 def test_api_response_never_contains_forbidden_fields() -> None:
