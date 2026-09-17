@@ -27,7 +27,7 @@ from tests.accounts.fakes import (
 )
 
 
-def _setup_service(db_path: Path):
+def _setup_service(db_path: Path, adapter: FakeProviderAuthAdapter | None = None):
     engine = create_engine_for_path(db_path)
     Base.metadata.create_all(engine)
     session_factory = sessionmaker(bind=engine)
@@ -36,7 +36,8 @@ def _setup_service(db_path: Path):
         return SQLAlchemyAccountUnitOfWork(session_factory)
 
     browser = FakeBrowserSessionManager()
-    adapter = FakeProviderAuthAdapter(provider_key="test-provider")
+    if adapter is None:
+        adapter = FakeProviderAuthAdapter(provider_key="test-provider")
     registry = FakeProviderRegistry([adapter])
     service = AccountService(
         uow_factory=uow_factory,
@@ -222,3 +223,71 @@ def test_concurrent_acquire_vs_relogin(tmp_path: Path) -> None:
     assert acquire_result == []
     # relogin should succeed
     assert len(relogin_result) == 1
+
+
+def test_validate_is_serialized_against_acquire(tmp_path: Path) -> None:
+    import time
+    db_path = tmp_path / "validate_vs_acquire.db"
+    validation_started = threading.Event()
+    allow_validation_to_finish = threading.Event()
+
+    class BlockingAuthAdapter(FakeProviderAuthAdapter):
+        def validate_persisted_session(self, profile_key: str):
+            validation_started.set()
+            assert allow_validation_to_finish.wait(timeout=5)
+            return super().validate_persisted_session(profile_key)
+
+    adapter = BlockingAuthAdapter(provider_key="test-provider")
+    engine, service, _ = _setup_service(db_path, adapter=adapter)
+    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=UTC)
+
+    start = service.start_login("test-provider", now=now)
+    service.complete_login(start.account_id, now=now)
+    account_id = start.account_id
+
+    validate_result = []
+    acquire_result = []
+    acquire_errors = []
+
+    def worker_validate():
+        try:
+            view = service.validate_account(account_id, now=now)
+            validate_result.append(view)
+        except Exception as e:
+            validate_result.append(e)
+
+    def worker_acquire():
+        try:
+            lease = service.acquire(
+                provider_key="test-provider",
+                owner_id="worker:blocking",
+                ttl=timedelta(minutes=5),
+                now=now,
+            )
+            acquire_result.append(lease)
+        except Exception as e:
+            acquire_errors.append(e)
+
+    validate_thread = threading.Thread(target=worker_validate)
+    acquire_thread = threading.Thread(target=worker_acquire)
+
+    validate_thread.start()
+    assert validation_started.wait(timeout=5), "Validation did not start in time"
+
+    # Acquire starts while validate is in progress
+    acquire_thread.start()
+    time.sleep(0.2)
+
+    # Acquire must NOT complete while validation holds lock
+    assert acquire_result == [], "Acquire should not have completed while validation is ongoing"
+    assert acquire_errors == []
+
+    # Let validation complete
+    allow_validation_to_finish.set()
+    validate_thread.join(timeout=5)
+    acquire_thread.join(timeout=5)
+
+    assert len(validate_result) == 1
+    assert len(acquire_result) == 1
+    assert acquire_errors == []
+

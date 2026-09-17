@@ -213,7 +213,8 @@ class AccountService:
         account_id: AccountId,
         now: datetime | None = None,
     ) -> AccountView:
-        return self._health_service.validate_account(account_id, now=now)
+        with self._mutation_lock:
+            return self._health_service.validate_account(account_id, now=now)
 
     def report_success(
         self,
