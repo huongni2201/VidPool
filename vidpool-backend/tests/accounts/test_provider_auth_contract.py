@@ -10,38 +10,42 @@ from app.modules.accounts.application.ports import (
 from tests.accounts.fakes import FakeProviderAuthAdapter
 
 
-def _verify_provider_auth_contract(adapter: ProviderAuthPort) -> None:
-    # 1. Stable provider_key
-    assert isinstance(adapter.provider_key, str)
-    assert len(adapter.provider_key) > 0
+def assert_provider_auth_contract(
+    adapter: ProviderAuthPort,
+    profile_key: str,
+    *,
+    expected_valid: bool = True,
+) -> None:
+    assert isinstance(adapter, ProviderAuthPort)
+    assert adapter.provider_key.strip()
 
-    # 2. Return an HTTPS login URL
-    url = adapter.login_url()
-    assert isinstance(url, str)
-    parsed = urlparse(url)
-    assert parsed.scheme == "https", f"Provider login URL must use HTTPS, got: {url}"
+    login_url = adapter.login_url()
+    parsed = urlparse(login_url)
 
-    # 3. Validate persistent profile
-    persisted_validation = adapter.validate_persisted_session("browser-profile/test/1")
-    assert isinstance(persisted_validation, SessionValidation)
-    assert isinstance(persisted_validation.valid, bool)
+    assert parsed.scheme == "https", f"Provider login URL must use HTTPS, got: {login_url}"
+    assert parsed.netloc
 
-    # 4. In active session validation
-    profile_key = "browser-profile/test/1"
-    session_validation = adapter.validate_active_session(profile_key)
-    assert isinstance(session_validation, SessionValidation)
-    assert isinstance(session_validation.valid, bool)
+    active = adapter.validate_active_session(profile_key)
+    assert isinstance(active, SessionValidation)
+    assert active.valid is expected_valid
 
-    # 5. Resolve identity
-    if session_validation.valid:
+    persisted = adapter.validate_persisted_session(profile_key)
+    assert isinstance(persisted, SessionValidation)
+    assert persisted.valid is expected_valid
+
+    if expected_valid:
         identity = adapter.resolve_identity(profile_key)
+
         assert isinstance(identity, ProviderIdentity)
-        assert isinstance(identity.display_name, str)
-        assert isinstance(identity.external_identity, str)
-        # Never expose cookies or tokens in display_name or external_identity
-        assert "cookie" not in identity.display_name.lower()
-        assert "token" not in identity.display_name.lower()
-        assert "password" not in identity.display_name.lower()
+        assert identity.display_name.strip()
+        assert identity.external_identity.strip()
+
+        for value in (identity.display_name, identity.external_identity):
+            lowered = value.lower()
+            assert "cookie" not in lowered
+            assert "token" not in lowered
+            assert "password" not in lowered
+            assert "authorization" not in lowered
 
 
 def test_fake_provider_auth_adapter_satisfies_contract() -> None:
@@ -51,7 +55,7 @@ def test_fake_provider_auth_adapter_satisfies_contract() -> None:
         display_name="Creator User",
         external_identity="usr-12345",
     )
-    _verify_provider_auth_contract(adapter)
+    assert_provider_auth_contract(adapter, "browser-profile/test/1", expected_valid=True)
 
 
 def test_contract_detects_non_https_url() -> None:
@@ -61,10 +65,10 @@ def test_contract_detects_non_https_url() -> None:
 
     adapter = InsecureAdapter()
     with pytest.raises(AssertionError, match="must use HTTPS"):
-        _verify_provider_auth_contract(adapter)
+        assert_provider_auth_contract(adapter, "browser-profile/test/1", expected_valid=True)
 
 
 def test_contract_detects_invalid_session() -> None:
     adapter = FakeProviderAuthAdapter(valid_session=False)
-    assert adapter.validate_active_session("browser-profile/test/1").valid is False
-    assert adapter.validate_persisted_session("browser-profile/test/1").valid is False
+    assert_provider_auth_contract(adapter, "browser-profile/test/1", expected_valid=False)
+
