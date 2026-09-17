@@ -1,6 +1,6 @@
 # Current Implementation Status
 
-**Status:** PRE-SCAFFOLD / DOCS-ONLY  
+**Status:** FOUNDATION / SCAFFOLD  
 **Last reviewed:** 2026-09-17
 
 ## Purpose
@@ -13,21 +13,25 @@ This file distinguishes target architecture from implemented reality.
 - architecture rules
 - ADR baseline
 - Python architecture enforcement rules
+- React/Vite/Tailwind/shadcn frontend scaffold
+- frontend test/build/lint verification gate (`pnpm check`)
+- FastAPI application scaffold with `/api/health` probe
+- SQLite/SQLAlchemy persistence bootstrap (path resolution & engine creation)
+- Alembic migration environment configuration
+- frontend-to-local-backend health status integration
+- GitHub Actions CI workflow for frontend and backend
 
 ## Not Implemented Yet
 
 The repository currently does not contain production implementation for:
 
 - Tauri desktop shell
-- React/Vite frontend
-- FastAPI backend
-- SQLite/SQLAlchemy persistence
-- Alembic migrations
-- durable worker
+- production domain modules
 - Story Engine
 - Story Memory
 - Character continuity engine
 - provider registry/adapters
+- durable job worker
 - TTS/audio engine
 - forced alignment
 - Timing Engine
