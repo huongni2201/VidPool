@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query"
-
-import { getHealth } from "@/lib/api"
+import { useApiClient } from "@/app/api-client-context"
+import { healthSchema } from "@/lib/api"
 
 function App() {
+  const client = useApiClient()
+
   const health = useQuery({
     queryKey: ["health"],
-    queryFn: getHealth,
+    queryFn: () => client.get("/api/health", healthSchema),
   })
 
   return (
@@ -17,7 +19,7 @@ function App() {
         </p>
 
         <div className="mt-6 text-sm">
-          {health.isPending && "Connecting to backend…"}
+          {health.isPending && "Starting VidPool…"}
           {health.isError && "Backend unavailable"}
           {health.data?.status === "ok" && "Backend connected"}
         </div>

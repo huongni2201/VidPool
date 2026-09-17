@@ -2,14 +2,12 @@ import { render, screen } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { describe, expect, it, vi } from "vitest"
 
-vi.mock("./lib/api", () => ({
-  getHealth: vi.fn().mockResolvedValue({ status: "ok" }),
-}))
-
+import { ApiClientProvider } from "./app/api-client-context"
 import App from "./App"
+import type { ApiClient } from "./lib/api-client"
 
 describe("App", () => {
-  it("renders the VidPool shell", async () => {
+  it("renders the VidPool shell and connects to backend", async () => {
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -18,9 +16,15 @@ describe("App", () => {
       },
     })
 
+    const mockClient: ApiClient = {
+      get: vi.fn().mockResolvedValue({ status: "ok" }),
+    }
+
     render(
       <QueryClientProvider client={queryClient}>
-        <App />
+        <ApiClientProvider client={mockClient}>
+          <App />
+        </ApiClientProvider>
       </QueryClientProvider>,
     )
 
