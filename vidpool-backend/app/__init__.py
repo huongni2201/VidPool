@@ -1,0 +1,1 @@
+"""VidPool Backend Application."""
