@@ -56,7 +56,7 @@ AccountRepo  AccountPool   ProviderAuthPort
 SQLite          |         Provider Auth Adapter
                 |               |
                 v               v
-           AccountLease   BrowserSessionManager
+            AccountLease      BrowserRuntime (single-owner thread)
                                 |
                                 v
                      Playwright persistent context
@@ -206,20 +206,21 @@ remote account IDs
 provider login route structure
 ```
 
-## 9. BrowserSessionManager port
+## 9. BrowserSessionPort & BrowserRuntime
 
 Application-facing port:
 
 ```python
 class BrowserSessionPort(Protocol):
-    def open_login(self, provider_key: str, profile_key: str, login_url: str) -> BrowserSessionId: ...
-    def get_profile(self, profile_key: str) -> BrowserProfileHandle: ...
-    def close(self, session_id: BrowserSessionId) -> None: ...
+    def open_login(self, *, provider_key: str, profile_key: str, login_url: str) -> None: ...
+    def close_profile(self, profile_key: str) -> None: ...
+    def has_open_session(self, profile_key: str) -> bool: ...
     def delete_profile(self, profile_key: str) -> None: ...
+    def close_all(self) -> None: ...
 ```
 
-Infrastructure implementation owns Playwright.
-
+Infrastructure implementation (`BrowserRuntime`) owns Playwright on a dedicated single owner thread.
+Calls across thread boundaries are dispatched safely via commands.
 Only one live browser context may use a given profile at a time.
 
 ## 10. Login flow
@@ -228,41 +229,38 @@ Only one live browser context may use a given profile at a time.
 POST login/start
    |
    v
-create ProviderAccount(AUTH_REQUIRED)
+create account identity / profile_key
    |
    v
-allocate profile_key
+open profile in BrowserRuntime
    |
    v
-BrowserSessionManager.open_login(...)
+persist account
    |
    v
-Edge opens login page
+return account ID
    |
    v
 user logs in manually
    |
    v
-user returns to VidPool and clicks "Đã đăng nhập"
-   |
-   v
 POST login/complete
    |
    v
-ProviderAuthPort.validate_session(profile)
+provider validates active session profile
    |
-   +-- invalid -> keep AUTH_REQUIRED
+   +-- invalid -> set AUTH_REQUIRED, raise error
    |
    +-- valid
          |
          v
-ProviderAuthPort.resolve_identity(profile)
+resolve identity
          |
          v
 save identity + ACTIVE
          |
          v
-close browser context
+close interactive context
 ```
 
 The flow is intentionally user-confirmed rather than generic DOM auto-detection, because login success criteria are provider-specific and brittle.

@@ -35,7 +35,13 @@ This file distinguishes target architecture from implemented reality.
 - Account Pool application service (`AccountService`)
 - durable LRU account leasing
 - persistent isolated browser profile path resolver (`BrowserProfilePathResolver`)
-- Playwright browser-session manager (`PlaywrightBrowserSessionManager`)
+- dedicated single-owner Playwright browser runtime (`BrowserRuntime`)
+- backend-owned account/profile browser session mapping
+- browser session ID removed from public API and frontend
+- persistent session validation through BrowserRuntime
+- account login failure compensation
+- explicit container shutdown lifecycle
+- SQLAlchemy Unit of Work (`SQLAlchemyAccountUnitOfWork` / `AccountUnitOfWorkPort`)
 - provider auth registry (`ProviderRegistry`)
 - protected account management FastAPI API
 - account management frontend feature (account list, actions, user-driven browser login dialog)
