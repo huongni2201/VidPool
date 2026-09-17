@@ -50,10 +50,10 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: python -m pip install -e "vidpool-backend[dev]"
-      - name: Verify Rust compiles
-        run: cargo check --manifest-path vidpool-frontend/src-tauri/Cargo.toml
+
       - name: Build sidecar binary
         run: python scripts/build-sidecar.py
+
       - name: Verify sidecar binary exists
         shell: pwsh
         run: |
@@ -64,3 +64,9 @@ jobs:
           if ((Get-Item $bin).Length -le 0) {
             throw "Sidecar binary is empty"
           }
+
+      - name: Run Rust tests
+        run: cargo test --manifest-path vidpool-frontend/src-tauri/Cargo.toml
+
+      - name: Verify Rust compiles
+        run: cargo check --manifest-path vidpool-frontend/src-tauri/Cargo.toml
