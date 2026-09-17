@@ -1,0 +1,2743 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>VidPool — AI Story Video Studio (UI Source of Truth)</title>
+<style>
+  /* ==========================================================================
+     VIDPOOL DESIGN SYSTEM (CSS-First Tokens · OKLCH Palette · Tailwind v4 Compatible)
+     ========================================================================== */
+  :root {
+    /* Color Palette (OKLCH based) */
+    --canvas: #07090e;
+    --surface-1: #0c1017;
+    --surface-2: #121824;
+    --surface-3: #182132;
+    --surface-4: #202b40;
+    --surface-hover: #1e283d;
+    
+    --line: rgba(255, 255, 255, 0.08);
+    --line-subtle: rgba(255, 255, 255, 0.04);
+    --line-strong: rgba(255, 255, 255, 0.16);
+
+    --text: #f3f6fc;
+    --text-sub: #9ca8bc;
+    --text-muted: #64748b;
+    --text-disabled: #475569;
+
+    /* Brand Accent */
+    --accent: #6366f1;
+    --accent-light: #818cf8;
+    --accent-dark: #4f46e5;
+    --accent-glow: rgba(99, 102, 241, 0.22);
+    --accent-soft: rgba(99, 102, 241, 0.12);
+
+    /* Semantic Status */
+    --emerald: #10b981;
+    --emerald-soft: rgba(16, 185, 129, 0.14);
+    --emerald-glow: rgba(16, 185, 129, 0.25);
+
+    --amber: #f59e0b;
+    --amber-soft: rgba(245, 158, 11, 0.14);
+    --amber-border: rgba(245, 158, 11, 0.35);
+
+    --rose: #f43f5e;
+    --rose-soft: rgba(244, 63, 94, 0.14);
+    --rose-border: rgba(244, 63, 94, 0.35);
+
+    --sky: #0ea5e9;
+    --sky-soft: rgba(14, 165, 233, 0.14);
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 18px;
+    --radius-full: 9999px;
+
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6);
+    --shadow-glow: 0 0 24px var(--accent-glow);
+
+    --transition-fast: 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+    --transition-normal: 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Reset & Base */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--canvas);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    overflow: hidden;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  input, select, textarea, button {
+    font: inherit;
+    color: inherit;
+  }
+  button {
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: var(--radius-full); }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.22); }
+
+  /* App Shell */
+  .app-shell {
+    display: grid;
+    grid-template-columns: 248px 1fr;
+    height: 100vh;
+    background: var(--canvas);
+  }
+
+  /* ==========================================================================
+     SIDEBAR
+     ========================================================================== */
+  .sidebar {
+    background: var(--surface-1);
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    padding: 18px 12px 14px;
+    gap: 16px;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .brand-block {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 2px 8px 14px;
+    border-bottom: 1px solid var(--line-subtle);
+  }
+  .brand-logo {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    color: white;
+    box-shadow: 0 4px 16px var(--accent-glow);
+    font-size: 16px;
+  }
+  .brand-text strong {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    display: block;
+    line-height: 1.2;
+  }
+  .brand-text small {
+    color: var(--text-muted);
+    font-size: 10.5px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .version-tag {
+    background: rgba(255, 255, 255, 0.06);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 9.5px;
+    font-family: monospace;
+  }
+
+  .nav-group-label {
+    padding: 10px 10px 4px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 12px;
+    border-radius: var(--radius-md);
+    color: var(--text-sub);
+    font-weight: 550;
+    font-size: 13px;
+    transition: var(--transition-fast);
+    position: relative;
+  }
+  .nav-item:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+  }
+  .nav-item.active {
+    background: var(--accent-soft);
+    color: var(--text);
+    font-weight: 600;
+  }
+  .nav-item.active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 3.5px;
+    border-radius: 0 4px 4px 0;
+    background: var(--accent-light);
+    box-shadow: 0 0 10px var(--accent);
+  }
+  .nav-icon {
+    width: 18px;
+    height: 18px;
+    display: grid;
+    place-items: center;
+    opacity: 0.85;
+    flex-shrink: 0;
+  }
+  .nav-badge {
+    margin-left: auto;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: var(--radius-full);
+    background: var(--surface-3);
+    color: var(--text-sub);
+  }
+  .nav-badge.live {
+    background: var(--accent-soft);
+    color: var(--accent-light);
+  }
+
+  .sidebar-spacer { flex: 1; min-height: 20px; }
+
+  /* Runtime Card in Sidebar */
+  .runtime-box {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .runtime-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+  .runtime-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--emerald);
+    box-shadow: 0 0 8px var(--emerald);
+  }
+  .runtime-sub {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+  .runtime-chips {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+  .chip {
+    font-size: 9.5px;
+    font-family: monospace;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-sub);
+    border: 1px solid var(--line-subtle);
+  }
+
+  /* ==========================================================================
+     MAIN CONTENT & GLOBAL TOPBAR
+     ========================================================================== */
+  .main-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    min-width: 0;
+    position: relative;
+  }
+
+  .topbar {
+    height: 56px;
+    background: rgba(7, 9, 14, 0.85);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    z-index: 20;
+    flex-shrink: 0;
+  }
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .project-switcher {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 6px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    transition: var(--transition-fast);
+  }
+  .project-switcher:hover {
+    background: var(--surface-3);
+    border-color: var(--line-strong);
+  }
+  .breadcrumb-sep {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+  .screen-title-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-sub);
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .task-ticker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    border-radius: var(--radius-full);
+    background: var(--accent-soft);
+    border: 1px solid rgba(99, 102, 241, 0.28);
+    font-size: 11.5px;
+    color: var(--accent-light);
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .pulse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-light);
+    box-shadow: 0 0 8px var(--accent-light);
+    animation: pulse 1.8s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+
+  .health-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 11px;
+    border-radius: var(--radius-full);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    font-size: 11.5px;
+    color: var(--text-sub);
+    cursor: pointer;
+  }
+  .health-pill:hover {
+    background: var(--surface-3);
+  }
+  .avatar-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 1px solid var(--line);
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--text-sub);
+  }
+
+  /* Content Scroll Area */
+  .content-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 32px 48px;
+    scrollbar-gutter: stable;
+    overscroll-behavior: contain;
+  }
+  .screen-view {
+    display: none;
+    max-width: 1380px;
+    margin: 0 auto;
+    animation: fadeIn 0.18s ease-out;
+  }
+  .screen-view.active {
+    display: block;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Page Header Block */
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+  .page-eyebrow {
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent-light);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .page-title {
+    font-size: 26px;
+    font-weight: 750;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    color: var(--text);
+  }
+  .page-desc {
+    color: var(--text-sub);
+    font-size: 13.5px;
+    margin-top: 6px;
+    max-width: 680px;
+    line-height: 1.55;
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Buttons & Controls */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: var(--radius-md);
+    font-size: 12.5px;
+    font-weight: 600;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--text);
+    transition: var(--transition-fast);
+    white-space: nowrap;
+  }
+  .btn:hover {
+    background: var(--surface-3);
+    border-color: var(--line-strong);
+  }
+  .btn:active {
+    transform: scale(0.985);
+  }
+  .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+    box-shadow: 0 4px 14px var(--accent-glow);
+  }
+  .btn.primary:hover {
+    background: var(--accent-light);
+    border-color: var(--accent-light);
+  }
+  .btn.ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-sub);
+  }
+  .btn.ghost:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+  }
+  .btn.danger {
+    background: var(--rose-soft);
+    border-color: var(--rose-border);
+    color: #ff9aa5;
+  }
+  .btn.danger:hover {
+    background: rgba(244, 63, 94, 0.22);
+  }
+  .btn-sm {
+    padding: 5px 10px;
+    font-size: 11.5px;
+    border-radius: var(--radius-sm);
+  }
+  .icon-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: var(--radius-sm);
+    display: grid;
+    place-items: center;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--text-sub);
+    transition: var(--transition-fast);
+  }
+  .icon-btn:hover {
+    background: var(--surface-3);
+    color: var(--text);
+    border-color: var(--line-strong);
+  }
+
+  /* Form Inputs */
+  .input, .select {
+    height: 36px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 0 12px;
+    color: var(--text);
+    font-size: 12.5px;
+    outline: none;
+    transition: var(--transition-fast);
+  }
+  .input:focus, .select:focus {
+    border-color: var(--accent-light);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238f9bae' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+    appearance: none;
+  }
+
+  /* Badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: var(--radius-full);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .badge-emerald { background: var(--emerald-soft); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); }
+  .badge-amber { background: var(--amber-soft); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25); }
+  .badge-rose { background: var(--rose-soft); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.25); }
+  .badge-indigo { background: var(--accent-soft); color: var(--accent-light); border: 1px solid rgba(99, 102, 241, 0.25); }
+  .badge-slate { background: rgba(255, 255, 255, 0.06); color: var(--text-muted); border: 1px solid var(--line); }
+
+  /* Grid Layouts */
+  .grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 18px;
+  }
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  /* Panels & Cards */
+  .panel {
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.015);
+  }
+  .panel-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel-body {
+    padding: 16px 18px;
+  }
+
+  /* Metric Card */
+  .metric-card {
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 16px 18px;
+    transition: var(--transition-fast);
+    position: relative;
+    overflow: hidden;
+  }
+  .metric-card:hover {
+    border-color: var(--line-strong);
+    background: var(--surface-2);
+  }
+  .metric-label {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .metric-value {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    margin: 6px 0 2px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .metric-sub {
+    font-size: 11px;
+    color: var(--text-sub);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ==========================================================================
+     SCREEN 2: ACCOUNT POOL SPEC
+     ========================================================================== */
+  .quota-summary-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .quota-stat-box {
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+  }
+  .quota-stat-box.highlight-alert {
+    background: rgba(244, 63, 94, 0.04);
+    border-color: var(--rose-border);
+  }
+  .quota-stat-box.highlight-warning {
+    background: rgba(245, 158, 11, 0.04);
+    border-color: var(--amber-border);
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .stat-number {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 4px 0 2px;
+    letter-spacing: -0.02em;
+  }
+  .stat-foot {
+    font-size: 10.5px;
+    color: var(--text-sub);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .pool-status-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+  }
+  .banner-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12.5px;
+  }
+  .banner-right {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    font-size: 11.5px;
+    color: var(--text-sub);
+  }
+  .dot-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .filter-note {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* Account Table */
+  .account-table {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface-1);
+    overflow: hidden;
+  }
+  .table-head, .table-row {
+    display: grid;
+    grid-template-columns: 2.2fr 1.1fr 2fr 1fr 1.2fr 1.3fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 18px;
+  }
+  .table-head {
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--line);
+    font-size: 10.5px;
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+  .table-row {
+    border-bottom: 1px solid var(--line-subtle);
+    font-size: 12.5px;
+    transition: var(--transition-fast);
+  }
+  .table-row:last-child {
+    border-bottom: none;
+  }
+  .table-row:hover {
+    background: rgba(255, 255, 255, 0.015);
+  }
+  .table-row.disabled {
+    opacity: 0.55;
+  }
+
+  .acc-cell-ident {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+  .provider-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    background: #1e2533;
+    border: 1px solid var(--line);
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 14px;
+    color: #cbd5e1;
+    flex-shrink: 0;
+  }
+  .acc-name-block {
+    min-width: 0;
+  }
+  .acc-email {
+    font-weight: 650;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .acc-subtag {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+
+  /* Quota Bar */
+  .quota-cell {
+    min-width: 0;
+  }
+  .quota-top-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11.5px;
+    font-weight: 650;
+    margin-bottom: 5px;
+  }
+  .quota-progress-track {
+    height: 7px;
+    background: #1e2638;
+    border-radius: var(--radius-full);
+    overflow: hidden;
+  }
+  .quota-progress-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    background: var(--accent);
+    transition: width 0.3s ease;
+  }
+  .quota-progress-fill.full { background: var(--emerald); }
+  .quota-progress-fill.low { background: var(--amber); }
+  .quota-progress-fill.exhausted { background: var(--rose); }
+
+  .quota-meta-line {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10.5px;
+    color: var(--text-muted);
+    margin-top: 5px;
+  }
+
+  /* ==========================================================================
+     SCREEN 4: WORKSPACE (8-STAGE PIPELINE)
+     ========================================================================== */
+  .workspace-layout {
+    display: grid;
+    grid-template-columns: 210px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  .workspace-nav-panel {
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 10px;
+    position: sticky;
+    top: 0;
+  }
+  .workspace-project-badge {
+    padding: 10px 12px 14px;
+    border-bottom: 1px solid var(--line-subtle);
+    margin-bottom: 8px;
+  }
+  .wp-label {
+    font-size: 9.5px;
+    font-weight: 750;
+    letter-spacing: 0.1em;
+    color: var(--accent-light);
+    text-transform: uppercase;
+  }
+  .wp-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-top: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pipeline-stage-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 550;
+    color: var(--text-sub);
+    text-align: left;
+    transition: var(--transition-fast);
+  }
+  .pipeline-stage-btn:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+  }
+  .pipeline-stage-btn.active {
+    background: var(--accent-soft);
+    color: var(--text);
+    font-weight: 650;
+  }
+  .stage-num {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    display: grid;
+    place-items: center;
+    font-size: 10px;
+    font-family: monospace;
+    flex-shrink: 0;
+  }
+  .pipeline-stage-btn.active .stage-num {
+    background: var(--accent);
+    color: white;
+  }
+
+  .stage-content-wrap {
+    min-width: 0;
+  }
+  .workspace-subview {
+    display: none;
+    animation: fadeIn 0.16s ease-out;
+  }
+  .workspace-subview.active {
+    display: block;
+  }
+
+  /* Timeline Multi-Track Mock */
+  .timeline-container {
+    background: #090d14;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-top: 16px;
+  }
+  .timeline-toolbar {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface-1);
+  }
+  .timecode-display {
+    font-family: monospace;
+    font-size: 15px;
+    font-weight: 750;
+    background: var(--surface-2);
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    color: var(--accent-light);
+  }
+  .timeline-tracks {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    overflow-x: auto;
+  }
+  .track-row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 12px;
+    align-items: center;
+  }
+  .track-header {
+    font-size: 11px;
+    font-weight: 650;
+    color: var(--text-sub);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .track-lane {
+    height: 38px;
+    background: #111724;
+    border: 1px solid var(--line-subtle);
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    gap: 4px;
+  }
+  .track-clip {
+    height: 30px;
+    border-radius: 4px;
+    background: #243048;
+    border: 1px solid #3b4968;
+    color: #e2e8f0;
+    font-size: 10.5px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .track-clip.video { background: #232c4b; border-color: #435285; color: #b9c6f8; }
+  .track-clip.audio { background: #183d36; border-color: #27695d; color: #7fe3d2; }
+  .track-clip.subtitles { background: #3d2f1f; border-color: #6a5231; color: #fbd69b; }
+
+  /* Storyboard Grid */
+  .storyboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .storyboard-card {
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: var(--transition-fast);
+  }
+  .storyboard-card:hover {
+    border-color: var(--line-strong);
+    transform: translateY(-2px);
+  }
+  .shot-preview {
+    height: 155px;
+    background: linear-gradient(135deg, #161e2d, #0d121a);
+    display: grid;
+    place-items: center;
+    color: var(--text-muted);
+    font-size: 12px;
+    position: relative;
+  }
+  .shot-num-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(6px);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10.5px;
+    font-weight: 700;
+    font-family: monospace;
+  }
+  .shot-body {
+    padding: 14px;
+  }
+  .shot-title {
+    font-weight: 650;
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  .shot-prompt {
+    font-size: 11.5px;
+    color: var(--text-sub);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Character Cards */
+  .character-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  .character-card {
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+  .char-portrait {
+    height: 190px;
+    background: linear-gradient(180deg, #1c2436, #0e131d);
+    display: grid;
+    place-items: center;
+    position: relative;
+    border-bottom: 1px solid var(--line);
+  }
+  .char-body {
+    padding: 14px;
+  }
+  .char-name {
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .char-role {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* Modals (Native <dialog>) */
+  dialog {
+    margin: auto;
+    background: var(--surface-1);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    color: var(--text);
+    width: min(540px, 92vw);
+    padding: 0;
+    outline: none;
+  }
+  dialog::backdrop {
+    background: rgba(4, 6, 10, 0.78);
+    backdrop-filter: blur(8px);
+  }
+  .dialog-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .dialog-body {
+    padding: 24px;
+  }
+  .dialog-footer {
+    padding: 16px 24px 20px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Toast Notification */
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 28px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .toast {
+    background: var(--surface-2);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-md);
+    padding: 12px 18px;
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12.5px;
+    animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Step Wizard */
+  .wizard-steps {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .wizard-step {
+    flex: 1;
+    height: 4px;
+    border-radius: var(--radius-full);
+    background: var(--surface-3);
+  }
+  .wizard-step.active {
+    background: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="sidebar">
+    <div class="brand-block">
+      <div class="brand-logo">V</div>
+      <div class="brand-text">
+        <strong>VidPool</strong>
+        <small>AI Video Studio <span class="version-tag">v0.2.0</span></small>
+      </div>
+    </div>
+
+    <div class="nav-group-label">Studio</div>
+    <nav class="nav-list" id="mainNav">
+      <button class="nav-item active" data-screen="home">
+        <span class="nav-icon">⌂</span>
+        <span>Dashboard</span>
+      </button>
+      <button class="nav-item" data-screen="projects">
+        <span class="nav-icon">▣</span>
+        <span>Projects</span>
+        <span class="nav-badge">12</span>
+      </button>
+      <button class="nav-item" data-screen="workspace">
+        <span class="nav-icon">🎬</span>
+        <span>Studio Workspace</span>
+      </button>
+      <button class="nav-item" data-screen="accounts">
+        <span class="nav-icon">👥</span>
+        <span>Account Pool</span>
+        <span class="nav-badge live">3 ready</span>
+      </button>
+      <button class="nav-item" data-screen="jobs">
+        <span class="nav-icon">⚡</span>
+        <span>Durable Jobs</span>
+        <span class="nav-badge live">2</span>
+      </button>
+    </nav>
+
+    <div class="nav-group-label">Configuration</div>
+    <nav class="nav-list">
+      <button class="nav-item" data-screen="settings">
+        <span class="nav-icon">⚙</span>
+        <span>System & Settings</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-spacer"></div>
+
+    <!-- RUNTIME SYSTEM HEALTH WIDGET -->
+    <div class="runtime-box">
+      <div class="runtime-header">
+        <span>Desktop Host</span>
+        <span class="runtime-status-dot" title="Tauri + FastAPI Active"></span>
+      </div>
+      <div class="runtime-sub">Tauri v2 · FastAPI Sidecar · SQLite WAL</div>
+      <div class="runtime-chips">
+        <span class="chip">Port 8000</span>
+        <span class="chip">Playwright</span>
+        <span class="chip">NVENC OK</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN VIEW CONTAINER -->
+  <main class="main-container">
+    <!-- GLOBAL TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="project-switcher" onclick="switchScreen('workspace')">
+          <span>📁 Anime Story #12</span>
+          <span style="opacity:0.6">▾</span>
+        </div>
+        <span class="breadcrumb-sep">/</span>
+        <span class="screen-title-text" id="topbarBreadcrumb">Dashboard</span>
+      </div>
+
+      <div class="topbar-right">
+        <!-- BACKGROUND JOBS TICKER -->
+        <div class="task-ticker" onclick="switchScreen('jobs')">
+          <span class="pulse-dot"></span>
+          <span>1 Video Gen running · 68%</span>
+        </div>
+
+        <!-- RUNTIME HEALTH FLYOUT -->
+        <div class="health-pill" onclick="openHealthDialog()">
+          <span class="dot-indicator" style="background:var(--emerald);box-shadow:0 0 8px var(--emerald)"></span>
+          <span>All systems operational</span>
+        </div>
+
+        <!-- USER PROFILE / APP SETTINGS -->
+        <div class="avatar-btn" title="Developer / Creator">HN</div>
+      </div>
+    </header>
+
+    <!-- CONTENT SCROLL AREA -->
+    <div class="content-area">
+
+      <!-- ====================================================================
+           SCREEN 1: HOME / DASHBOARD
+           ==================================================================== -->
+      <section class="screen-view active" id="screen-home">
+        <div class="page-header">
+          <div>
+            <div class="page-eyebrow">Studio Command Center</div>
+            <h1 class="page-title">Welcome back, Creator.</h1>
+            <p class="page-desc">Production is on schedule. 1 video generation task and 1 TTS alignment are actively processing in your durable queue.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn" onclick="switchScreen('accounts')">Review Accounts</button>
+            <button class="btn primary" onclick="openNewProjectDialog()">+ New Project</button>
+          </div>
+        </div>
+
+        <!-- 4 KPI TILES -->
+        <div class="grid-4">
+          <div class="metric-card">
+            <span class="metric-label">Active Projects</span>
+            <div class="metric-value">12</div>
+            <div class="metric-sub"><span style="color:var(--emerald)">● 3</span> updated this week</div>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Account Pool Health</span>
+            <div class="metric-value">3 <span style="font-size:16px;color:var(--text-muted)">/ 5 ready</span></div>
+            <div class="metric-sub">256 stamina · 420 credits remaining</div>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Durable Jobs in Flight</span>
+            <div class="metric-value">2</div>
+            <div class="metric-sub"><span style="color:var(--accent-light)">Scene 08</span> video generating</div>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Items Needing Attention</span>
+            <div class="metric-value" style="color:var(--rose)">1</div>
+            <div class="metric-sub">creator04 stamina exhausted</div>
+          </div>
+        </div>
+
+        <!-- SPLIT VIEW: RECENT PROJECTS & SYSTEM HEALTH -->
+        <div class="grid-2">
+          <!-- Recent Projects -->
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Recent Projects</span>
+              <button class="btn ghost btn-sm" onclick="switchScreen('projects')">View All</button>
+            </div>
+            <div class="panel-body" style="padding:0">
+              <div style="display:flex;flex-direction:column">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line-subtle)">
+                  <div style="display:flex;align-items:center;gap:14px">
+                    <div style="width:48px;height:48px;border-radius:8px;background:linear-gradient(135deg,#20293a,#101722);border:1px solid var(--line);display:grid;place-items:center;font-weight:750;color:var(--accent-light)">01</div>
+                    <div>
+                      <div style="font-weight:700;font-size:13.5px">Anime Story #12</div>
+                      <div style="color:var(--text-muted);font-size:11.5px;margin-top:2px">24 scenes · 75% complete · Updated 12m ago</div>
+                    </div>
+                  </div>
+                  <button class="btn btn-sm primary" onclick="switchScreen('workspace')">Open Workspace</button>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line-subtle)">
+                  <div style="display:flex;align-items:center;gap:14px">
+                    <div style="width:48px;height:48px;border-radius:8px;background:linear-gradient(135deg,#20293a,#101722);border:1px solid var(--line);display:grid;place-items:center;font-weight:750;color:var(--accent-light)">02</div>
+                    <div>
+                      <div style="font-weight:700;font-size:13.5px">Horror Shorts Episode 2</div>
+                      <div style="color:var(--text-muted);font-size:11.5px;margin-top:2px">11 scenes · Audio Ready · Updated yesterday</div>
+                    </div>
+                  </div>
+                  <button class="btn btn-sm">Open</button>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
+                  <div style="display:flex;align-items:center;gap:14px">
+                    <div style="width:48px;height:48px;border-radius:8px;background:linear-gradient(135deg,#20293a,#101722);border:1px solid var(--line);display:grid;place-items:center;font-weight:750;color:var(--accent-light)">03</div>
+                    <div>
+                      <div style="font-weight:700;font-size:13.5px">Cyberpunk Chronicles</div>
+                      <div style="color:var(--text-muted);font-size:11.5px;margin-top:2px">32 scenes · Draft Script · Updated 3 days ago</div>
+                    </div>
+                  </div>
+                  <button class="btn btn-sm">Open</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Activity & Diagnostic Feed -->
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Production Activity</span>
+              <span class="badge badge-indigo">Live Queue</span>
+            </div>
+            <div class="panel-body">
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div style="display:flex;gap:12px;align-items:flex-start">
+                  <div style="width:8px;height:8px;border-radius:50%;background:var(--accent-light);margin-top:6px"></div>
+                  <div style="flex:1">
+                    <div style="font-weight:650;font-size:12.5px">Video Generation #8491 (Scene 08)</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Leased to creator02@gmail.com · 68% finished</div>
+                    <div style="height:5px;background:var(--surface-3);border-radius:99px;margin-top:6px;overflow:hidden">
+                      <div style="width:68%;height:100%;background:var(--accent);border-radius:99px"></div>
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:12px;align-items:flex-start">
+                  <div style="width:8px;height:8px;border-radius:50%;background:var(--emerald);margin-top:6px"></div>
+                  <div style="flex:1">
+                    <div style="font-weight:650;font-size:12.5px">Audio Forced Alignment Complete</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Horror Shorts · Scene 04 · Accurate word timings synchronized</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:12px;align-items:flex-start">
+                  <div style="width:8px;height:8px;border-radius:50%;background:var(--rose);margin-top:6px"></div>
+                  <div style="flex:1">
+                    <div style="font-weight:650;font-size:12.5px">Account Quota Exhausted</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:2px">creator04@gmail.com reached 0 stamina. Cooldown active until daily reset.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SCREEN 2: ACCOUNT POOL & QUOTA HEALTH
+           ==================================================================== -->
+      <section class="screen-view" id="screen-accounts">
+        <div class="page-header">
+          <div>
+            <div class="page-eyebrow">Provider Credentials & Quota Balances</div>
+            <h1 class="page-title">Account Pool</h1>
+            <p class="page-desc">Theo dõi session trình duyệt độc lập và mức hạn ngạch (Stamina / Credits) theo thời gian thực. Hệ thống tự động lease tài khoản khả dụng theo thuật toán LRU.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn" id="btnRefreshAll" onclick="simulateRefreshAll()">↻ Refresh All Quotas</button>
+            <button class="btn primary" onclick="openAddAccountDialog()">+ Add Account</button>
+          </div>
+        </div>
+
+        <!-- 5 QUOTA SUMMARY CARDS -->
+        <div class="quota-summary-strip">
+          <div class="quota-stat-box">
+            <div class="stat-label">Ready for Jobs</div>
+            <div class="stat-number" style="color:var(--emerald)">3 <span style="font-size:13px;color:var(--text-muted)">/ 5 usable</span></div>
+            <div class="stat-foot"><span class="dot-indicator" style="background:var(--emerald)"></span>Session & Quota OK</div>
+          </div>
+          <div class="quota-stat-box">
+            <div class="stat-label">Total SeaArt Stamina</div>
+            <div class="stat-number">256 <span style="font-size:13px;color:var(--text-muted)">points</span></div>
+            <div class="stat-foot">Across active worker profiles</div>
+          </div>
+          <div class="quota-stat-box">
+            <div class="stat-label">Usable Credits</div>
+            <div class="stat-number">420 <span style="font-size:13px;color:var(--text-muted)">credits</span></div>
+            <div class="stat-foot">Fallback paid balance</div>
+          </div>
+          <div class="quota-stat-box highlight-alert">
+            <div class="stat-label">Quota Exhausted</div>
+            <div class="stat-number" style="color:var(--rose)">1 <span style="font-size:13px;color:var(--text-muted)">account</span></div>
+            <div class="stat-foot"><span class="dot-indicator" style="background:var(--rose)"></span>Locked from new leases</div>
+          </div>
+          <div class="quota-stat-box highlight-warning">
+            <div class="stat-label">Login Required</div>
+            <div class="stat-number" style="color:var(--amber)">1 <span style="font-size:13px;color:var(--text-muted)">account</span></div>
+            <div class="stat-foot"><span class="dot-indicator" style="background:var(--amber)"></span>Session needs verification</div>
+          </div>
+        </div>
+
+        <!-- PROVIDER STATUS SUMMARY BAR -->
+        <div class="pool-status-banner">
+          <div class="banner-left">
+            <span class="badge badge-emerald">SEAART POOL</span>
+            <span>Trạng thái cụm: <strong>3 tài khoản sẵn sàng nhận việc</strong></span>
+          </div>
+          <div class="banner-right">
+            <span><span class="dot-indicator" style="background:var(--emerald)"></span> <strong>1</strong> Full (100%)</span>
+            <span><span class="dot-indicator" style="background:var(--accent-light)"></span> <strong>1</strong> Available (65%)</span>
+            <span><span class="dot-indicator" style="background:var(--amber)"></span> <strong>1</strong> Low (32%)</span>
+            <span><span class="dot-indicator" style="background:var(--rose)"></span> <strong>1</strong> Exhausted</span>
+          </div>
+        </div>
+
+        <!-- FILTER TOOLBAR -->
+        <div class="filter-bar">
+          <div class="filter-group">
+            <select class="select" id="filterProvider">
+              <option value="all">All Providers</option>
+              <option value="seaart" selected>SeaArt</option>
+            </select>
+            <select class="select" id="filterQuota" onchange="filterAccounts()">
+              <option value="all">All Quota Health</option>
+              <option value="ready">Ready (Full/Available)</option>
+              <option value="low">Low Quota (&lt;35%)</option>
+              <option value="exhausted">Exhausted (0 Stamina)</option>
+            </select>
+            <select class="select" id="filterStatus" onchange="filterAccounts()">
+              <option value="all">All Account Status</option>
+              <option value="active">Active</option>
+              <option value="relogin">Login Required</option>
+              <option value="disabled">Disabled</option>
+            </select>
+            <input type="text" class="input" id="searchAccount" placeholder="Search by email..." oninput="filterAccounts()" style="width:230px"/>
+          </div>
+          <div class="filter-note" id="poolUpdateTimestamp">Live Quota Snapshot · Updated 1 min ago</div>
+        </div>
+
+        <!-- ACCOUNT POOL DATA TABLE -->
+        <div class="account-table">
+          <div class="table-head">
+            <div>Account Identity</div>
+            <div>Status</div>
+            <div>Stamina Meter</div>
+            <div>Credits</div>
+            <div>Daily Reset</div>
+            <div>Session Health</div>
+            <div style="text-align:right">Actions</div>
+          </div>
+
+          <!-- ROW 1: FULL -->
+          <div class="table-row" data-status="active" data-quota="ready">
+            <div class="acc-cell-ident">
+              <div class="provider-avatar" style="color:var(--accent-light)">S</div>
+              <div class="acc-name-block">
+                <div class="acc-email">creator01@gmail.com</div>
+                <div class="acc-subtag">SeaArt · Primary Worker</div>
+              </div>
+            </div>
+            <div><span class="badge badge-emerald">ACTIVE</span></div>
+            <div class="quota-cell">
+              <div class="quota-top-label">
+                <span>130 / 130</span>
+                <span style="color:var(--emerald);font-size:10.5px">FULL</span>
+              </div>
+              <div class="quota-progress-track"><div class="quota-progress-fill full" style="width:100%"></div></div>
+              <div class="quota-meta-line"><span>100% capacity</span><span>Priority #1</span></div>
+            </div>
+            <div style="font-weight:700">240</div>
+            <div>07h 32m<div style="font-size:10.5px;color:var(--text-muted)">daily reset</div></div>
+            <div>Just now<div style="font-size:10.5px;color:var(--emerald)">Session valid</div></div>
+            <div style="display:flex;justify-content:flex-end;gap:6px">
+              <button class="icon-btn" title="Refresh Quota" onclick="simulateRowRefresh(this)">↻</button>
+              <button class="icon-btn" title="Account Options">•••</button>
+            </div>
+          </div>
+
+          <!-- ROW 2: AVAILABLE / CURRENTLY IN LEASE -->
+          <div class="table-row" data-status="active" data-quota="ready">
+            <div class="acc-cell-ident">
+              <div class="provider-avatar" style="color:var(--accent-light)">S</div>
+              <div class="acc-name-block">
+                <div class="acc-email">creator02@gmail.com</div>
+                <div class="acc-subtag">SeaArt · Leased: Job #8491</div>
+              </div>
+            </div>
+            <div><span class="badge badge-indigo">IN LEASE</span></div>
+            <div class="quota-cell">
+              <div class="quota-top-label">
+                <span>84 / 130</span>
+                <span style="color:var(--accent-light);font-size:10.5px">65%</span>
+              </div>
+              <div class="quota-progress-track"><div class="quota-progress-fill" style="width:65%"></div></div>
+              <div class="quota-meta-line"><span>Generating Scene 08</span><span>Usable</span></div>
+            </div>
+            <div style="font-weight:700">180</div>
+            <div>07h 32m<div style="font-size:10.5px;color:var(--text-muted)">daily reset</div></div>
+            <div>2m ago<div style="font-size:10.5px;color:var(--emerald)">Session valid</div></div>
+            <div style="display:flex;justify-content:flex-end;gap:6px">
+              <button class="icon-btn" title="Refresh Quota" onclick="simulateRowRefresh(this)">↻</button>
+              <button class="icon-btn" title="Account Options">•••</button>
+            </div>
+          </div>
+
+          <!-- ROW 3: LOW QUOTA -->
+          <div class="table-row" data-status="active" data-quota="low">
+            <div class="acc-cell-ident">
+              <div class="provider-avatar" style="color:var(--accent-light)">S</div>
+              <div class="acc-name-block">
+                <div class="acc-email">creator03@gmail.com</div>
+                <div class="acc-subtag">SeaArt · Low Remaining</div>
+              </div>
+            </div>
+            <div><span class="badge badge-emerald">ACTIVE</span></div>
+            <div class="quota-cell">
+              <div class="quota-top-label">
+                <span>42 / 130</span>
+                <span style="color:var(--amber);font-size:10.5px">32%</span>
+              </div>
+              <div class="quota-progress-track"><div class="quota-progress-fill low" style="width:32%"></div></div>
+              <div class="quota-meta-line"><span>Watch usage</span><span>Low quota</span></div>
+            </div>
+            <div style="font-weight:700;color:var(--text-muted)">0</div>
+            <div>07h 32m<div style="font-size:10.5px;color:var(--text-muted)">daily reset</div></div>
+            <div>5m ago<div style="font-size:10.5px;color:var(--emerald)">Session valid</div></div>
+            <div style="display:flex;justify-content:flex-end;gap:6px">
+              <button class="icon-btn" title="Refresh Quota" onclick="simulateRowRefresh(this)">↻</button>
+              <button class="icon-btn" title="Account Options">•••</button>
+            </div>
+          </div>
+
+          <!-- ROW 4: EXHAUSTED -->
+          <div class="table-row" data-status="active" data-quota="exhausted">
+            <div class="acc-cell-ident">
+              <div class="provider-avatar" style="color:var(--accent-light)">S</div>
+              <div class="acc-name-block">
+                <div class="acc-email">creator04@gmail.com</div>
+                <div class="acc-subtag">SeaArt · Waiting for Reset</div>
+              </div>
+            </div>
+            <div><span class="badge badge-rose">EXHAUSTED</span></div>
+            <div class="quota-cell">
+              <div class="quota-top-label">
+                <span>0 / 130</span>
+                <span style="color:var(--rose);font-size:10.5px">0%</span>
+              </div>
+              <div class="quota-progress-track"><div class="quota-progress-fill exhausted" style="width:0%"></div></div>
+              <div class="quota-meta-line" style="color:var(--rose)">Tạm ngưng cấp lease cho tới khi hồi phục</div>
+            </div>
+            <div style="font-weight:700;color:var(--text-muted)">0</div>
+            <div>07h 32m<div style="font-size:10.5px;color:var(--text-muted)">daily reset</div></div>
+            <div>1m ago<div style="font-size:10.5px;color:var(--text-sub)">Session active</div></div>
+            <div style="display:flex;justify-content:flex-end;gap:6px">
+              <button class="icon-btn" title="Refresh Quota" onclick="simulateRowRefresh(this)">↻</button>
+              <button class="icon-btn" title="Account Options">•••</button>
+            </div>
+          </div>
+
+          <!-- ROW 5: LOGIN REQUIRED -->
+          <div class="table-row" data-status="relogin" data-quota="unknown">
+            <div class="acc-cell-ident">
+              <div class="provider-avatar" style="color:var(--amber)">S</div>
+              <div class="acc-name-block">
+                <div class="acc-email">creator05@gmail.com</div>
+                <div class="acc-subtag">SeaArt · Auth Expired</div>
+              </div>
+            </div>
+            <div><span class="badge badge-amber">LOGIN REQUIRED</span></div>
+            <div class="quota-cell">
+              <div class="quota-top-label">
+                <span>— / —</span>
+                <span style="color:var(--text-muted);font-size:10.5px">UNKNOWN</span>
+              </div>
+              <div class="quota-progress-track"><div class="quota-progress-fill" style="width:0%;background:var(--text-disabled)"></div></div>
+              <div class="quota-meta-line"><span>Cannot query quota</span><span>Relogin needed</span></div>
+            </div>
+            <div style="font-weight:700;color:var(--text-muted)">—</div>
+            <div>—<div style="font-size:10.5px;color:var(--text-muted)">unknown</div></div>
+            <div>Yesterday<div style="font-size:10.5px;color:var(--rose)">Cookie expired</div></div>
+            <div style="display:flex;justify-content:flex-end;gap:6px">
+              <button class="btn btn-sm primary" onclick="openReloginDialog('creator05@gmail.com')">Login Again</button>
+            </div>
+          </div>
+
+          <!-- ROW 6: DISABLED -->
+          <div class="table-row disabled" data-status="disabled" data-quota="unknown">
+            <div class="acc-cell-ident">
+              <div class="provider-avatar" style="color:var(--text-muted)">S</div>
+              <div class="acc-name-block">
+                <div class="acc-email">archive.worker@gmail.com</div>
+                <div class="acc-subtag">SeaArt · Paused by User</div>
+              </div>
+            </div>
+            <div><span class="badge badge-slate">DISABLED</span></div>
+            <div class="quota-cell">
+              <div class="quota-top-label">
+                <span>— / —</span>
+                <span style="color:var(--text-muted);font-size:10.5px">PAUSED</span>
+              </div>
+              <div class="quota-progress-track"><div class="quota-progress-fill" style="width:0%;background:var(--text-disabled)"></div></div>
+              <div class="quota-meta-line"><span>Manually disabled</span><span>Ignored</span></div>
+            </div>
+            <div style="font-weight:700;color:var(--text-muted)">—</div>
+            <div>—<div style="font-size:10.5px;color:var(--text-muted)">disabled</div></div>
+            <div>Sep 12<div style="font-size:10.5px;color:var(--text-muted)">Last active</div></div>
+            <div style="display:flex;justify-content:flex-end;gap:6px">
+              <button class="btn btn-sm">Enable</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SCREEN 3: PROJECTS LIBRARY
+           ==================================================================== -->
+      <section class="screen-view" id="screen-projects">
+        <div class="page-header">
+          <div>
+            <div class="page-eyebrow">Local Project Repository</div>
+            <h1 class="page-title">Projects Library</h1>
+            <p class="page-desc">Tất cả dự án được lưu trữ cục bộ (local-first SQLite + binary media directory). Không phụ thuộc cloud.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn primary" onclick="openNewProjectDialog()">+ Create Project</button>
+          </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+          <div class="filter-group">
+            <input type="text" class="input" placeholder="Search projects by title..." style="width:280px"/>
+            <select class="select">
+              <option>All Aspect Ratios</option>
+              <option>16:9 Landscape (YouTube/TV)</option>
+              <option>9:16 Portrait (TikTok/Shorts)</option>
+              <option>1:1 Square</option>
+            </select>
+            <select class="select">
+              <option>Recently Modified</option>
+              <option>Project Name (A-Z)</option>
+              <option>Scene Count</option>
+            </select>
+          </div>
+          <div class="filter-note">Total 12 projects · 14.8 GB local media</div>
+        </div>
+
+        <!-- Projects Grid -->
+        <div class="grid-3">
+          <!-- Project 1 -->
+          <div class="panel" style="cursor:pointer" onclick="switchScreen('workspace')">
+            <div style="height:150px;background:radial-gradient(circle at 70% 30%, rgba(99,102,241,0.2), transparent 50%), linear-gradient(135deg,#131b2a,#0c1017);position:relative;display:grid;place-items:center;border-bottom:1px solid var(--line)">
+              <span style="font-size:32px;opacity:0.6">🎬</span>
+              <span class="badge badge-indigo" style="position:absolute;top:12px;left:12px">16:9 Cinema</span>
+              <span class="badge badge-emerald" style="position:absolute;top:12px;right:12px">75% Ready</span>
+            </div>
+            <div class="panel-body">
+              <div style="font-size:15px;font-weight:700">Anime Story #12: Huyết Kiếm</div>
+              <div style="color:var(--text-muted);font-size:11.5px;margin-top:4px">24 scenes · 03m 45s duration · 8 characters</div>
+              <div style="height:5px;background:var(--surface-3);border-radius:99px;margin:12px 0 10px;overflow:hidden">
+                <div style="width:75%;height:100%;background:var(--accent);border-radius:99px"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;color:var(--text-muted);font-size:11px">
+                <span>Updated 12m ago</span>
+                <span style="color:var(--accent-light);font-weight:600">Open Studio →</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Project 2 -->
+          <div class="panel" style="cursor:pointer">
+            <div style="height:150px;background:radial-gradient(circle at 30% 70%, rgba(244,63,94,0.18), transparent 50%), linear-gradient(135deg,#1a1318,#0d0b0e);position:relative;display:grid;place-items:center;border-bottom:1px solid var(--line)">
+              <span style="font-size:32px;opacity:0.6">👻</span>
+              <span class="badge badge-slate" style="position:absolute;top:12px;left:12px">9:16 Shorts</span>
+              <span class="badge badge-amber" style="position:absolute;top:12px;right:12px">Audio Aligned</span>
+            </div>
+            <div class="panel-body">
+              <div style="font-size:15px;font-weight:700">Horror Shorts Episode 2</div>
+              <div style="color:var(--text-muted);font-size:11.5px;margin-top:4px">11 scenes · 01m 15s duration · 3 characters</div>
+              <div style="height:5px;background:var(--surface-3);border-radius:99px;margin:12px 0 10px;overflow:hidden">
+                <div style="width:45%;height:100%;background:var(--amber);border-radius:99px"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;color:var(--text-muted);font-size:11px">
+                <span>Updated yesterday</span>
+                <span style="color:var(--text-sub)">Open Studio →</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Create Project Button Card -->
+          <div class="panel" style="border:1px dashed rgba(255,255,255,0.18);background:transparent;display:grid;place-items:center;min-height:260px;cursor:pointer" onclick="openNewProjectDialog()">
+            <div style="text-align:center;padding:20px">
+              <div style="width:44px;height:44px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line);margin:0 auto 12px;display:grid;place-items:center;font-size:22px;color:var(--accent-light)">+</div>
+              <div style="font-weight:700;font-size:14px">Create New Project</div>
+              <div style="font-size:11.5px;color:var(--text-muted);margin-top:4px;max-width:200px">Khởi tạo từ kịch bản có sẵn hoặc Story Bible trống</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SCREEN 4: STUDIO WORKSPACE (8-STAGE PIPELINE)
+           ==================================================================== -->
+      <section class="screen-view" id="screen-workspace">
+        <div class="page-header" style="margin-bottom:20px">
+          <div>
+            <div class="page-eyebrow">Production Studio · Anime Story #12</div>
+            <h1 class="page-title">Anime Story #12: Huyết Kiếm</h1>
+            <p class="page-desc">24 scenes · 18 visuals generated · Master Audio aligned · Timeline 82% ready</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn" onclick="switchPipelineStage('stage-timeline')">Open Timeline</button>
+            <button class="btn primary" onclick="switchPipelineStage('stage-render')">Render Video ▶</button>
+          </div>
+        </div>
+
+        <div class="workspace-layout">
+          <!-- WORKSPACE 8-STAGE SIDEBAR NAV -->
+          <aside class="workspace-nav-panel">
+            <div class="workspace-project-badge">
+              <div class="wp-label">Pipeline Stages</div>
+              <div class="wp-title">Anime Story #12</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:3px">
+              <button class="pipeline-stage-btn active" onclick="switchPipelineStage('stage-overview', this)">
+                <span class="stage-num">1</span>
+                <span>Overview & Health</span>
+              </button>
+              <button class="pipeline-stage-btn" onclick="switchPipelineStage('stage-story', this)">
+                <span class="stage-num">2</span>
+                <span>Story & Bible</span>
+              </button>
+              <button class="pipeline-stage-btn" onclick="switchPipelineStage('stage-characters', this)">
+                <span class="stage-num">3</span>
+                <span>Characters</span>
+              </button>
+              <button class="pipeline-stage-btn" onclick="switchPipelineStage('stage-storyboard', this)">
+                <span class="stage-num">4</span>
+                <span>Storyboard</span>
+              </button>
+              <button class="pipeline-stage-btn" onclick="switchPipelineStage('stage-visuals', this)">
+                <span class="stage-num">5</span>
+                <span>Visuals & Gen</span>
+              </button>
+              <button class="pipeline-stage-btn" onclick="switchPipelineStage('stage-audio', this)">
+                <span class="stage-num">6</span>
+                <span>Audio & Timing</span>
+              </button>
+              <button class="pipeline-stage-btn" onclick="switchPipelineStage('stage-timeline', this)">
+                <span class="stage-num">7</span>
+                <span>Timeline NLE</span>
+              </button>
+              <button class="pipeline-stage-btn" onclick="switchPipelineStage('stage-render', this)">
+                <span class="stage-num">8</span>
+                <span>Render & Export</span>
+              </button>
+            </div>
+          </aside>
+
+          <!-- STAGE CONTENT WRAPPER -->
+          <div class="stage-content-wrap">
+            
+            <!-- STAGE 1: OVERVIEW -->
+            <div class="workspace-subview active" id="stage-overview">
+              <div class="grid-2">
+                <!-- Production Checklist -->
+                <div class="panel">
+                  <div class="panel-header">
+                    <span class="panel-title">Production Progress</span>
+                    <span class="badge badge-emerald">75% Complete</span>
+                  </div>
+                  <div class="panel-body">
+                    <div style="display:flex;flex-direction:column;gap:12px">
+                      <div>
+                        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:5px">
+                          <span>1. Story Bible & Beats</span>
+                          <span style="color:var(--emerald)">100% Complete</span>
+                        </div>
+                        <div style="height:6px;background:var(--surface-3);border-radius:99px;overflow:hidden">
+                          <div style="width:100%;height:100%;background:var(--emerald)"></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:5px">
+                          <span>2. Character Profiles & References</span>
+                          <span style="color:var(--emerald)">100% Complete</span>
+                        </div>
+                        <div style="height:6px;background:var(--surface-3);border-radius:99px;overflow:hidden">
+                          <div style="width:100%;height:100%;background:var(--emerald)"></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:5px">
+                          <span>3. Storyboard Frames</span>
+                          <span>24 / 24 approved</span>
+                        </div>
+                        <div style="height:6px;background:var(--surface-3);border-radius:99px;overflow:hidden">
+                          <div style="width:100%;height:100%;background:var(--emerald)"></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:5px">
+                          <span>4. Video Generations</span>
+                          <span style="color:var(--accent-light)">18 / 24 (6 pending)</span>
+                        </div>
+                        <div style="height:6px;background:var(--surface-3);border-radius:99px;overflow:hidden">
+                          <div style="width:75%;height:100%;background:var(--accent)"></div>
+                        </div>
+                      </div>
+                      <div>
+                        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:5px">
+                          <span>5. Audio TTS & Word Alignment</span>
+                          <span style="color:var(--emerald)">Aligned</span>
+                        </div>
+                        <div style="height:6px;background:var(--surface-3);border-radius:99px;overflow:hidden">
+                          <div style="width:100%;height:100%;background:var(--emerald)"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Needs Attention Cards -->
+                <div class="panel">
+                  <div class="panel-header">
+                    <span class="panel-title">Blocking Issues (Needs Attention)</span>
+                    <span class="badge badge-amber">2 Items</span>
+                  </div>
+                  <div class="panel-body">
+                    <div style="display:flex;flex-direction:column;gap:10px">
+                      <div style="background:var(--surface-2);border:1px solid var(--amber-border);border-radius:var(--radius-md);padding:12px">
+                        <div style="font-weight:700;color:var(--amber);font-size:12.5px">⚠️ 3 Scenes Missing Video Clips</div>
+                        <div style="font-size:11.5px;color:var(--text-sub);margin-top:3px">Scenes 08, 11 và 19 chưa có asset video hoàn thiện để render timeline.</div>
+                        <button class="btn btn-sm" style="margin-top:8px" onclick="switchPipelineStage('stage-visuals')">Go to Visuals Generator</button>
+                      </div>
+                      <div style="background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-md);padding:12px">
+                        <div style="font-weight:700;color:var(--text);font-size:12.5px">ℹ️ Character Turnaround Warning</div>
+                        <div style="font-size:11.5px;color:var(--text-sub);margin-top:3px">Bạch Thanh Hạ thiếu góc nhìn nghiêng 3/4. Có thể ảnh hưởng tính nhất quán ở scene 14.</div>
+                        <button class="btn btn-sm" style="margin-top:8px" onclick="switchPipelineStage('stage-characters')">Open Character Sheet</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STAGE 2: STORY & BIBLE -->
+            <div class="workspace-subview" id="stage-story">
+              <div class="panel">
+                <div class="panel-header">
+                  <span class="panel-title">Story Bible & Visual Beats Breakdown</span>
+                  <button class="btn btn-sm primary">+ Add Beat</button>
+                </div>
+                <div class="panel-body">
+                  <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px">
+                    <div>
+                      <div style="font-weight:700;margin-bottom:8px">Story Parameters</div>
+                      <div style="font-size:12px;color:var(--text-muted)">Premise</div>
+                      <div style="font-size:12.5px;margin-bottom:10px">Một thiếu hiệp bị vu oan tìm đường báo thù trong màn đêm mưa bão.</div>
+                      <div style="font-size:12px;color:var(--text-muted)">Narrative Tone</div>
+                      <div style="font-size:12.5px;margin-bottom:10px">Dark Fantasy, Wuxia, Moody, Cinematic 4K.</div>
+                      <div style="font-size:12px;color:var(--text-muted)">Master Style Anchor</div>
+                      <div style="font-size:12.5px;font-family:monospace;background:var(--surface-2);padding:6px;border-radius:6px">anime aesthetic, ukiyo-e ink outline, dramatic rim light, octane render</div>
+                    </div>
+                    <div>
+                      <div style="font-weight:700;margin-bottom:8px">Visual Beats (Chronological)</div>
+                      <div style="display:flex;flex-direction:column;gap:8px">
+                        <div style="background:var(--surface-2);padding:10px 14px;border-radius:8px;border:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
+                          <div><strong>Beat 01: Mưa rơi trên lưỡi kiếm</strong><div style="color:var(--text-muted);font-size:11px">Close-up giọt mưa rơi chạm vào mũi kiếm rỉ máu.</div></div>
+                          <span class="badge badge-emerald">Locked</span>
+                        </div>
+                        <div style="background:var(--surface-2);padding:10px 14px;border-radius:8px;border:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
+                          <div><strong>Beat 02: Bạch Thanh Hạ bước ra</strong><div style="color:var(--text-muted);font-size:11px">Góc máy từ dưới lên, áo choàng rách bay trong gió bão.</div></div>
+                          <span class="badge badge-emerald">Locked</span>
+                        </div>
+                        <div style="background:var(--surface-2);padding:10px 14px;border-radius:8px;border:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
+                          <div><strong>Beat 08: Đối đầu tại cổng thành</strong><div style="color:var(--text-muted);font-size:11px">Dạ Ma đứng trên đỉnh thành lũy nhìn xuống. Ánh trăng máu.</div></div>
+                          <span class="badge badge-indigo">Generating</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STAGE 3: CHARACTERS -->
+            <div class="workspace-subview" id="stage-characters">
+              <div class="page-header" style="margin-bottom:16px">
+                <div>
+                  <h2 style="font-size:18px;font-weight:700">Character Profiles & Continuity State</h2>
+                  <p style="font-size:12px;color:var(--text-muted)">Phân tách rõ Identity (gương mặt, đặc trưng không đổi) và Mutable State (trang phục, vết thương theo từng scene).</p>
+                </div>
+                <button class="btn btn-sm primary">+ New Character</button>
+              </div>
+              <div class="character-grid">
+                <div class="character-card">
+                  <div class="char-portrait">
+                    <span style="font-size:40px">🗡️</span>
+                    <span class="badge badge-emerald" style="position:absolute;top:10px;right:10px">Master Reference</span>
+                  </div>
+                  <div class="char-body">
+                    <div class="char-name">Bạch Thanh Hạ</div>
+                    <div class="char-role">Protagonist · Kiếm khách cô độc</div>
+                    <div style="margin-top:10px;font-size:11.5px;color:var(--text-sub)">
+                      <div><strong>Voice:</strong> VoiceStudio_VN_NamTram</div>
+                      <div style="margin-top:3px"><strong>State:</strong> Vết sẹo má trái, áo tơi đen</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="character-card">
+                  <div class="char-portrait">
+                    <span style="font-size:40px">🪭</span>
+                    <span class="badge badge-emerald" style="position:absolute;top:10px;right:10px">Master Reference</span>
+                  </div>
+                  <div class="char-body">
+                    <div class="char-name">Lục Tiêu</div>
+                    <div class="char-role">Allied Mage · Y sư bí ẩn</div>
+                    <div style="margin-top:10px;font-size:11.5px;color:var(--text-sub)">
+                      <div><strong>Voice:</strong> VoiceStudio_VN_NuNhe</div>
+                      <div style="margin-top:3px"><strong>State:</strong> Áo xanh ngọc, cầm quạt ngọc</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="character-card">
+                  <div class="char-portrait">
+                    <span style="font-size:40px">👹</span>
+                    <span class="badge badge-amber" style="position:absolute;top:10px;right:10px">Draft State</span>
+                  </div>
+                  <div class="char-body">
+                    <div class="char-name">Dạ Ma</div>
+                    <div class="char-role">Antagonist · Thành chủ Dạ Vực</div>
+                    <div style="margin-top:10px;font-size:11.5px;color:var(--text-sub)">
+                      <div><strong>Voice:</strong> VoiceStudio_VN_QuaiAc</div>
+                      <div style="margin-top:3px"><strong>State:</strong> Giáp sắt gai, mắt đỏ rực</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STAGE 4: STORYBOARD -->
+            <div class="workspace-subview" id="stage-storyboard">
+              <div class="page-header" style="margin-bottom:16px">
+                <div>
+                  <h2 style="font-size:18px;font-weight:700">Shot-by-Shot Storyboard</h2>
+                  <p style="font-size:12px;color:var(--text-muted)">Cấu trúc góc máy (Camera Angle), ánh sáng (Lighting), và khung hình chi tiết cho từng beat.</p>
+                </div>
+                <button class="btn btn-sm primary">+ Add Shot</button>
+              </div>
+              <div class="storyboard-grid">
+                <div class="storyboard-card">
+                  <div class="shot-preview">
+                    <span class="shot-num-badge">SHOT 01</span>
+                    <span>Frame Preview</span>
+                  </div>
+                  <div class="shot-body">
+                    <div class="shot-title">Close-Up · Blade in Rain</div>
+                    <div class="shot-prompt">Extreme close-up on katana tip, water droplets splashing, cinematic rim lighting, 4k.</div>
+                    <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+                      <span class="badge badge-emerald">Approved</span>
+                      <span style="font-size:11px;color:var(--text-muted)">03.2s</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="storyboard-card">
+                  <div class="shot-preview">
+                    <span class="shot-num-badge">SHOT 02</span>
+                    <span>Frame Preview</span>
+                  </div>
+                  <div class="shot-body">
+                    <div class="shot-title">Wide Shot · Castle Gates</div>
+                    <div class="shot-prompt">Wide landscape, storm clouds rolling over ancient gothic fortress, lightning streak in background.</div>
+                    <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+                      <span class="badge badge-emerald">Approved</span>
+                      <span style="font-size:11px;color:var(--text-muted)">04.5s</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="storyboard-card">
+                  <div class="shot-preview">
+                    <span class="shot-num-badge">SHOT 03</span>
+                    <span>Generating…</span>
+                  </div>
+                  <div class="shot-body">
+                    <div class="shot-title">Dutch Angle · Duel Begins</div>
+                    <div class="shot-prompt">Two swordsmen locking eyes across courtyard, dynamic tilt angle, heavy atmospheric mist.</div>
+                    <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+                      <span class="badge badge-indigo">In Progress</span>
+                      <span style="font-size:11px;color:var(--text-muted)">04.0s</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STAGE 5: VISUALS & GENERATION -->
+            <div class="workspace-subview" id="stage-visuals">
+              <div class="panel">
+                <div class="panel-header">
+                  <span class="panel-title">Prompt Engineering & Visual Generation Workbench</span>
+                  <span class="badge badge-indigo">Provider: SeaArt / Seedance</span>
+                </div>
+                <div class="panel-body">
+                  <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:20px">
+                    <div>
+                      <div style="font-weight:700;margin-bottom:6px">Generation Prompt (Scene 08)</div>
+                      <textarea class="input" style="height:90px;width:100%;padding:10px;resize:none;font-family:monospace;font-size:12px">masterpiece, best quality, cinematic wuxia, Bach Thanh Ha raising glowing sword towards Da Ma on the castle battlement, thunderstorm, lightning flash, anime dramatic lighting, 8k --ar 16:9 --seed 8391024</textarea>
+                      <div style="display:flex;gap:10px;margin-top:10px;align-items:center">
+                        <select class="select">
+                          <option>Model: SeaArt SDXL Anime Pro</option>
+                          <option>Model: Seedance Video Gen v2</option>
+                        </select>
+                        <select class="select">
+                          <option>Aspect Ratio: 16:9 Cinema</option>
+                          <option>Aspect Ratio: 9:16 Shorts</option>
+                        </select>
+                        <button class="btn primary" onclick="showToast('Job #8493 queued for generation!')">Generate 4 Candidates</button>
+                      </div>
+                    </div>
+                    <div>
+                      <div style="font-weight:700;margin-bottom:6px">Candidate Selection</div>
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                        <div style="height:70px;background:#182234;border:1px solid var(--accent);border-radius:6px;display:grid;place-items:center;font-size:11px;position:relative">
+                          Candidate A
+                          <span class="badge badge-emerald" style="position:absolute;top:4px;right:4px;font-size:8px">Selected</span>
+                        </div>
+                        <div style="height:70px;background:#131a28;border:1px solid var(--line);border-radius:6px;display:grid;place-items:center;font-size:11px">Candidate B</div>
+                        <div style="height:70px;background:#131a28;border:1px solid var(--line);border-radius:6px;display:grid;place-items:center;font-size:11px">Candidate C</div>
+                        <div style="height:70px;background:#131a28;border:1px solid var(--line);border-radius:6px;display:grid;place-items:center;font-size:11px">Candidate D</div>
+                      </div>
+                      <button class="btn btn-sm" style="width:100%;margin-top:10px">Lock Candidate A to Scene 08</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STAGE 6: AUDIO & TIMING -->
+            <div class="workspace-subview" id="stage-audio">
+              <div class="panel">
+                <div class="panel-header">
+                  <span class="panel-title">TTS Voice Synthesis & Word-Level Forced Alignment</span>
+                  <span class="badge badge-emerald">Master Timing Source</span>
+                </div>
+                <div class="panel-body">
+                  <div style="background:var(--surface-2);padding:14px;border-radius:8px;border:1px solid var(--line);margin-bottom:14px">
+                    <div style="font-size:11.5px;color:var(--text-muted);margin-bottom:4px">NARRATION / DIALOGUE SCRIPT (SCENE 08)</div>
+                    <div style="font-size:14px;font-weight:600;line-height:1.6">"Dạ Ma, ba năm trước ngươi nợ nhà họ Bạch một mạng... Hôm nay phải trả!"</div>
+                    <div style="display:flex;gap:12px;margin-top:10px;align-items:center">
+                      <span class="badge badge-indigo">Speaker: Bạch Thanh Hạ</span>
+                      <span style="font-size:11.5px;color:var(--text-muted)">Duration: 04.250s · 14 words</span>
+                      <button class="btn btn-sm">▶ Play Synthesized Audio</button>
+                    </div>
+                  </div>
+
+                  <!-- Waveform & Alignment Word Badges -->
+                  <div style="font-weight:700;font-size:12.5px;margin-bottom:8px">Forced Alignment Timestamps (WhisperX / ASR)</div>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap">
+                    <span class="chip" style="color:var(--accent-light)">[00:00.120] Dạ</span>
+                    <span class="chip" style="color:var(--accent-light)">[00:00.350] Ma</span>
+                    <span class="chip">[00:00.750] ba</span>
+                    <span class="chip">[00:00.980] năm</span>
+                    <span class="chip">[00:01.250] trước</span>
+                    <span class="chip">[00:01.800] ngươi</span>
+                    <span class="chip">[00:02.100] nợ</span>
+                    <span class="chip">[00:02.400] nhà</span>
+                    <span class="chip">[00:02.700] họ</span>
+                    <span class="chip" style="color:var(--rose)">[00:03.100] Bạch</span>
+                    <span class="chip">[00:03.450] một</span>
+                    <span class="chip">[00:03.700] mạng</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STAGE 7: TIMELINE NLE -->
+            <div class="workspace-subview" id="stage-timeline">
+              <div class="panel">
+                <div class="panel-header">
+                  <span class="panel-title">Multi-Track Non-Linear Editing Timeline</span>
+                  <div style="display:flex;gap:8px">
+                    <button class="btn btn-sm">Zoom -</button>
+                    <button class="btn btn-sm">Zoom +</button>
+                    <button class="btn btn-sm primary">Split At Playhead</button>
+                  </div>
+                </div>
+                <div class="timeline-container">
+                  <div class="timeline-toolbar">
+                    <div style="display:flex;align-items:center;gap:12px">
+                      <button class="icon-btn">⏮</button>
+                      <button class="icon-btn" style="background:var(--accent);color:white">▶</button>
+                      <button class="icon-btn">⏭</button>
+                      <div class="timecode-display">00:01:24:18</div>
+                    </div>
+                    <div style="font-size:12px;color:var(--text-muted)">Editing Master Source · Aligned to Audio Clock</div>
+                  </div>
+                  <div class="timeline-tracks">
+                    <!-- Track 1: Video -->
+                    <div class="track-row">
+                      <div class="track-header">📹 V1 Video</div>
+                      <div class="track-lane">
+                        <div class="track-clip video" style="width:140px">Shot 01 (Blade)</div>
+                        <div class="track-clip video" style="width:180px">Shot 02 (Castle)</div>
+                        <div class="track-clip video" style="width:160px">Shot 03 (Mist)</div>
+                        <div class="track-clip video" style="width:190px">Shot 04 (Duel)</div>
+                      </div>
+                    </div>
+                    <!-- Track 2: Dialogue Audio -->
+                    <div class="track-row">
+                      <div class="track-header">🎙️ A1 Dialogue</div>
+                      <div class="track-lane">
+                        <div class="track-clip audio" style="width:180px">VO_ThanhHa_01.wav</div>
+                        <div class="track-clip audio" style="width:220px">VO_DaMa_02.wav</div>
+                      </div>
+                    </div>
+                    <!-- Track 3: BGM -->
+                    <div class="track-row">
+                      <div class="track-header">🎵 A2 Music</div>
+                      <div class="track-lane">
+                        <div class="track-clip audio" style="width:100%;background:#1b2d42;border-color:#2a4868;color:#9bc9fb">BGM_DarkFantasy_Theme_Loop.mp3</div>
+                      </div>
+                    </div>
+                    <!-- Track 4: Subtitles -->
+                    <div class="track-row">
+                      <div class="track-header">💬 Subtitles</div>
+                      <div class="track-lane">
+                        <div class="track-clip subtitles" style="width:180px">Sub_Scene01</div>
+                        <div class="track-clip subtitles" style="width:220px">Sub_Scene02</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- STAGE 8: RENDER & EXPORT -->
+            <div class="workspace-subview" id="stage-render">
+              <div class="panel">
+                <div class="panel-header">
+                  <span class="panel-title">RenderPlan Compiler & FFmpeg Pipeline</span>
+                  <span class="badge badge-emerald">Hardware: NVENC Accelerated</span>
+                </div>
+                <div class="panel-body">
+                  <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:20px">
+                    <div>
+                      <div style="font-weight:700;margin-bottom:10px">Pre-flight Quality Control (QC Checklist)</div>
+                      <div style="display:flex;flex-direction:column;gap:8px">
+                        <div style="display:flex;align-items:center;gap:10px;font-size:12.5px">
+                          <span style="color:var(--emerald)">✓</span>
+                          <span>Timeline continuity verified (Zero black frames detected)</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;font-size:12.5px">
+                          <span style="color:var(--emerald)">✓</span>
+                          <span>Audio loudness normalized (-14 LUFS standard)</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;font-size:12.5px">
+                          <span style="color:var(--emerald)">✓</span>
+                          <span>Subtitle burn-in formatting synchronized with forced alignment</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:10px;font-size:12.5px">
+                          <span style="color:var(--rose)">✗</span>
+                          <span>3 Visual Beats pending final generation (Scene 08, 11, 19)</span>
+                        </div>
+                      </div>
+
+                      <div style="margin-top:20px">
+                        <div style="font-weight:700;margin-bottom:8px">Render Preset</div>
+                        <div style="display:flex;gap:10px">
+                          <select class="select">
+                            <option>1080p 60fps · H.264 High Profile (YouTube)</option>
+                            <option>4K 30fps · ProRes 422 HQ (Master Archive)</option>
+                            <option>1080x1920 · 9:16 H.264 (TikTok / Shorts)</option>
+                          </select>
+                          <button class="btn primary" onclick="showToast('RenderPlan compiled! Sending to local FFmpeg worker...')">Start Render Job</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style="background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-md);padding:14px">
+                      <div style="font-weight:700;font-size:13px;margin-bottom:8px">Generated FFmpeg Command (Preview)</div>
+                      <pre style="font-family:monospace;font-size:10.5px;color:var(--accent-light);white-space:pre-wrap;line-height:1.5">ffmpeg -y -hwaccel cuda \
+  -i concat_video_list.txt \
+  -i audio_mix_master.wav \
+  -vf "subtitles=scene.srt:force_style='FontSize=22'" \
+  -c:v h264_nvenc -preset p6 -b:v 12M \
+  -c:a aac -b:a 320k \
+  output_anime12_master.mp4</pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SCREEN 5: DURABLE JOBS MONITOR
+           ==================================================================== -->
+      <section class="screen-view" id="screen-jobs">
+        <div class="page-header">
+          <div>
+            <div class="page-eyebrow">Durable Execution Queue</div>
+            <h1 class="page-title">Jobs & Worker Monitor</h1>
+            <p class="page-desc">Các tác vụ dài hạn (Video gen, TTS, Alignment, FFmpeg) được bảo vệ bằng Durable Job Pattern. Tự động phục hồi khi tắt mở lại app.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn" onclick="showToast('Cleaned up 12 completed jobs from queue.')">Clear Completed</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-sm primary">All (4)</button>
+              <button class="btn btn-sm">Running (2)</button>
+              <button class="btn btn-sm">Queued (1)</button>
+              <button class="btn btn-sm">Failed (1)</button>
+            </div>
+            <span class="filter-note">Active Leases: 1 account currently locked by worker</span>
+          </div>
+          <div class="panel-body" style="padding:0">
+            <!-- Job 1 -->
+            <div style="padding:16px 20px;border-bottom:1px solid var(--line-subtle)">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span class="badge badge-indigo">VIDEO GENERATION</span>
+                    <span style="font-weight:750;font-size:13.5px">Job #8491 · Anime Story #12 (Scene 08)</span>
+                  </div>
+                  <div style="color:var(--text-muted);font-size:11.5px;margin-top:4px">
+                    Provider: SeaArt · Leased Account: <strong>creator02@gmail.com</strong> · Elapsed: 02m 14s
+                  </div>
+                </div>
+                <div style="text-align:right">
+                  <span class="badge badge-indigo">68% RUNNING</span>
+                  <div style="margin-top:6px">
+                    <button class="btn btn-sm danger" onclick="showToast('Cancelled Job #8491. Account lease released.')">Cancel</button>
+                  </div>
+                </div>
+              </div>
+              <div style="height:6px;background:var(--surface-3);border-radius:99px;margin-top:12px;overflow:hidden">
+                <div style="width:68%;height:100%;background:var(--accent);border-radius:99px"></div>
+              </div>
+            </div>
+
+            <!-- Job 2 -->
+            <div style="padding:16px 20px;border-bottom:1px solid var(--line-subtle)">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span class="badge badge-indigo">TTS SYNTHESIS</span>
+                    <span style="font-weight:750;font-size:13.5px">Job #8492 · Anime Story #12 (Scene 14)</span>
+                  </div>
+                  <div style="color:var(--text-muted);font-size:11.5px;margin-top:4px">
+                    Engine: VoiceStudio Local API · Elapsed: 28s
+                  </div>
+                </div>
+                <div style="text-align:right">
+                  <span class="badge badge-indigo">35% RUNNING</span>
+                </div>
+              </div>
+              <div style="height:6px;background:var(--surface-3);border-radius:99px;margin-top:12px;overflow:hidden">
+                <div style="width:35%;height:100%;background:var(--accent);border-radius:99px"></div>
+              </div>
+            </div>
+
+            <!-- Job 3: Failed with Retry -->
+            <div style="padding:16px 20px">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span class="badge badge-rose">ALIGNMENT FAILED</span>
+                    <span style="font-weight:750;font-size:13.5px">Job #8490 · Horror Shorts (Scene 04)</span>
+                  </div>
+                  <div style="color:var(--rose);font-size:11.5px;margin-top:4px">
+                    Audio timestamp discontinuity at 00:14.200 (WhisperX VAD threshold error)
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px">
+                  <button class="btn btn-sm" onclick="showToast('Viewing execution logs...')">View Log</button>
+                  <button class="btn btn-sm primary" onclick="showToast('Retrying Job #8490 with relaxed VAD...')">Retry Job</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           SCREEN 6: SYSTEM & SETTINGS
+           ==================================================================== -->
+      <section class="screen-view" id="screen-settings">
+        <div class="page-header">
+          <div>
+            <div class="page-eyebrow">Local Infrastructure</div>
+            <h1 class="page-title">System & Settings</h1>
+            <p class="page-desc">Chẩn đoán các thành phần Clean Architecture cục bộ: FastAPI Sidecar, Playwright Browser Runtime, SQLite WAL, và FFmpeg Hardware Acceleration.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn" onclick="showToast('Diagnostics copied to clipboard!')">Copy Diagnostics</button>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <!-- Diagnostics -->
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Component Diagnostics</span>
+              <span class="badge badge-emerald">Operational</span>
+            </div>
+            <div class="panel-body">
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--line-subtle)">
+                  <div><strong>FastAPI Sidecar</strong><div style="font-size:11px;color:var(--text-muted)">http://127.0.0.1:8000 · Protected token</div></div>
+                  <span class="badge badge-emerald">Active (1.2ms)</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--line-subtle)">
+                  <div><strong>Playwright Browser Runtime</strong><div style="font-size:11px;color:var(--text-muted)">Dedicated single-owner worker thread</div></div>
+                  <span class="badge badge-emerald">Active (1 profile)</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--line-subtle)">
+                  <div><strong>SQLite Database</strong><div style="font-size:11px;color:var(--text-muted)">WAL Mode enabled · 14.2 MB storage</div></div>
+                  <span class="badge badge-emerald">Connected</span>
+                </div>
+                <div style="display:flex;justify-content:space-between">
+                  <div><strong>FFmpeg Video Engine</strong><div style="font-size:11px;color:var(--text-muted)">Version 7.0.1 · NVIDIA NVENC Driver detected</div></div>
+                  <span class="badge badge-emerald">Hardware Ready</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Configuration -->
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Local Storage Paths</span>
+            </div>
+            <div class="panel-body">
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div>
+                  <div style="font-size:11.5px;color:var(--text-muted);margin-bottom:4px">PROJECTS STORAGE DIRECTORY</div>
+                  <input type="text" class="input" style="width:100%" value="D:\workspace\VidPool\projects" readonly/>
+                </div>
+                <div>
+                  <div style="font-size:11.5px;color:var(--text-muted);margin-bottom:4px">BROWSER PROFILE ISOLATION CACHE</div>
+                  <input type="text" class="input" style="width:100%" value="C:\Users\PC\AppData\Local\VidPool\browser_profiles" readonly/>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+                  <span style="font-size:12px;color:var(--text-muted)">Temporary cache: 3.2 GB</span>
+                  <button class="btn btn-sm" onclick="showToast('Cache cleared successfully!')">Clear Cache</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- ==========================================================================
+     NATIVE DIALOGS (<dialog>)
+     ========================================================================== -->
+
+<!-- 1. ADD / RE-LOGIN ACCOUNT WIZARD DIALOG -->
+<dialog id="accountWizardDialog">
+  <div class="dialog-header">
+    <div>
+      <h2 id="wizardTitle" style="font-size:17px;font-weight:750">Add Account to Pool</h2>
+      <p id="wizardSub" style="font-size:12px;color:var(--text-muted);margin-top:2px">Kết nối tài khoản provider thông qua browser profile độc lập.</p>
+    </div>
+    <button class="icon-btn" onclick="closeAccountDialog()">✕</button>
+  </div>
+  <div class="dialog-body" id="wizardBody">
+    <!-- Wizard step pills -->
+    <div class="wizard-steps">
+      <div class="wizard-step active" id="wStep1"></div>
+      <div class="wizard-step" id="wStep2"></div>
+      <div class="wizard-step" id="wStep3"></div>
+    </div>
+    <div id="wizardStepContent">
+      <!-- Step 1: Select Provider -->
+      <div style="display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--accent);border-radius:12px;background:var(--accent-soft)">
+        <div class="provider-avatar" style="color:var(--accent-light)">S</div>
+        <div style="flex:1">
+          <div style="font-weight:700">SeaArt AI</div>
+          <div style="font-size:11.5px;color:var(--text-sub)">Video generation & Character asset creation</div>
+        </div>
+        <span class="badge badge-indigo">Selected</span>
+      </div>
+    </div>
+  </div>
+  <div class="dialog-footer">
+    <button class="btn" onclick="closeAccountDialog()">Cancel</button>
+    <button class="btn primary" id="wizardNextBtn" onclick="nextWizardStep()">Continue</button>
+  </div>
+</dialog>
+
+<!-- 2. CREATE NEW PROJECT DIALOG -->
+<dialog id="newProjectDialog">
+  <div class="dialog-header">
+    <div>
+      <h2 style="font-size:17px;font-weight:750">Create New Video Project</h2>
+      <p style="font-size:12px;color:var(--text-muted);margin-top:2px">Khởi tạo Story Bible và thư mục media cục bộ.</p>
+    </div>
+    <button class="icon-btn" onclick="closeNewProjectDialog()">✕</button>
+  </div>
+  <div class="dialog-body">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px">Project Name</label>
+        <input type="text" class="input" style="width:100%" placeholder="e.g. Cyberpunk Detective Episode 1" id="newProjTitle"/>
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px">Aspect Ratio Format</label>
+        <select class="select" style="width:100%">
+          <option>16:9 Landscape (YouTube, Desktop, Film)</option>
+          <option>9:16 Portrait (TikTok, YouTube Shorts, Reels)</option>
+          <option>1:1 Square (Instagram, Social)</option>
+        </select>
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px">Initial Script Seed (Optional)</label>
+        <textarea class="input" style="width:100%;height:80px;padding:10px;resize:none" placeholder="Paste initial raw story prompt or screenplay..."></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="dialog-footer">
+    <button class="btn" onclick="closeNewProjectDialog()">Cancel</button>
+    <button class="btn primary" onclick="submitNewProject()">Create Project</button>
+  </div>
+</dialog>
+
+<!-- 3. SYSTEM HEALTH FLYOUT DIALOG -->
+<dialog id="healthDialog" style="width:min(440px, 90vw)">
+  <div class="dialog-header">
+    <div>
+      <h2 style="font-size:16px;font-weight:750">System Diagnostics</h2>
+      <p style="font-size:11.5px;color:var(--text-muted);margin-top:2px">Real-time local backend health audit.</p>
+    </div>
+    <button class="icon-btn" onclick="closeHealthDialog()">✕</button>
+  </div>
+  <div class="dialog-body" style="padding:16px 20px">
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:12.5px">
+      <div style="display:flex;justify-content:space-between"><span>FastAPI Status:</span><span style="color:var(--emerald);font-weight:700">OK (Port 8000)</span></div>
+      <div style="display:flex;justify-content:space-between"><span>Playwright Runtime:</span><span style="color:var(--emerald);font-weight:700">Ready</span></div>
+      <div style="display:flex;justify-content:space-between"><span>SQLite Engine:</span><span style="color:var(--emerald);font-weight:700">WAL Mode Clean</span></div>
+      <div style="display:flex;justify-content:space-between"><span>Hardware Accel:</span><span style="color:var(--emerald);font-weight:700">NVIDIA CUDA NVENC</span></div>
+      <div style="display:flex;justify-content:space-between"><span>Active Browser Profiles:</span><span style="font-weight:700">5 isolated</span></div>
+    </div>
+  </div>
+  <div class="dialog-footer">
+    <button class="btn primary" onclick="closeHealthDialog()">Close</button>
+  </div>
+</dialog>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastBox"></div>
+
+<!-- ==========================================================================
+     INTERACTIVE JAVASCRIPT CONTROLLER
+     ========================================================================== -->
+<script>
+  // Navigation Controller
+  function switchScreen(screenId) {
+    document.querySelectorAll('.screen-view').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById('screen-' + screenId);
+    if (target) target.classList.add('active');
+
+    document.querySelectorAll('#mainNav .nav-item').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.screen === screenId);
+    });
+
+    const labels = {
+      home: 'Dashboard',
+      projects: 'Projects Library',
+      workspace: 'Studio Workspace',
+      accounts: 'Account Pool & Quotas',
+      jobs: 'Durable Jobs Queue',
+      settings: 'System Diagnostics & Settings'
+    };
+    document.getElementById('topbarBreadcrumb').textContent = labels[screenId] || 'VidPool Studio';
+  }
+
+  document.querySelectorAll('#mainNav .nav-item').forEach(btn => {
+    btn.addEventListener('click', () => switchScreen(btn.dataset.screen));
+  });
+
+  // Workspace Pipeline Stage Switcher
+  function switchPipelineStage(stageId, btnElement) {
+    document.querySelectorAll('.workspace-subview').forEach(v => v.classList.remove('active'));
+    const target = document.getElementById(stageId);
+    if (target) target.classList.add('active');
+
+    if (btnElement) {
+      document.querySelectorAll('.pipeline-stage-btn').forEach(b => b.classList.remove('active'));
+      btnElement.classList.add('active');
+    }
+  }
+
+  // Filter Accounts in Account Pool
+  function filterAccounts() {
+    const quotaVal = document.getElementById('filterQuota').value;
+    const statusVal = document.getElementById('filterStatus').value;
+    const searchVal = document.getElementById('searchAccount').value.toLowerCase().trim();
+
+    document.querySelectorAll('.account-table .table-row').forEach(row => {
+      const rowStatus = row.dataset.status;
+      const rowQuota = row.dataset.quota;
+      const email = row.querySelector('.acc-email')?.textContent.toLowerCase() || '';
+
+      const matchQuota = (quotaVal === 'all') || (rowQuota === quotaVal);
+      const matchStatus = (statusVal === 'all') || (rowStatus === statusVal);
+      const matchSearch = !searchVal || email.includes(searchVal);
+
+      row.style.display = (matchQuota && matchStatus && matchSearch) ? 'grid' : 'none';
+    });
+  }
+
+  // Toast Notification System
+  function showToast(message) {
+    const toastBox = document.getElementById('toastBox');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `<span style="color:var(--accent-light)">✦</span><span>${message}</span>`;
+    toastBox.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(8px)';
+      toast.style.transition = '0.2s ease';
+      setTimeout(() => toast.remove(), 200);
+    }, 3000);
+  }
+
+  // Account Wizard Dialog Flow
+  let wizardStep = 1;
+  let wizardMode = 'add';
+  const wizardDialog = document.getElementById('accountWizardDialog');
+
+  function openAddAccountDialog() {
+    wizardMode = 'add';
+    wizardStep = 1;
+    renderWizardStep();
+    wizardDialog.showModal();
+  }
+
+  function openReloginDialog(email) {
+    wizardMode = 'relogin';
+    wizardStep = 2;
+    renderWizardStep(email);
+    wizardDialog.showModal();
+  }
+
+  function closeAccountDialog() {
+    wizardDialog.close();
+  }
+
+  function renderWizardStep(reloginEmail) {
+    const title = document.getElementById('wizardTitle');
+    const sub = document.getElementById('wizardSub');
+    const content = document.getElementById('wizardStepContent');
+    const nextBtn = document.getElementById('wizardNextBtn');
+
+    document.getElementById('wStep1').classList.toggle('active', wizardStep >= 1);
+    document.getElementById('wStep2').classList.toggle('active', wizardStep >= 2);
+    document.getElementById('wStep3').classList.toggle('active', wizardStep >= 3);
+
+    if (wizardStep === 1) {
+      title.textContent = 'Add Account to Pool';
+      sub.textContent = 'Choose an AI provider to link using an isolated browser profile.';
+      content.innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--accent);border-radius:12px;background:var(--accent-soft)">
+          <div class="provider-avatar" style="color:var(--accent-light)">S</div>
+          <div style="flex:1">
+            <div style="font-weight:700">SeaArt AI</div>
+            <div style="font-size:11.5px;color:var(--text-sub)">Video generation & Character asset creation</div>
+          </div>
+          <span class="badge badge-indigo">Selected</span>
+        </div>
+      `;
+      nextBtn.textContent = 'Continue';
+    } else if (wizardStep === 2) {
+      title.textContent = wizardMode === 'relogin' ? 'Re-login Session' : 'Browser Window Launch';
+      sub.textContent = 'VidPool sẽ mở một cửa sổ trình duyệt độc lập (persistent browser profile).';
+      content.innerHTML = `
+        <div style="background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:16px;text-align:center">
+          <div style="font-size:32px;margin-bottom:8px">🌐</div>
+          <div style="font-weight:700;font-size:14px">Cửa sổ trình duyệt đã được mở</div>
+          <p style="font-size:12px;color:var(--text-sub);margin:8px 0 12px;line-height:1.5">
+            1. Đăng nhập Google / SeaArt như thông thường.<br>
+            2. Vượt qua captcha hoặc 2FA nếu có.<br>
+            3. Quay lại VidPool và bấm nút <strong>"Đã đăng nhập xong"</strong> bên dưới.
+          </p>
+          <div style="font-size:11px;color:var(--text-muted)">VidPool không lưu password của bạn. Chỉ lưu persistent cookie session.</div>
+        </div>
+      `;
+      nextBtn.textContent = 'Đã đăng nhập xong';
+    } else if (wizardStep === 3) {
+      title.textContent = 'Verifying Session & Quota';
+      sub.textContent = 'Đang kiểm tra tính hợp lệ của cookie và đo lường stamina/credits khả dụng...';
+      content.innerHTML = `
+        <div style="text-align:center;padding:24px 0">
+          <div style="width:36px;height:36px;border:3px solid var(--surface-3);border-top-color:var(--accent-light);border-radius:50%;margin:0 auto 16px;animation:spin 0.8s linear infinite"></div>
+          <div style="font-weight:700;font-size:14px">Checking SeaArt Session…</div>
+          <div style="font-size:11.5px;color:var(--text-muted);margin-top:4px">Đang kết nối qua Playwright Runtime</div>
+        </div>
+        <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+      `;
+      nextBtn.style.display = 'none';
+
+      setTimeout(() => {
+        wizardStep = 4;
+        title.textContent = 'Tài khoản đã sẵn sàng';
+        sub.textContent = 'Session hợp lệ và tài khoản đã được đưa vào Pool phục vụ công việc.';
+        content.innerHTML = `
+          <div style="text-align:center;padding:20px 0">
+            <div style="width:48px;height:48px;border-radius:50%;background:var(--emerald-soft);color:var(--emerald);display:grid;place-items:center;font-size:24px;margin:0 auto 12px">✓</div>
+            <div style="font-weight:700;font-size:15px">Kết nối thành công!</div>
+            <div style="font-size:12px;color:var(--text-sub);margin-top:4px">SeaArt Account · 130/130 Stamina · ACTIVE</div>
+          </div>
+        `;
+        nextBtn.style.display = 'inline-flex';
+        nextBtn.textContent = 'Hoàn tất';
+        nextBtn.onclick = () => {
+          closeAccountDialog();
+          showToast('Thêm tài khoản thành công! Pool đã sẵn sàng.');
+        };
+      }, 1200);
+    }
+  }
+
+  function nextWizardStep() {
+    wizardStep++;
+    renderWizardStep();
+  }
+
+  // Simulate Quota Refresh
+  function simulateRefreshAll() {
+    const btn = document.getElementById('btnRefreshAll');
+    const originalText = btn.textContent;
+    btn.textContent = '↻ Đang cập nhật...';
+    btn.disabled = true;
+
+    setTimeout(() => {
+      btn.textContent = '✓ Đã đồng bộ quota';
+      document.getElementById('poolUpdateTimestamp').textContent = 'Live Quota Snapshot · Just now';
+      showToast('Đã làm mới quota cho 5 tài khoản trong cụm!');
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }, 1200);
+    }, 900);
+  }
+
+  function simulateRowRefresh(btn) {
+    const orig = btn.textContent;
+    btn.textContent = '…';
+    setTimeout(() => {
+      btn.textContent = '✓';
+      showToast('Quota tài khoản đã được đồng bộ!');
+      setTimeout(() => btn.textContent = orig, 800);
+    }, 600);
+  }
+
+  // New Project Dialog
+  const newProjDialog = document.getElementById('newProjectDialog');
+  function openNewProjectDialog() { newProjDialog.showModal(); }
+  function closeNewProjectDialog() { newProjDialog.close(); }
+  function submitNewProject() {
+    const title = document.getElementById('newProjTitle').value.trim() || 'New Video Project';
+    closeNewProjectDialog();
+    showToast(`Dự án "${title}" đã được tạo thành công!`);
+    switchScreen('workspace');
+  }
+
+  // System Health Dialog
+  const healthDialog = document.getElementById('healthDialog');
+  function openHealthDialog() { healthDialog.showModal(); }
+  function closeHealthDialog() { healthDialog.close(); }
+
+  // Backdrop click auto-dismiss for all native dialogs
+  document.querySelectorAll('dialog').forEach(d => {
+    d.addEventListener('click', (e) => {
+      if (e.target === d) d.close();
+    });
+  });
+</script>
+
+</body>
+</html>
