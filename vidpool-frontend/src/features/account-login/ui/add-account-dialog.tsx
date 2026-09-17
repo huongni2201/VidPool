@@ -98,6 +98,44 @@ export function AddAccountDialog({
     }
   }
 
+  const resetDialogState = () => {
+    setState("choose_provider")
+    setSelectedProvider("")
+    setAccountId(null)
+    setErrorMessage("")
+  }
+
+  const cleanupLoginSession = async (): Promise<boolean> => {
+    if (!accountId) {
+      return true
+    }
+
+    try {
+      if (target?.kind === "relogin") {
+        await cancelRelogin(client, accountId)
+      } else {
+        await cancelNewLogin(client, accountId)
+      }
+      return true
+    } catch (err: unknown) {
+      setErrorMessage(
+        err instanceof Error ? err.message : "Không thể dọn phiên đăng nhập",
+      )
+      setState("error")
+      return false
+    }
+  }
+
+  const handleClose = async () => {
+    const cleaned = await cleanupLoginSession()
+    if (!cleaned) {
+      return
+    }
+
+    resetDialogState()
+    onClose()
+  }
+
   const handleComplete = async () => {
     if (!accountId) return
     setState("validating")
@@ -105,7 +143,8 @@ export function AddAccountDialog({
     try {
       await completeLogin(client, accountId)
       onSuccess()
-      handleClose()
+      resetDialogState()
+      onClose()
     } catch (err: unknown) {
       setErrorMessage(
         err instanceof Error
@@ -132,30 +171,12 @@ export function AddAccountDialog({
   }
 
   const handleCancelWaiting = async () => {
-    if (!accountId) {
-      handleClose()
+    const cleaned = await cleanupLoginSession()
+    if (!cleaned) {
       return
     }
-
-    try {
-      if (target?.kind === "relogin") {
-        await cancelRelogin(client, accountId)
-      } else {
-        await cancelNewLogin(client, accountId)
-      }
-      onSuccess()
-    } catch {
-      // Ignore cancel errors
-    } finally {
-      handleClose()
-    }
-  }
-
-  const handleClose = () => {
-    setState("choose_provider")
-    setSelectedProvider("")
-    setAccountId(null)
-    setErrorMessage("")
+    onSuccess()
+    resetDialogState()
     onClose()
   }
 

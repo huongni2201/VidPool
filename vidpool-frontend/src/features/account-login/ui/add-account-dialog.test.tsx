@@ -52,7 +52,7 @@ describe("AddAccountDialog cleanup lifecycle", () => {
   it("cancels the provisional account before closing after new-login validation fails", async () => {
     const PROVISIONAL_ID = "11111111-1111-4111-8111-111111111111"
     vi.mocked(accountLoginApi.listProviders).mockResolvedValue([
-      { key: "seedance", displayName: "Seedance", description: "Seedance AI" },
+      { key: "seedance", displayName: "Seedance", authKind: "browser_session" },
     ])
     vi.mocked(accountLoginApi.startLogin).mockResolvedValue({
       accountId: PROVISIONAL_ID,
@@ -127,7 +127,7 @@ describe("AddAccountDialog cleanup lifecycle", () => {
   it("keeps the dialog open when provisional cleanup fails", async () => {
     const PROVISIONAL_ID = "11111111-1111-4111-8111-111111111111"
     vi.mocked(accountLoginApi.listProviders).mockResolvedValue([
-      { key: "seedance", displayName: "Seedance", description: "Seedance AI" },
+      { key: "seedance", displayName: "Seedance", authKind: "browser_session" },
     ])
     vi.mocked(accountLoginApi.startLogin).mockResolvedValue({
       accountId: PROVISIONAL_ID,
