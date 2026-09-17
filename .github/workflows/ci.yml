@@ -83,3 +83,18 @@ jobs:
 
       - name: Verify Rust compiles
         run: cargo check --locked --manifest-path vidpool-frontend/src-tauri/Cargo.toml
+
+      - run: corepack enable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: vidpool-frontend/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+        working-directory: vidpool-frontend
+
+      - name: Build Tauri desktop app
+        run: pnpm tauri build
+        working-directory: vidpool-frontend
