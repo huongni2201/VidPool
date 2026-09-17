@@ -1,15 +1,17 @@
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { useNavigationStore } from "@/app/store/navigation-store"
-import { ROUTES } from "@/shared/constants"
+import { ROUTES, type AppRoute } from "@/shared/constants"
+import { useProjectStore } from "@/entities/project"
 import { StatCard } from "@/components/shared/StatCard"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { CreateProjectDialog } from "@/features/project-create"
 
 export function DashboardPage() {
   const navigate = useNavigate()
-  const { setScreen } = useNavigationStore()
+  const { openProject } = useProjectStore()
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
 
-  const handleNavigate = (route: string, screenId: any) => {
-    setScreen(screenId)
+  const handleNavigate = (route: AppRoute) => {
     navigate(route)
   }
 
@@ -113,16 +115,93 @@ export function DashboardPage() {
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div>
-          <span className="sr-only">Chào mừng bạn đến với VidPool</span>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">Tổng quan</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">
+            Chào mừng bạn đến với VidPool
+          </h2>
           <p className="text-xs text-muted-foreground mt-1">
-            Chào mừng bạn trở lại! Đây là tổng quan dự án và hoạt động studio của VidPool.
+            Studio AI làm phim chuyên nghiệp. Chọn dự án để mở không gian chỉnh sửa hoặc tạo dự án mới theo tỷ lệ khung hình mong muốn.
           </p>
         </div>
         <div className="text-right">
           <div className="text-xs font-semibold text-muted-foreground">Thứ 3, 15 thg 4, 2025</div>
           <div className="text-[11px] text-blue-400/90 mt-0.5">
             Sáng tạo hôm nay, nội dung lớn hơn ngày mai!
+          </div>
+        </div>
+      </div>
+
+      {/* CapCut Style Quick Launcher Hero */}
+      <div className="relative overflow-hidden rounded-2xl border border-primary/25 bg-gradient-to-b from-primary/10 via-card to-card p-6 shadow-xl">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex flex-col gap-2 max-w-xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/15 px-3 py-1 text-[11px] font-semibold text-primary w-fit">
+              <span className="size-1.5 rounded-full bg-primary animate-pulse" />
+              <span>Khởi tạo dự án theo chuẩn CapCut</span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground">
+              Bắt đầu sáng tạo video mới
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Chọn nhanh tỷ lệ khung hình video hoặc mở hộp thoại tạo dự án chi tiết để bắt đầu quy trình AI Timeline.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            {/* Aspect Ratio Quick Launchers */}
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-card/70 p-1.5 backdrop-blur-md">
+              <button
+                onClick={() => {
+                  openProject("Dự án mới 16:9")
+                  navigate(ROUTES.EDITOR)
+                }}
+                className="group flex flex-col items-center gap-1 rounded-lg px-3 py-2 text-muted-foreground hover:bg-studio-hover hover:text-foreground transition-all cursor-pointer"
+                title="Tạo dự án 16:9 (YouTube, Phim)"
+              >
+                <div className="flex h-5 w-8 items-center justify-center rounded border border-current text-[10px] font-mono font-bold">
+                  16:9
+                </div>
+                <span className="text-[10px] font-medium">Ngang</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  openProject("Dự án mới 9:16")
+                  navigate(ROUTES.EDITOR)
+                }}
+                className="group flex flex-col items-center gap-1 rounded-lg px-3 py-2 text-muted-foreground hover:bg-studio-hover hover:text-foreground transition-all cursor-pointer"
+                title="Tạo dự án 9:16 (TikTok, Reels, Shorts)"
+              >
+                <div className="flex h-8 w-5 items-center justify-center rounded border border-current text-[10px] font-mono font-bold">
+                  9:16
+                </div>
+                <span className="text-[10px] font-medium">Dọc</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  openProject("Dự án mới 1:1")
+                  navigate(ROUTES.EDITOR)
+                }}
+                className="group flex flex-col items-center gap-1 rounded-lg px-3 py-2 text-muted-foreground hover:bg-studio-hover hover:text-foreground transition-all cursor-pointer"
+                title="Tạo dự án 1:1 (Instagram, Feed)"
+              >
+                <div className="flex size-6 items-center justify-center rounded border border-current text-[10px] font-mono font-bold">
+                  1:1
+                </div>
+                <span className="text-[10px] font-medium">Vuông</span>
+              </button>
+            </div>
+
+            {/* Main + Tạo dự án mới Button */}
+            <button
+              onClick={() => setIsCreateOpen(true)}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-lg shadow-blue-500/30 hover:from-blue-500 hover:to-indigo-500 active:scale-95 transition-all cursor-pointer"
+            >
+              <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+              </svg>
+              <span>+ Tạo dự án mới</span>
+            </button>
           </div>
         </div>
       </div>
@@ -195,7 +274,7 @@ export function DashboardPage() {
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-foreground">Dự Án Gần Đây</h3>
               <button
-                onClick={() => handleNavigate(ROUTES.PROJECTS, "projects")}
+                onClick={() => handleNavigate(ROUTES.PROJECTS)}
                 className="text-[11.5px] font-medium text-blue-400 hover:text-blue-300 transition-colors"
               >
                 Xem tất cả →
@@ -206,7 +285,10 @@ export function DashboardPage() {
               {recentProjects.map((p) => (
                 <div
                   key={p.id}
-                  onClick={() => handleNavigate(ROUTES.EDITOR, "editor")}
+                  onClick={() => {
+                    openProject(p.name)
+                    navigate(ROUTES.EDITOR)
+                  }}
                   className="group flex items-center justify-between rounded-lg p-2 hover:bg-white/[0.04] transition-all cursor-pointer"
                 >
                   <div className="flex items-center gap-3 min-w-0">
@@ -240,7 +322,7 @@ export function DashboardPage() {
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-foreground">Account Pool</h3>
               <button
-                onClick={() => setScreen("accounts")}
+                onClick={() => navigate(ROUTES.ACCOUNTS)}
                 className="text-[11.5px] font-medium text-blue-400 hover:text-blue-300 transition-colors"
               >
                 Xem chi tiết →
@@ -326,7 +408,7 @@ export function DashboardPage() {
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-foreground">Nhân vật (Character Pack)</h3>
               <button
-                onClick={() => setScreen("characters")}
+                onClick={() => navigate(ROUTES.CHARACTERS)}
                 className="text-[11.5px] font-medium text-blue-400 hover:text-blue-300 transition-colors"
               >
                 Xem tất cả →
@@ -338,7 +420,7 @@ export function DashboardPage() {
               {characters.map((c) => (
                 <div
                   key={c.name}
-                  onClick={() => setScreen("characters")}
+                  onClick={() => navigate(ROUTES.CHARACTERS)}
                   className="group flex flex-col items-center rounded-lg border border-white/[0.06] bg-white/[0.02] p-2 text-center hover:border-white/[0.14] hover:bg-white/[0.05] transition-all cursor-pointer"
                 >
                   <img
@@ -385,7 +467,7 @@ export function DashboardPage() {
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-foreground">Thư viện Voice</h3>
               <button
-                onClick={() => setScreen("voice")}
+                onClick={() => navigate(ROUTES.VOICE)}
                 className="text-[11.5px] font-medium text-blue-400 hover:text-blue-300 transition-colors"
               >
                 Xem tất cả →
@@ -463,8 +545,11 @@ export function DashboardPage() {
                 Cắt ghép, đồng bộ timeline, render video hoàn chỉnh với hiệu suất cao và chuẩn xác.
               </p>
               <button
-                onClick={() => handleNavigate(ROUTES.EDITOR, "editor")}
-                className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-500 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-blue-600/20 transition-all"
+                onClick={() => {
+                  openProject("Thanh Xuân Trở Lại")
+                  navigate(ROUTES.EDITOR)
+                }}
+                className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-500 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-blue-600/20 transition-all cursor-pointer"
               >
                 <span>Mở trình chỉnh sửa</span>
                 <span>→</span>
@@ -482,7 +567,7 @@ export function DashboardPage() {
                 </span>
               </div>
               <button
-                onClick={() => handleNavigate(ROUTES.JOBS, "jobs")}
+                onClick={() => handleNavigate(ROUTES.JOBS)}
                 className="text-[11.5px] font-medium text-blue-400 hover:text-blue-300 transition-colors"
               >
                 Xem tất cả →
@@ -493,7 +578,7 @@ export function DashboardPage() {
               {recentJobs.map((j) => (
                 <div
                   key={j.id}
-                  onClick={() => setScreen("jobs")}
+                  onClick={() => navigate(ROUTES.JOBS)}
                   className="flex flex-col gap-1.5 rounded-lg border border-border/50 bg-secondary/30 p-2.5 hover:border-border hover:bg-secondary/60 transition-all cursor-pointer"
                 >
                   <div className="flex items-center justify-between">
@@ -529,6 +614,17 @@ export function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Create Project Dialog */}
+      <CreateProjectDialog
+        open={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSubmit={(data) => {
+          openProject(data.name)
+          setIsCreateOpen(false)
+          navigate(ROUTES.EDITOR)
+        }}
+      />
     </div>
   )
 }

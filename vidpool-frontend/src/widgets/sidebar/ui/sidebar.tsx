@@ -1,8 +1,10 @@
 import { Link, useLocation } from "react-router-dom"
 import { ROUTES } from "@/shared/constants"
+import { useProjectStore } from "@/entities/project"
 
 export interface SidebarProps {
   backendStatus?: "ok" | "pending" | "error"
+  projectName?: string
 }
 
 interface NavItem {
@@ -12,55 +14,29 @@ interface NavItem {
   icon: (active: boolean) => React.ReactNode
 }
 
-export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
+export function Sidebar({
+  backendStatus = "ok",
+  projectName: propProjectName,
+}: SidebarProps) {
   const location = useLocation()
+  const { projectName: storeProjectName } = useProjectStore()
+  const projectName = propProjectName || storeProjectName || "Thanh Xuân Trở Lại"
 
-  const navItems: NavItem[] = [
-    {
-      to: ROUTES.DASHBOARD,
-      label: "Tổng quan",
-      icon: (active) => (
-        <svg
-          className={`size-4.5 ${active ? "text-white" : "text-muted-foreground"}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.8}
-            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-          />
-        </svg>
-      ),
-    },
-    {
-      to: ROUTES.PROJECTS,
-      label: "Dự án",
-      badge: "12",
-      icon: (active) => (
-        <svg
-          className={`size-4.5 ${active ? "text-white" : "text-muted-foreground"}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.8}
-            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
-          />
-        </svg>
-      ),
-    },
+  const isWorkspace =
+    location.pathname.startsWith(ROUTES.EDITOR) ||
+    location.pathname.startsWith(ROUTES.VISUAL_BEAT) ||
+    location.pathname.startsWith(ROUTES.CHARACTERS) ||
+    location.pathname.startsWith(ROUTES.VOICE) ||
+    location.pathname.startsWith(ROUTES.JOBS) ||
+    location.pathname.startsWith("/generations")
+
+  const workspaceNavItems: NavItem[] = [
     {
       to: ROUTES.EDITOR,
       label: "Chỉnh sửa",
       icon: (active) => (
         <svg
-          className={`size-4.5 ${active ? "text-white" : "text-muted-foreground"}`}
+          className={`size-4.5 ${active ? "text-primary-foreground" : "text-muted-foreground"}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -79,7 +55,7 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
       label: "Visual Beat",
       icon: (active) => (
         <svg
-          className={`size-4.5 ${active ? "text-white" : "text-muted-foreground"}`}
+          className={`size-4.5 ${active ? "text-primary-foreground" : "text-muted-foreground"}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -98,7 +74,7 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
       label: "Nhân vật",
       icon: (active) => (
         <svg
-          className={`size-4.5 ${active ? "text-white" : "text-muted-foreground"}`}
+          className={`size-4.5 ${active ? "text-primary-foreground" : "text-muted-foreground"}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -117,7 +93,7 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
       label: "Voice",
       icon: (active) => (
         <svg
-          className={`size-4.5 ${active ? "text-white" : "text-muted-foreground"}`}
+          className={`size-4.5 ${active ? "text-primary-foreground" : "text-muted-foreground"}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -132,12 +108,54 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
       ),
     },
     {
+      to: ROUTES.JOBS,
+      label: "Hàng đợi & Render",
+      badge: "3",
+      icon: (active) => (
+        <svg
+          className={`size-4.5 ${active ? "text-primary-foreground" : "text-muted-foreground"}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.8}
+            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+          />
+        </svg>
+      ),
+    },
+  ]
+
+  const launcherNavItems: NavItem[] = [
+    {
+      to: ROUTES.DASHBOARD,
+      label: "Dự án của tôi",
+      icon: (active) => (
+        <svg
+          className={`size-4.5 ${active ? "text-primary-foreground" : "text-muted-foreground"}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.8}
+            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+          />
+        </svg>
+      ),
+    },
+    {
       to: ROUTES.ACCOUNTS,
-      label: "Account Pool",
+      label: "Tài khoản AI",
       badge: "8",
       icon: (active) => (
         <svg
-          className={`size-4.5 ${active ? "text-white" : "text-muted-foreground"}`}
+          className={`size-4.5 ${active ? "text-primary-foreground" : "text-muted-foreground"}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -147,26 +165,6 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
             strokeLinejoin="round"
             strokeWidth={1.8}
             d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-          />
-        </svg>
-      ),
-    },
-    {
-      to: ROUTES.JOBS,
-      label: "Jobs",
-      badge: "3",
-      icon: (active) => (
-        <svg
-          className={`size-4.5 ${active ? "text-white" : "text-muted-foreground"}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.8}
-            d="M13 10V3L4 14h7v7l9-11h-7z"
           />
         </svg>
       ),
@@ -192,40 +190,127 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
 
       {/* Navigation List */}
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto pr-1">
-        {navItems.map((item) => {
-          const isActive =
-            item.to === "/"
-              ? location.pathname === "/"
-              : location.pathname.startsWith(item.to) ||
-                (item.to === ROUTES.JOBS && location.pathname.startsWith("/generations"))
-          return (
+        {isWorkspace ? (
+          <>
+            {/* Back to Project Hub Button (CapCut style) */}
             <Link
-              key={item.to}
-              to={item.to}
-              className={`group relative flex items-center justify-between rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-150 ${
-                isActive
-                  ? "bg-gradient-to-r from-blue-600/25 via-blue-500/15 to-transparent text-white border border-blue-500/35 shadow-sm shadow-blue-900/30 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-blue-500 before:shadow-[0_0_8px_var(--primary)]"
-                  : "hover:bg-white/[0.05] hover:text-foreground border border-transparent"
-              }`}
+              to={ROUTES.DASHBOARD}
+              className="group mb-2 flex items-center gap-2.5 rounded-xl border border-border bg-card/60 px-3 py-2 text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:bg-card hover:text-foreground transition-all"
             >
-              <div className="flex items-center gap-3">
-                {item.icon(isActive)}
-                <span className={isActive ? "font-semibold text-white" : ""}>{item.label}</span>
+              <svg
+                className="size-4 transition-transform group-hover:-translate-x-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
+              </svg>
+              <span>Màn hình dự án</span>
+            </Link>
+
+            {/* Active Project Card */}
+            <div className="mb-2 rounded-xl border border-primary/25 bg-primary/10 p-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                  Đang chỉnh sửa
+                </span>
+                <span className="rounded bg-primary/20 px-1 py-0.2 text-[9px] font-bold text-primary">
+                  16:9
+                </span>
               </div>
-              {item.badge && (
-                <span
-                  className={`rounded-full px-2 py-0.5 text-[10.5px] font-semibold transition-colors ${
+              <div className="mt-1 truncate text-xs font-bold text-foreground">
+                {projectName}
+              </div>
+            </div>
+
+            {/* Workspace Project-Scoped Tools */}
+            {workspaceNavItems.map((item) => {
+              const isActive =
+                location.pathname.startsWith(item.to) ||
+                (item.to === ROUTES.JOBS && location.pathname.startsWith("/generations"))
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`group relative flex items-center justify-between rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-150 ${
                     isActive
-                      ? "bg-blue-500/30 text-blue-300 border border-blue-400/30"
-                      : "bg-white/[0.08] text-muted-foreground group-hover:bg-white/[0.14] group-hover:text-white"
+                      ? "bg-gradient-to-r from-blue-600/25 via-blue-500/15 to-transparent text-white border border-blue-500/35 shadow-sm shadow-blue-900/30 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-blue-500 before:shadow-[0_0_8px_var(--primary)]"
+                      : "hover:bg-white/[0.05] hover:text-foreground border border-transparent"
                   }`}
                 >
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          )
-        })}
+                  <div className="flex items-center gap-3">
+                    {item.icon(isActive)}
+                    <span className={isActive ? "font-semibold text-white" : ""}>{item.label}</span>
+                  </div>
+                  {item.badge && (
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10.5px] font-semibold transition-colors ${
+                        isActive
+                          ? "bg-blue-500/30 text-blue-300 border border-blue-400/30"
+                          : "bg-white/[0.08] text-muted-foreground group-hover:bg-white/[0.14] group-hover:text-white"
+                      }`}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              )
+            })}
+          </>
+        ) : (
+          <>
+            {/* Launcher Mode Navigation */}
+            {launcherNavItems.map((item) => {
+              const isActive =
+                item.to === "/"
+                  ? location.pathname === "/" || location.pathname.startsWith(ROUTES.PROJECTS)
+                  : location.pathname.startsWith(item.to)
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className={`group relative flex items-center justify-between rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-150 ${
+                    isActive
+                      ? "bg-gradient-to-r from-blue-600/25 via-blue-500/15 to-transparent text-white border border-blue-500/35 shadow-sm shadow-blue-900/30 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:rounded-r before:bg-blue-500 before:shadow-[0_0_8px_var(--primary)]"
+                      : "hover:bg-white/[0.05] hover:text-foreground border border-transparent"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    {item.icon(isActive)}
+                    <span className={isActive ? "font-semibold text-white" : ""}>{item.label}</span>
+                  </div>
+                  {item.badge && (
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10.5px] font-semibold transition-colors ${
+                        isActive
+                          ? "bg-blue-500/30 text-blue-300 border border-blue-400/30"
+                          : "bg-white/[0.08] text-muted-foreground group-hover:bg-white/[0.14] group-hover:text-white"
+                      }`}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              )
+            })}
+
+            {/* Hub info card */}
+            <div className="mt-auto mb-2 rounded-xl border border-border bg-card/40 p-3">
+              <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+                <span className="size-2 rounded-full bg-blue-500" />
+                <span>Không gian sáng tạo</span>
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
+                Chọn dự án từ danh sách hoặc tạo mới để mở bộ công cụ studio.
+              </p>
+            </div>
+          </>
+        )}
       </nav>
 
       {/* Bottom Section: Settings & Backend Status & User profile */}

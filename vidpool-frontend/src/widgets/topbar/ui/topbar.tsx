@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom"
 import { ROUTES } from "@/shared/constants"
+import { useProjectStore } from "@/entities/project"
 
 export interface TopbarProps {
   onPrimaryAction?: () => void
@@ -9,11 +10,23 @@ export interface TopbarProps {
 
 export function Topbar({
   onPrimaryAction,
-  projectName = "Thanh Xuân Trở Lại",
-  savedTime = "15:24",
+  projectName: propProjectName,
+  savedTime: propSavedTime,
 }: TopbarProps) {
   const location = useLocation()
   const navigate = useNavigate()
+  const { projectName: storeProjectName, savedTime: storeSavedTime, closeProject } = useProjectStore()
+
+  const activeProjectName = propProjectName || storeProjectName || "Thanh Xuân Trở Lại"
+  const activeSavedTime = propSavedTime || storeSavedTime || "15:24"
+
+  const isWorkspace =
+    location.pathname.startsWith(ROUTES.EDITOR) ||
+    location.pathname.startsWith(ROUTES.VISUAL_BEAT) ||
+    location.pathname.startsWith(ROUTES.CHARACTERS) ||
+    location.pathname.startsWith(ROUTES.VOICE) ||
+    location.pathname.startsWith(ROUTES.JOBS) ||
+    location.pathname.startsWith("/generations")
 
   const getPageInfo = () => {
     const path = location.pathname
@@ -105,30 +118,69 @@ export function Topbar({
 
   return (
     <header className="flex h-14 w-full items-center justify-between border-b border-border bg-sidebar/85 px-6 backdrop-blur-md select-none sticky top-0 z-20">
-      {/* Left Project Info & Saved status */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <div className="flex size-7 items-center justify-center rounded-lg bg-white/[0.06] text-muted-foreground border border-white/[0.06]">
-            <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      {/* Left: CapCut project switcher or Launcher title */}
+      {isWorkspace ? (
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              closeProject()
+              navigate(ROUTES.DASHBOARD)
+            }}
+            className="group flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:border-primary/50 hover:bg-studio-hover hover:text-foreground transition-all cursor-pointer shadow-sm"
+            title="Đóng dự án và quay về danh sách"
+          >
+            <svg
+              className="size-3.5 transition-transform group-hover:-translate-x-0.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span>Màn hình dự án</span>
+          </button>
+
+          <div className="h-4 w-px bg-border" />
+
+          <div className="flex items-center gap-2">
+            <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
+              <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.8}
+                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+            <span className="text-sm font-semibold text-foreground tracking-tight">
+              {activeProjectName}
+            </span>
+            <span className="rounded bg-secondary px-1.5 py-0.2 text-[10px] font-mono font-semibold text-muted-foreground">
+              16:9
+            </span>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground ml-1">
+            <svg className="size-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="text-[11.5px] text-studio-subtle">Đã lưu lúc {activeSavedTime}</span>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-7 items-center justify-center rounded-lg bg-blue-600/15 text-blue-400 border border-blue-500/20">
+            <svg className="size-4 fill-current" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
             </svg>
           </div>
-          <span className="text-sm font-semibold text-foreground tracking-tight">{projectName}</span>
-          <button className="text-studio-subtle hover:text-muted-foreground p-0.5 transition-colors cursor-pointer" title="Đổi tên dự án">
-            <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-            </svg>
-          </button>
+          <span className="text-sm font-bold text-foreground">Không Gian Dự Án</span>
+          <span className="text-[11px] text-muted-foreground hidden sm:inline">
+            • Quản lý & khởi tạo dự án AI
+          </span>
         </div>
-
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <svg className="size-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 00-9.78 2.096A4.001 4.001 0 003 15z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13l2 2 4-4" />
-          </svg>
-          <span className="text-[11.5px] text-studio-subtle">Đã lưu lúc {savedTime}</span>
-        </div>
-      </div>
+      )}
 
       {/* Right Top Actions */}
       <div className="flex items-center gap-2.5">

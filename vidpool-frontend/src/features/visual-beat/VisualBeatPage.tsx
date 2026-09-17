@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { useNavigationStore } from "@/app/store/navigation-store"
+import { useNavigate } from "react-router-dom"
+import { ROUTES } from "@/shared/constants"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 
 interface BeatScene {
@@ -17,7 +18,7 @@ interface BeatScene {
 }
 
 export function VisualBeatPage() {
-  const { setScreen } = useNavigationStore()
+  const navigate = useNavigate()
   const [selectedId, setSelectedId] = useState<number>(1)
   const [filter, setFilter] = useState("all")
 
@@ -438,7 +439,7 @@ export function VisualBeatPage() {
             {/* Bottom Actions */}
             <div className="flex items-center gap-2 pt-2 border-t border-border mt-1">
               <button
-                onClick={() => setScreen("editor")}
+                onClick={() => navigate(ROUTES.EDITOR)}
                 className="flex-1 rounded-lg border border-border bg-secondary/60 py-2 text-[11.5px] font-semibold text-foreground hover:bg-secondary transition-all text-center"
               >
                 Mở trong Chỉnh sửa
@@ -449,7 +450,7 @@ export function VisualBeatPage() {
                 </svg>
               </button>
               <button
-                onClick={() => setScreen("editor")}
+                onClick={() => navigate(ROUTES.EDITOR)}
                 className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-[11.5px] font-semibold text-white shadow-md shadow-blue-500/25 hover:bg-blue-500 transition-all"
               >
                 <svg className="size-3.5 fill-current" viewBox="0 0 24 24">

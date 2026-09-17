@@ -32,6 +32,9 @@ describe("Architecture Import Boundaries", () => {
       /@\/runtime\/runtime-config/,
       /@\/app\/api-client-context/,
       /@\/features\/accounts/,
+      /@\/app\/shell/,
+      /@\/app\/store/,
+      /useNavigationStore/,
     ]
 
     for (const file of allFiles) {
@@ -64,5 +67,19 @@ describe("Architecture Import Boundaries", () => {
       exists = false
     }
     expect(exists).toBe(false)
+  })
+
+  it("ensures legacy src/app/shell and src/app/store directories do not exist", async () => {
+    for (const subDir of [path.join("app", "shell"), path.join("app", "store")]) {
+      const fullDir = path.join(srcRoot, subDir)
+      let exists = false
+      try {
+        await fs.access(fullDir)
+        exists = true
+      } catch {
+        exists = false
+      }
+      expect(exists, `${subDir} should not exist`).toBe(false)
+    }
   })
 })

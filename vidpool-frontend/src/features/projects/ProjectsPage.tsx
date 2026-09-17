@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { useNavigationStore } from "@/app/store/navigation-store"
 import { ROUTES } from "@/shared/constants"
+import { useProjectStore } from "@/entities/project"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { CreateProjectDialog } from "@/features/project-create"
 
@@ -22,7 +22,7 @@ interface ProjectItem {
 
 export function ProjectsPage() {
   const navigate = useNavigate()
-  const { setScreen, setProjectName } = useNavigationStore()
+  const { openProject: storeOpenProject } = useProjectStore()
   const [filter, setFilter] = useState<string>("all")
   const [search, setSearch] = useState("")
   const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -153,9 +153,8 @@ export function ProjectsPage() {
     return true
   })
 
-  const openProject = (title: string) => {
-    setProjectName(title)
-    setScreen("editor")
+  const openProject = (title: string = "Thanh Xuân Trở Lại") => {
+    storeOpenProject(title)
     navigate(ROUTES.EDITOR)
   }
 
