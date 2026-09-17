@@ -22,7 +22,7 @@ class SQLAlchemyAccountRepository(AccountRepositoryPort):
     def add(self, account: ProviderAccount) -> None:
         model = account_to_model(account)
         self._session.add(model)
-        self._session.commit()
+        self._session.flush()
 
     def get(self, account_id: AccountId) -> ProviderAccount | None:
         model = self._session.get(ProviderAccountModel, str(account_id))
@@ -55,13 +55,13 @@ class SQLAlchemyAccountRepository(AccountRepositoryPort):
         model.consecutive_failures = account.consecutive_failures
         model.cooldown_until = account.cooldown_until
         model.updated_at = account.updated_at
-        self._session.commit()
+        self._session.flush()
 
     def delete(self, account_id: AccountId) -> None:
         model = self._session.get(ProviderAccountModel, str(account_id))
         if model is not None:
             self._session.delete(model)
-            self._session.commit()
+            self._session.flush()
 
     def acquire_lru(
         self,
@@ -124,7 +124,7 @@ class SQLAlchemyAccountRepository(AccountRepositoryPort):
         lease = self._session.get(AccountLeaseModel, str(lease_id))
         if lease is not None:
             self._session.delete(lease)
-            self._session.commit()
+            self._session.flush()
             return True
         return False
 

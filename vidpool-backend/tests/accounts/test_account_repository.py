@@ -239,6 +239,7 @@ def test_concurrent_acquire_never_leases_same_account_twice(tmp_path: Path) -> N
         acc = ProviderAccount.create("test-provider", "profile/conc-1", now=now)
         acc.mark_authenticated("User Conc", "conc", now=now)
         repo.add(acc)
+        seed_session.commit()
 
     barrier = threading.Barrier(2)
     successful_acquires: list[tuple[str, ProviderAccount]] = []

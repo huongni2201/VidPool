@@ -193,3 +193,24 @@ class FakeProviderRegistry(ProviderRegistryPort):
 
     def get_auth(self, provider_key: str) -> ProviderAuthPort | None:
         return self._adapters.get(provider_key)
+
+
+class FakeAccountUnitOfWork:
+    def __init__(self, repo: FakeAccountRepository | None = None) -> None:
+        self.accounts = repo if repo is not None else FakeAccountRepository()
+        self.committed = False
+        self.rolled_back = False
+
+    def __enter__(self) -> "FakeAccountUnitOfWork":
+        return self
+
+    def __exit__(self, exc_type, exc, traceback) -> None:
+        if exc_type is not None:
+            self.rollback()
+
+    def commit(self) -> None:
+        self.committed = True
+
+    def rollback(self) -> None:
+        self.rolled_back = True
+

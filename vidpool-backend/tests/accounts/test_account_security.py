@@ -58,13 +58,11 @@ def test_api_responses_never_contain_sensitive_keys() -> None:
     res_start = client.post("/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER)
     assert res_start.status_code == 200
     account_id = res_start.json()["accountId"]
-    session_id = res_start.json()["browserSessionId"]
 
     # 2. Complete login
     res_complete = client.post(
         f"/api/accounts/{account_id}/login/complete",
         headers=AUTH_HEADER,
-        json={"browserSessionId": session_id},
     )
     assert res_complete.status_code == 200
 
