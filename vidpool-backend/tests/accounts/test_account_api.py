@@ -29,7 +29,7 @@ def _build_test_client(
     registry = FakeProviderRegistry([adapter])
     container = build_container(
         account_repository=repo,
-        browser_session_manager=browser,
+        browser_runtime=browser,
         provider_registry=registry,
     )
 
@@ -79,7 +79,7 @@ def test_login_lifecycle_endpoints() -> None:
     assert res_start.status_code == 200
     start_data = res_start.json()
     account_id = start_data["accountId"]
-    session_id = start_data["browserSessionId"]
+    assert "browserSessionId" not in start_data
     assert start_data["status"] == "waiting_for_user"
 
     # 2. Get account
@@ -87,11 +87,10 @@ def test_login_lifecycle_endpoints() -> None:
     assert res_get.status_code == 200
     assert res_get.json()["status"] == "auth_required"
 
-    # 3. Complete login
+    # 3. Complete login (no body required)
     res_complete = client.post(
         f"/api/accounts/{account_id}/login/complete",
         headers=AUTH_HEADER,
-        json={"browserSessionId": session_id},
     )
     assert res_complete.status_code == 200
     complete_data = res_complete.json()
@@ -121,19 +120,36 @@ def test_login_lifecycle_endpoints() -> None:
     assert res_after.status_code == 404
 
 
-def test_cancel_login_endpoint() -> None:
-    client, repo, browser = _build_test_client()
-
+def test_complete_login_requires_no_browser_session_id() -> None:
+    client, _, _ = _build_test_client()
     res_start = client.post("/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER)
-    start_data = res_start.json()
+    account_id = res_start.json()["accountId"]
 
-    res_cancel = client.post(
-        f"/api/accounts/{start_data['accountId']}/login/cancel",
-        headers=AUTH_HEADER,
-        json={"browserSessionId": start_data["browserSessionId"]},
-    )
+    res_complete = client.post(f"/api/accounts/{account_id}/login/complete", headers=AUTH_HEADER)
+    assert res_complete.status_code == 200
+    assert res_complete.json()["status"] == "active"
+
+
+def test_cancel_login_requires_no_browser_session_id() -> None:
+    client, _, _ = _build_test_client()
+    res_start = client.post("/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER)
+    account_id = res_start.json()["accountId"]
+
+    res_cancel = client.post(f"/api/accounts/{account_id}/login/cancel", headers=AUTH_HEADER)
     assert res_cancel.status_code == 200
     assert res_cancel.json()["status"] == "auth_required"
+
+
+def test_missing_browser_profile_returns_409() -> None:
+    client, _, browser = _build_test_client()
+    res_start = client.post("/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER)
+    account_id = res_start.json()["accountId"]
+
+    # Close the profile manually to simulate user closed window
+    browser.close_all()
+
+    res_complete = client.post(f"/api/accounts/{account_id}/login/complete", headers=AUTH_HEADER)
+    assert res_complete.status_code == 409
 
 
 def test_error_mapping() -> None:
@@ -157,6 +173,10 @@ def test_api_response_never_contains_forbidden_fields() -> None:
 
     res_start = client.post("/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER)
     account_id = res_start.json()["accountId"]
+    start_data = res_start.json()
+
+    assert "browserSessionId" not in start_data
+    assert "browser_session_id" not in start_data
 
     res_get = client.get(f"/api/accounts/{account_id}", headers=AUTH_HEADER)
     data = res_get.json()
@@ -166,6 +186,10 @@ def test_api_response_never_contains_forbidden_fields() -> None:
         "profile_key",
         "profilePath",
         "profile_path",
+        "browserSessionId",
+        "browser_session_id",
+        "sessionId",
+        "session_id",
         "cookie",
         "cookies",
         "token",

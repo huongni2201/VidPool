@@ -27,17 +27,4 @@ class StartLoginResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     account_id: str = Field(..., alias="accountId")
-    browser_session_id: str = Field(..., alias="browserSessionId")
     status: str = Field(default="waiting_for_user")
-
-
-class CompleteLoginRequest(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    browser_session_id: str = Field(..., alias="browserSessionId")
-
-
-class CancelLoginRequest(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
-
-    browser_session_id: str = Field(..., alias="browserSessionId")

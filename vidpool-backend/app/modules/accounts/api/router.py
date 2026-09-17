@@ -8,6 +8,7 @@ from app.modules.accounts.domain.errors import (
     AccountInUse,
     AccountNotFound,
     BrowserProfileInUse,
+    BrowserSessionNotOpen,
     BrowserUnavailable,
     InvalidProfileKey,
     ProviderNotRegistered,
@@ -16,8 +17,6 @@ from app.modules.accounts.domain.errors import (
 from app.modules.accounts.domain.values import AccountId
 from .schemas import (
     AccountResponse,
-    CancelLoginRequest,
-    CompleteLoginRequest,
     ProviderResponse,
     StartLoginResponse,
 )
@@ -48,7 +47,7 @@ def parse_account_id(account_id: str) -> AccountId:
 def _handle_error(exc: Exception) -> None:
     if isinstance(exc, (ProviderNotRegistered, AccountNotFound)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
-    if isinstance(exc, (AccountInUse, SessionInvalid, BrowserProfileInUse)):
+    if isinstance(exc, (AccountInUse, SessionInvalid, BrowserProfileInUse, BrowserSessionNotOpen)):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
     if isinstance(exc, BrowserUnavailable):
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
@@ -112,7 +111,6 @@ def start_login(
         res = service.start_login(provider_key)
         return StartLoginResponse(
             accountId=str(res.account_id),
-            browserSessionId=res.browser_session_id,
             status=res.status,
         )
     except Exception as exc:
@@ -123,12 +121,11 @@ def start_login(
 @router.post("/accounts/{account_id}/login/complete", response_model=AccountResponse)
 def complete_login(
     account_id: str,
-    body: CompleteLoginRequest,
     service: AccountService = Depends(get_account_service),
 ) -> AccountResponse:
     parsed_id = parse_account_id(account_id)
     try:
-        view = service.complete_login(parsed_id, body.browser_session_id)
+        view = service.complete_login(parsed_id)
         return _serialize_account(view)
     except Exception as exc:
         _handle_error(exc)
@@ -138,12 +135,11 @@ def complete_login(
 @router.post("/accounts/{account_id}/login/cancel", response_model=AccountResponse)
 def cancel_login(
     account_id: str,
-    body: CancelLoginRequest,
     service: AccountService = Depends(get_account_service),
 ) -> AccountResponse:
     parsed_id = parse_account_id(account_id)
     try:
-        view = service.cancel_login(parsed_id, body.browser_session_id)
+        view = service.cancel_login(parsed_id)
         return _serialize_account(view)
     except Exception as exc:
         _handle_error(exc)
@@ -160,7 +156,6 @@ def start_relogin(
         res = service.start_relogin(parsed_id)
         return StartLoginResponse(
             accountId=str(res.account_id),
-            browserSessionId=res.browser_session_id,
             status=res.status,
         )
     except Exception as exc:
