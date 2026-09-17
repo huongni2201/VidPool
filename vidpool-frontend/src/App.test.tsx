@@ -17,7 +17,13 @@ describe("App", () => {
     })
 
     const mockClient: ApiClient = {
-      get: vi.fn().mockResolvedValue({ status: "ok" }),
+      get: vi.fn().mockImplementation((path: string) => {
+        if (path === "/api/health") return Promise.resolve({ status: "ok" })
+        if (path === "/api/accounts") return Promise.resolve([])
+        return Promise.resolve({ status: "ok" })
+      }),
+      post: vi.fn().mockResolvedValue({}),
+      delete: vi.fn().mockResolvedValue(undefined),
     }
 
     render(
