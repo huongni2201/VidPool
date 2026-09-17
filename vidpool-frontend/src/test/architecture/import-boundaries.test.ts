@@ -31,18 +31,12 @@ describe("Architecture Import Boundaries", () => {
       /@\/lib\/api-client/,
       /@\/runtime\/runtime-config/,
       /@\/app\/api-client-context/,
+      /@\/features\/accounts/,
     ]
 
     for (const file of allFiles) {
-      // Exclude this test file and the legacy files themselves before deletion
-      if (
-        file.endsWith("import-boundaries.test.ts") ||
-        file.includes(path.join("lib", "api-client.ts")) ||
-        file.includes(path.join("runtime", "runtime-config.ts")) ||
-        file.includes(path.join("app", "api-client-context.tsx")) ||
-        file.includes(path.join("lib", "api-client.test.ts")) ||
-        file.includes(path.join("runtime", "runtime-config.test.ts"))
-      ) {
+      // Exclude this test file
+      if (file.endsWith("import-boundaries.test.ts")) {
         continue
       }
 
@@ -58,5 +52,17 @@ describe("Architecture Import Boundaries", () => {
     }
 
     expect(violations).toEqual([])
+  })
+
+  it("ensures legacy src/features/accounts directory does not exist", async () => {
+    const legacyAccountsDir = path.join(srcRoot, "features", "accounts")
+    let exists = false
+    try {
+      await fs.access(legacyAccountsDir)
+      exists = true
+    } catch {
+      exists = false
+    }
+    expect(exists).toBe(false)
   })
 })

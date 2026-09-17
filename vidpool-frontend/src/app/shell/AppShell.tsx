@@ -7,7 +7,7 @@ import { EditorPage } from "@/features/editor/EditorPage"
 import { VisualBeatPage } from "@/features/visual-beat/VisualBeatPage"
 import { CharactersPage } from "@/features/characters/CharactersPage"
 import { VoicePage } from "@/features/voice/VoicePage"
-import { AccountsPage } from "@/features/accounts/accounts-page"
+import { AccountsPage } from "@/pages/accounts/accounts-page"
 import { JobsPage } from "@/features/jobs/JobsPage"
 import { SettingsPage } from "@/features/settings/SettingsPage"
 
