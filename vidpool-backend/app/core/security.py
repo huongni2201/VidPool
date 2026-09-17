@@ -7,7 +7,10 @@ def require_session(request: Request) -> None:
     expected = request.app.state.config.session_token
 
     if not expected:
-        return
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="App session is not configured",
+        )
 
     authorization = request.headers.get("Authorization", "")
     prefix = "Bearer "
