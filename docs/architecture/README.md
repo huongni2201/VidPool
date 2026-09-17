@@ -1,10 +1,16 @@
 # Architecture Overview
 
+## Documentation Status
+
+This directory describes the accepted **target architecture**.
+
+For the code that actually exists today, read `docs/CURRENT_STATUS.md`.
+
 ## System
 
 AI Story Video Studio is a desktop-first, single-user production application.
 
-Primary flow:
+Primary target flow:
 
 ```text
 Source Story
@@ -38,7 +44,26 @@ Export
 
 Storyboard Studio surrounds the pipeline and allows human review, locking, version comparison, selective regeneration, and editing.
 
-## Technology
+## Backend Architecture
+
+```text
+Modular Monolith
++
+Clean Architecture
++
+Hexagonal / Ports & Adapters
++
+Lightweight DDD
+```
+
+See:
+
+- `python-backend-architecture.md`
+- `module-boundaries.md`
+- `dependency-map.md`
+- `../adr/0016-use-modular-monolith-clean-hexagonal-backend.md`
+
+## Target Technology
 
 ```text
 Desktop: Tauri

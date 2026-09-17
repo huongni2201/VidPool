@@ -19,3 +19,4 @@ This directory stores significant architecture decisions.
 | 0013 | Filesystem media storage |
 | 0014 | Local API security boundary |
 | 0015 | FastAPI packaged as Tauri sidecar |
+| 0016 | Modular Monolith + Clean/Hexagonal backend architecture |

@@ -8,11 +8,13 @@ The application turns long-form story text into structured story data, narration
 
 This file is the mandatory entrypoint for any human or coding agent modifying the repository.
 
-Before changing code, read this file and the relevant documents under:
+Before changing code, read this file, `docs/CURRENT_STATUS.md`, and the relevant documents under:
 
 - `docs/rules/`
 - `docs/architecture/`
 - `docs/adr/`
+
+Architecture documents describe the accepted target architecture. `docs/CURRENT_STATUS.md` is the authority for what is actually implemented today.
 
 ## Non-Negotiable Project Rules
 
@@ -41,58 +43,77 @@ Before changing code, read this file and the relevant documents under:
 23. Bug fixes require a regression test when the behavior is testable.
 24. User decisions override AI suggestions.
 25. AI output is always candidate data until validated and persisted by the application.
+26. Backend architecture is a Modular Monolith with Clean Architecture dependency direction, Hexagonal boundaries, and lightweight DDD.
+27. Do not create a global business `services/` dumping ground; organize backend behavior by domain module.
+28. SQLAlchemy models are infrastructure persistence models, not domain entities.
+29. Long-running work must be persisted before external execution begins whenever recovery requires knowing the operation exists.
 
 ## Architecture Dependency Direction
 
-Allowed dependency direction:
+The backend uses dependency inversion.
+
+Source-code dependencies must point inward:
 
 ```text
-Infrastructure
-      ↓
-Application
-      ↓
+API / Worker
+    |
+    v
+Application -----> Port <----- Infrastructure Adapter
+    |
+    v
 Domain
 ```
+
+More explicitly:
+
+```text
+Application -> Domain
+Application -> Port
+Infrastructure -> Port
+Infrastructure -> Domain when mapping requires it
+API -> Application
+
+Application -X-> concrete Infrastructure
+Domain      -X-> Application / Infrastructure / API
+```
+
+At runtime an application use case may call an adapter through a port, but the application source code must not import that concrete adapter.
 
 External presentation layers call inward:
 
 ```text
 Tauri / React
-      ↓
+      |
+      v
 FastAPI
-      ↓
+      |
+      v
 Application
-      ↓
+      |
+      v
 Domain
 ```
 
 Forbidden examples:
 
 ```text
-Domain → FastAPI
-Domain → SQLAlchemy
-Domain → httpx
-Domain → FFmpeg
-Domain → Tauri
-Domain → Seedance
+Domain -> FastAPI
+Domain -> SQLAlchemy
+Domain -> httpx
+Domain -> FFmpeg
+Domain -> Tauri
+Domain -> Seedance
 
-React → SQLite
-React → provider HTTP APIs
-React → provider tokens
+React -> SQLite
+React -> provider HTTP APIs
+React -> provider tokens
 
-Application → concrete SeaArtClient
-Application → concrete SQLAlchemy models
+Application -> concrete SeaArtClient
+Application -> concrete SQLAlchemy models
+Application -> concrete FFmpeg renderer
 ```
 
-Required pattern:
-
-```text
-Application
-   ↓
-Port / Interface
-   ↓
-Infrastructure Adapter
-```
+Concrete wiring belongs in the composition root, normally `core/container.py` or an equivalent bootstrap module.
 
 ## When to Add an Abstraction
 
@@ -109,6 +130,8 @@ Add one when there is a real boundary, especially:
 - external AI/TTS/video/image service
 
 Do not create interfaces for simple internal helpers with one stable implementation.
+
+Do not skip an abstraction at an external boundary merely to reduce file count.
 
 ## Source of Truth
 
@@ -155,19 +178,25 @@ The final MP4 is never used as the canonical project state.
 
 | Change | Required docs |
 |---|---|
-| Domain/entity changes | `02-domain-modeling.md`, `07-ai-story-continuity.md` |
-| FastAPI/API changes | `03-backend-fastapi.md` |
+| Any backend architecture work | `16-python-module-architecture.md`, `17-domain-application-separation.md`, `23-import-and-dependency-rules.md`, `26-architecture-review-gates.md` |
+| New backend module | `01-architecture-boundaries.md`, `16-python-module-architecture.md`, `17-domain-application-separation.md`, `18-dependency-injection.md`, `23-import-and-dependency-rules.md` |
+| Domain/entity changes | `02-domain-modeling.md`, `07-ai-story-continuity.md`, `17-domain-application-separation.md` |
+| FastAPI/API changes | `03-backend-fastapi.md`, `20-commands-queries-usecases.md` |
 | React UI changes | `04-frontend-react.md` |
-| Database changes | `05-database-persistence.md`, `14-migrations-compatibility.md` |
-| Job/worker changes | `06-jobs-and-orchestration.md` |
-| Story/AI changes | `07-ai-story-continuity.md` |
-| Provider/model changes | `08-provider-adapters.md` |
+| Database changes | `05-database-persistence.md`, `19-repositories-and-mappers.md`, `14-migrations-compatibility.md` |
+| Job/worker changes | `06-jobs-and-orchestration.md`, `20-commands-queries-usecases.md` |
+| Story/AI changes | `07-ai-story-continuity.md`, `21-boundary-contracts.md` |
+| Provider/model changes | `08-provider-adapters.md`, `21-boundary-contracts.md`, `24-architecture-testing.md` |
 | Audio/subtitle/timing | `09-audio-timing-sync.md` |
-| FFmpeg/rendering | `10-media-rendering.md` |
+| FFmpeg/rendering | `10-media-rendering.md`, `21-boundary-contracts.md` |
 | Credentials/security | `11-security-secrets.md` |
-| Tests/quality | `12-testing-quality.md` |
+| Dependency injection/composition | `18-dependency-injection.md` |
+| Repository/mapping work | `19-repositories-and-mappers.md` |
+| Python implementation style | `22-python-coding-standards.md`, `23-import-and-dependency-rules.md` |
+| Tests/quality | `12-testing-quality.md`, `24-architecture-testing.md` |
+| Refactoring/migrations | `14-migrations-compatibility.md`, `25-refactoring-and-migration.md` |
 | Errors/logging | `13-errors-observability.md` |
-| Architecture changes | `15-documentation-adr.md` |
+| Architecture changes | `15-documentation-adr.md`, `26-architecture-review-gates.md` |
 
 ## Pre-Commit Questions
 
@@ -179,8 +208,11 @@ Before finalizing a change, answer:
 4. Could this overwrite user-approved or locked data?
 5. Does this invalidate more downstream work than necessary?
 6. Can the operation resume after app restart?
-7. Are secrets protected?
-8. Are story, character, audio, and timeline continuity preserved?
-9. Is a migration required?
-10. Is an ADR required?
-11. Are the relevant tests present and passing?
+7. Was durable job state persisted before an external operation that may outlive the process?
+8. Are secrets protected?
+9. Are story, character, audio, and timeline continuity preserved?
+10. Did domain/application code import concrete infrastructure?
+11. Is a migration required?
+12. Is an ADR required?
+13. Are the relevant tests present and passing?
+14. Does `ARCHITECTURE-CHECKLIST.md` pass for this change?
