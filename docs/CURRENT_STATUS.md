@@ -13,7 +13,8 @@ This file distinguishes target architecture from implemented reality.
 - architecture rules
 - ADR baseline
 - Python architecture enforcement rules
-- React/Vite/Tailwind/shadcn frontend scaffold
+- React/Vite/Tailwind/shadcn frontend Feature-Sliced Design (FSD) architecture (`app/`, `pages/`, `widgets/`, `features/`, `entities/`, `shared/`, `test/`)
+- 9-screen studio UI design baseline with client routing, navigation sidebar, topbar, and high-fidelity screen views (Tổng quan, Dự án, Chỉnh sửa, Visual Beat, Nhân vật, Voice, Account Pool, Jobs, Cài đặt)
 - frontend test/build/lint verification gate (`pnpm check`)
 - FastAPI application scaffold with `/api/health` probe
 - SQLite/SQLAlchemy persistence bootstrap (path resolution & engine creation)
