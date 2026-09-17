@@ -43,16 +43,17 @@ VidPool supports two development workflows:
 Backend:
 
 ```powershell
-$env:VIDPOOL_SESSION_TOKEN="dev-token"
+$env:VIDPOOL_SESSION_TOKEN="<your-local-dev-token-at-least-32-characters>"
 $env:VIDPOOL_ALLOWED_ORIGINS="http://localhost:5173"
-vidpool-backend --port 8000
+python -m app.bootstrap --port 8000
 ```
 
-Frontend:
+Frontend (configure `vidpool-frontend/.env.development.local` from `.env.example`):
 
 ```powershell
-$env:VITE_API_BASE_URL="http://127.0.0.1:8000"
-$env:VITE_SESSION_TOKEN="dev-token"
+# In vidpool-frontend/.env.development.local:
+# VITE_API_BASE_URL=http://127.0.0.1:8000
+# VITE_SESSION_TOKEN=<same-token-as-backend>
 cd vidpool-frontend
 pnpm dev
 ```

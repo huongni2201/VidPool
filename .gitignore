@@ -20,6 +20,10 @@ ENV/
 node_modules/
 dist/
 .vite/
+.env.local
+.env.*.local
+vidpool-frontend/.env.local
+vidpool-frontend/.env.development.local
 
 # Tauri & sidecar binaries
 vidpool-frontend/src-tauri/target/
