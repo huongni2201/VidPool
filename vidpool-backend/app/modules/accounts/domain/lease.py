@@ -2,11 +2,13 @@ from dataclasses import dataclass
 from datetime import datetime
 import uuid
 
+from .values import AccountId
+
 
 @dataclass
 class AccountLease:
     id: uuid.UUID
-    account_id: uuid.UUID
+    account_id: AccountId
     owner_id: str
     acquired_at: datetime
     expires_at: datetime

@@ -66,7 +66,7 @@ def lease_to_model(lease: AccountLease) -> AccountLeaseModel:
 def lease_from_model(model: AccountLeaseModel) -> AccountLease:
     return AccountLease(
         id=uuid.UUID(model.id),
-        account_id=uuid.UUID(model.account_id),
+        account_id=AccountId(uuid.UUID(model.account_id)),
         owner_id=model.owner_id,
         acquired_at=_ensure_utc(model.acquired_at) or datetime.now(timezone.utc),
         expires_at=_ensure_utc(model.expires_at) or datetime.now(timezone.utc),

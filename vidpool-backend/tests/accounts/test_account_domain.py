@@ -155,7 +155,7 @@ def test_record_success_and_failure() -> None:
 
 
 def test_lease_expiration() -> None:
-    account_id = uuid.uuid4()
+    account_id = AccountId(uuid.uuid4())
     lease = AccountLease(
         id=uuid.uuid4(),
         account_id=account_id,
