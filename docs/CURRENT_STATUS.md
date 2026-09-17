@@ -1,6 +1,6 @@
 # Current Implementation Status
 
-**Status:** DESKTOP RUNTIME & SIDECAR FOUNDATION  
+**Status:** ACCOUNT POOL FOUNDATION & PERSISTENT BROWSER SESSIONS  
 **Last reviewed:** 2026-09-17
 
 ## Purpose
@@ -32,6 +32,14 @@ This file distinguishes target architecture from implemented reality.
 - Account Pool application ports/fakes
 - Account Pool SQLAlchemy persistence models/repository
 - Account Pool Alembic schema for provider accounts and leases
+- Account Pool application service (`AccountService`)
+- durable LRU account leasing
+- persistent isolated browser profile path resolver (`BrowserProfilePathResolver`)
+- Playwright browser-session manager (`PlaywrightBrowserSessionManager`)
+- provider auth registry (`ProviderRegistry`)
+- protected account management FastAPI API
+- account management frontend feature (account list, actions, user-driven browser login dialog)
+- browser-session restart persistence verification and security regression tests
 
 ## Not Implemented Yet
 
@@ -41,8 +49,10 @@ The repository currently does not contain production implementation for:
 - Story Engine
 - Story Memory
 - Character continuity engine
-- provider registry/adapters
+- production provider auth adapters (e.g. Seedance, Gemini)
 - durable job worker
+- provider execution jobs
+- durable job integration with account leases
 - TTS/audio engine
 - forced alignment
 - Timing Engine
@@ -51,13 +61,6 @@ The repository currently does not contain production implementation for:
 - FFmpeg render pipeline
 - quality-control pipeline
 - OS keyring integration
-- Account Pool runtime wiring
-- persistent browser session manager
-- production provider auth adapters
-- account login/relogin lifecycle
-- account management API
-- account management frontend
-- durable job integration with account leases
 
 ## Documentation Semantics
 

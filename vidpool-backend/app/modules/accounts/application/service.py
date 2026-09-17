@@ -57,7 +57,7 @@ class AccountService:
     def get_account(self, account_id: AccountId) -> AccountView:
         account = self._accounts.get(account_id)
         if account is None:
-            raise AccountNotFound(f"Account '{account_id.value}' not found")
+            raise AccountNotFound(f"Account '{account_id}' not found")
         return _to_view(account)
 
     def start_login(
