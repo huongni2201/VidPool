@@ -154,14 +154,17 @@ class FakeProviderAuthAdapter(ProviderAuthPort):
     def login_url(self) -> str:
         return f"https://auth.{self.provider_key}.example.com/login"
 
-    def validate_session(self, profile_key: str) -> SessionValidation:
+    def validate_session(self, session: BrowserSessionHandle) -> SessionValidation:
         return SessionValidation(valid=self.valid_session)
 
-    def resolve_identity(self, profile_key: str) -> ProviderIdentity:
+    def resolve_identity(self, session: BrowserSessionHandle) -> ProviderIdentity:
         return ProviderIdentity(
             display_name=self.display_name,
             external_identity=self.external_identity,
         )
+
+    def validate_persisted_session(self, profile_key: str) -> SessionValidation:
+        return SessionValidation(valid=self.valid_session)
 
 
 class FakeProviderRegistry(ProviderRegistryPort):

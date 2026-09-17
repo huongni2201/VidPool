@@ -45,8 +45,21 @@ class ProviderAuthPort(Protocol):
     provider_key: str
 
     def login_url(self) -> str: ...
-    def validate_session(self, profile_key: str) -> SessionValidation: ...
-    def resolve_identity(self, profile_key: str) -> ProviderIdentity: ...
+
+    def validate_session(
+        self,
+        session: BrowserSessionHandle,
+    ) -> SessionValidation: ...
+
+    def resolve_identity(
+        self,
+        session: BrowserSessionHandle,
+    ) -> ProviderIdentity: ...
+
+    def validate_persisted_session(
+        self,
+        profile_key: str,
+    ) -> SessionValidation: ...
 
 
 @dataclass(frozen=True)
