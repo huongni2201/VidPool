@@ -173,7 +173,6 @@ describe("AddAccountDialog component", () => {
         if (path.includes("/login/start")) {
           return Promise.resolve({
             accountId: "123e4567-e89b-12d3-a456-426614174000",
-            browserSessionId: "session-abc",
             status: "waiting_for_user",
           })
         }
@@ -230,7 +229,6 @@ describe("AddAccountDialog component", () => {
       ]),
       post: vi.fn().mockResolvedValue({
         accountId: "123e4567-e89b-12d3-a456-426614174000",
-        browserSessionId: "session-abc",
         status: "waiting_for_user",
       }),
       delete: vi.fn(),
@@ -256,7 +254,7 @@ describe("AddAccountDialog component", () => {
     await waitFor(() => {
       expect(mockClient.post).toHaveBeenCalledWith(
         "/api/accounts/123e4567-e89b-12d3-a456-426614174000/login/cancel",
-        { browserSessionId: "session-abc" },
+        undefined,
         expect.anything()
       )
       expect(onClose).toHaveBeenCalled()

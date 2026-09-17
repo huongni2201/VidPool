@@ -30,7 +30,6 @@ export type AccountSummary = z.infer<typeof accountSummarySchema>
 export const startLoginResponseSchema = z
   .object({
     accountId: z.string().uuid(),
-    browserSessionId: z.string(),
     status: z.string(),
   })
   .strict()

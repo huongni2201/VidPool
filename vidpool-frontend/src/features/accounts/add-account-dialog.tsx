@@ -32,10 +32,7 @@ export function AddAccountDialog({
 
   const [state, setState] = useState<DialogState>("choose_provider")
   const [selectedProvider, setSelectedProvider] = useState<string>("")
-  const [sessionData, setSessionData] = useState<{
-    accountId: string
-    browserSessionId: string
-  } | null>(null)
+  const [accountId, setAccountId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string>("")
 
   const providersQuery = useQuery<ProviderDefinition[]>({
@@ -52,10 +49,7 @@ export function AddAccountDialog({
     setErrorMessage("")
     try {
       const res = await startLogin(client, selectedProvider)
-      setSessionData({
-        accountId: res.accountId,
-        browserSessionId: res.browserSessionId,
-      })
+      setAccountId(res.accountId)
       setState("waiting_for_user")
     } catch (err: unknown) {
       setErrorMessage(err instanceof Error ? err.message : "Failed to start login")
@@ -64,11 +58,11 @@ export function AddAccountDialog({
   }
 
   const handleComplete = async () => {
-    if (!sessionData) return
+    if (!accountId) return
     setState("validating")
     setErrorMessage("")
     try {
-      await completeLogin(client, sessionData.accountId, sessionData.browserSessionId)
+      await completeLogin(client, accountId)
       onSuccess()
       handleClose()
     } catch (err: unknown) {
@@ -82,9 +76,9 @@ export function AddAccountDialog({
   }
 
   const handleCancelWaiting = async () => {
-    if (sessionData) {
+    if (accountId) {
       try {
-        await cancelLogin(client, sessionData.accountId, sessionData.browserSessionId)
+        await cancelLogin(client, accountId)
       } catch {
         // Ignore cancel errors
       }
@@ -95,7 +89,7 @@ export function AddAccountDialog({
   const handleClose = () => {
     setState("choose_provider")
     setSelectedProvider("")
-    setSessionData(null)
+    setAccountId(null)
     setErrorMessage("")
     onClose()
   }
@@ -226,7 +220,7 @@ export function AddAccountDialog({
               <Button variant="outline" size="sm" onClick={handleClose}>
                 Đóng
               </Button>
-              {sessionData ? (
+              {accountId ? (
                 <Button size="sm" onClick={handleComplete}>
                   Thử xác minh lại
                 </Button>

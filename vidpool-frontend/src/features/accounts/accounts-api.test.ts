@@ -83,7 +83,6 @@ describe("Account API client and schemas", () => {
       get: vi.fn(),
       post: vi.fn().mockResolvedValue({
         accountId: "123e4567-e89b-12d3-a456-426614174000",
-        browserSessionId: "session-1",
         status: "waiting_for_user",
       }),
       delete: vi.fn(),
@@ -95,10 +94,10 @@ describe("Account API client and schemas", () => {
       undefined,
       expect.anything(),
     )
-    expect(res.browserSessionId).toBe("session-1")
+    expect(res.accountId).toBe("123e4567-e89b-12d3-a456-426614174000")
   })
 
-  it("calls completeLogin with browserSessionId payload", async () => {
+  it("calls completeLogin without browserSessionId payload", async () => {
     const mockClient: ApiClient = {
       get: vi.fn(),
       post: vi.fn().mockResolvedValue({
@@ -114,10 +113,10 @@ describe("Account API client and schemas", () => {
       delete: vi.fn(),
     }
 
-    await completeLogin(mockClient, "123e4567-e89b-12d3-a456-426614174000", "session-1")
+    await completeLogin(mockClient, "123e4567-e89b-12d3-a456-426614174000")
     expect(mockClient.post).toHaveBeenCalledWith(
       "/api/accounts/123e4567-e89b-12d3-a456-426614174000/login/complete",
-      { browserSessionId: "session-1" },
+      undefined,
       expect.anything(),
     )
   })
@@ -134,10 +133,10 @@ describe("Account API client and schemas", () => {
     await getAccount(mockClient, accId)
     expect(mockClient.get).toHaveBeenCalledWith(`/api/accounts/${accId}`, expect.anything())
 
-    await cancelLogin(mockClient, accId, "sess-1")
+    await cancelLogin(mockClient, accId)
     expect(mockClient.post).toHaveBeenCalledWith(
       `/api/accounts/${accId}/login/cancel`,
-      { browserSessionId: "sess-1" },
+      undefined,
       expect.anything(),
     )
 

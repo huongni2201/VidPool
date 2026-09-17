@@ -44,11 +44,10 @@ export async function startLogin(
 export async function completeLogin(
   client: ApiClient,
   accountId: string,
-  browserSessionId: string,
 ): Promise<AccountSummary> {
   return client.post(
     `/api/accounts/${accountId}/login/complete`,
-    { browserSessionId },
+    undefined,
     accountSummarySchema,
   )
 }
@@ -56,11 +55,10 @@ export async function completeLogin(
 export async function cancelLogin(
   client: ApiClient,
   accountId: string,
-  browserSessionId: string,
 ): Promise<AccountSummary> {
   return client.post(
     `/api/accounts/${accountId}/login/cancel`,
-    { browserSessionId },
+    undefined,
     accountSummarySchema,
   )
 }
