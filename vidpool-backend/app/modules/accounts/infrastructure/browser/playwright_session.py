@@ -20,48 +20,6 @@ logger = logging.getLogger(__name__)
 LauncherType = Callable[[Path, str, bool], Any]
 
 
-class _PersistentContextWrapper:
-    def __init__(self, context: Any, pw: Any | None = None) -> None:
-        self._context = context
-        self._pw = pw
-
-    @property
-    def pages(self) -> list[Any]:
-        return getattr(self._context, "pages", [])
-
-    def new_page(self) -> Any:
-        return self._context.new_page()
-
-    def close(self) -> None:
-        try:
-            self._context.close()
-        finally:
-            if self._pw is not None:
-                try:
-                    self._pw.stop()
-                except Exception:
-                    pass
-
-
-def _default_launcher(profile_path: Path, channel: str, headless: bool) -> Any:
-    from playwright.sync_api import Error as PlaywrightError, sync_playwright
-
-    pw = sync_playwright().start()
-    try:
-        context = pw.chromium.launch_persistent_context(
-            user_data_dir=str(profile_path),
-            channel=channel,
-            headless=headless,
-        )
-        return _PersistentContextWrapper(context, pw)
-    except (PlaywrightError, Exception) as exc:
-        try:
-            pw.stop()
-        except Exception:
-            pass
-        raise BrowserLaunchFailed(f"Failed to launch browser with channel '{channel}': {exc}") from exc
-
-
 @dataclass
 class _LiveSession:
     id: str
@@ -82,11 +40,34 @@ class PlaywrightBrowserSessionManager(BrowserSessionPort):
         channels: tuple[str, ...] = DEFAULT_CHANNELS,
     ) -> None:
         self._resolver = resolver or BrowserProfilePathResolver()
-        self._launcher = launcher or _default_launcher
+        self._launcher = launcher
         self._headless = headless
         self._channels = channels
         self._sessions_by_id: dict[str, _LiveSession] = {}
         self._session_ids_by_profile: dict[str, str] = {}
+        self._pw: Any = None
+
+    def _get_playwright(self) -> Any:
+        if self._pw is None:
+            from playwright.sync_api import sync_playwright
+
+            self._pw = sync_playwright().start()
+        return self._pw
+
+    def _default_launch(self, profile_path: Path, channel: str, headless: bool) -> Any:
+        from playwright.sync_api import Error as PlaywrightError
+
+        pw = self._get_playwright()
+        try:
+            return pw.chromium.launch_persistent_context(
+                user_data_dir=str(profile_path),
+                channel=channel,
+                headless=headless,
+            )
+        except (PlaywrightError, Exception) as exc:
+            raise BrowserLaunchFailed(
+                f"Failed to launch browser with channel '{channel}': {exc}"
+            ) from exc
 
     def open_login(
         self,
@@ -106,7 +87,10 @@ class PlaywrightBrowserSessionManager(BrowserSessionPort):
         last_error = None
         for channel in self._channels:
             try:
-                context = self._launcher(profile_path, channel, self._headless)
+                if self._launcher is not None:
+                    context = self._launcher(profile_path, channel, self._headless)
+                else:
+                    context = self._default_launch(profile_path, channel, self._headless)
                 break
             except BrowserLaunchFailed as exc:
                 last_error = exc
@@ -165,3 +149,16 @@ class PlaywrightBrowserSessionManager(BrowserSessionPort):
                 logger.warning("Error closing browser session '%s' during close_all: %s", session.id, exc)
         self._sessions_by_id.clear()
         self._session_ids_by_profile.clear()
+        if self._pw is not None:
+            try:
+                self._pw.stop()
+            except Exception as exc:
+                logger.warning("Error stopping playwright driver during close_all: %s", exc)
+            finally:
+                self._pw = None
+
+    def __del__(self) -> None:
+        try:
+            self.close_all()
+        except Exception:
+            pass

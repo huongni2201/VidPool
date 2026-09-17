@@ -108,9 +108,12 @@ def main() -> int:
             return 1
         print("PASS: account profiles remain isolated")
         manager_b.close(handle_b2.id)
+        manager_b.close(handle_b.id)
 
         # 5. Delete profile and assert state is absent
         manager_b.delete_profile(profile_key)
+        manager_b.close_all()
+        del manager_b
 
         manager_c = PlaywrightBrowserSessionManager(resolver=resolver, headless=True)
         handle_c = manager_c.open_login(
