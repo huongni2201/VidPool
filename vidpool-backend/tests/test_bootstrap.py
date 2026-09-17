@@ -1,6 +1,6 @@
 import pytest
 
-from app.bootstrap import parse_args, resolve_config
+from app.bootstrap import main, parse_args, resolve_config
 
 
 def test_default_host_is_loopback() -> None:
@@ -85,3 +85,32 @@ def test_cli_session_token_overrides_environment(monkeypatch) -> None:
     config = resolve_config(args)
 
     assert config.session_token == "cli-token"
+
+
+def test_parse_args_accepts_browser_smoke_test() -> None:
+    args = parse_args(["--browser-smoke-test"])
+    assert args.browser_smoke_test is True
+
+
+def test_browser_smoke_test_defaults_false() -> None:
+    args = parse_args([])
+    assert args.browser_smoke_test is False
+
+
+def test_main_routes_to_browser_smoke_test(monkeypatch: pytest.MonkeyPatch) -> None:
+    called = False
+
+    def fake_smoke() -> None:
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr("app.bootstrap.run_browser_smoke_test", fake_smoke)
+    monkeypatch.setattr(
+        "app.bootstrap.uvicorn.run",
+        lambda *args, **kwargs: pytest.fail("uvicorn must not start"),
+    )
+
+    main(["--browser-smoke-test"])
+
+    assert called is True
+

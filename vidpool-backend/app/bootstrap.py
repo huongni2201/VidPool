@@ -15,6 +15,7 @@ class BootstrapArgs:
     port: int
     session_token: str | None
     allowed_origins: tuple[str, ...] | None
+    browser_smoke_test: bool = False
 
 
 def parse_args(argv: list[str] | None = None) -> BootstrapArgs:
@@ -43,6 +44,11 @@ def parse_args(argv: list[str] | None = None) -> BootstrapArgs:
         default=None,
         help="Allowed CORS origin (can be specified multiple times)",
     )
+    parser.add_argument(
+        "--browser-smoke-test",
+        action="store_true",
+        help="Launch and close an isolated browser profile, then exit",
+    )
 
     args = parser.parse_args(argv if argv is not None else sys.argv[1:])
 
@@ -56,6 +62,7 @@ def parse_args(argv: list[str] | None = None) -> BootstrapArgs:
         port=args.port,
         session_token=args.session_token,
         allowed_origins=origins,
+        browser_smoke_test=args.browser_smoke_test,
     )
 
 
@@ -77,8 +84,40 @@ def resolve_config(args: BootstrapArgs) -> AppConfig:
     )
 
 
+def run_browser_smoke_test() -> None:
+    from pathlib import Path
+    from tempfile import TemporaryDirectory
+
+    from app.modules.accounts.infrastructure.browser.profile_paths import (
+        BrowserProfilePathResolver,
+    )
+    from app.modules.accounts.infrastructure.browser.runtime import BrowserRuntime
+
+    with TemporaryDirectory(prefix="vidpool-browser-smoke-") as tmp:
+        resolver = BrowserProfilePathResolver(Path(tmp))
+        runtime = BrowserRuntime(resolver=resolver)
+        profile_key = "browser-profile/smoke/smoke-account"
+
+        try:
+            runtime.open_login(
+                provider_key="smoke",
+                profile_key=profile_key,
+                login_url="about:blank",
+            )
+            if not runtime.has_open_session(profile_key):
+                raise RuntimeError("Browser smoke profile did not open")
+            runtime.close_profile(profile_key)
+        finally:
+            runtime.close_all()
+
+
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
+
+    if args.browser_smoke_test:
+        run_browser_smoke_test()
+        return
+
     config = resolve_config(args)
     app = create_app(config)
     uvicorn.run(
@@ -92,3 +131,4 @@ def main(argv: list[str] | None = None) -> None:
 
 if __name__ == "__main__":
     main()
+
