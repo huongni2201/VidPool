@@ -19,6 +19,7 @@ from app.modules.accounts.domain.errors import (
     InvalidAccountState,
     LeaseNotFound,
     ProviderNotRegistered,
+    ProviderUnavailable,
     SessionInvalid,
 )
 from app.modules.accounts.domain.values import AccountId, AccountStatus
@@ -589,3 +590,45 @@ def test_health_auth_failure_sets_auth_required() -> None:
 
     v = service.report_auth_failure(start.account_id, now=NOW)
     assert v.status is AccountStatus.AUTH_REQUIRED
+
+
+def test_validate_account_preserves_state_on_provider_unavailable() -> None:
+    adapter = FakeProviderAuthAdapter(provider_key="provider-x")
+    service, repo, _, _ = _build_service(adapter)
+
+    start = service.start_login("provider-x", now=NOW)
+    service.complete_login(start.account_id, now=NOW)
+
+    account = repo.get(start.account_id)
+    assert account is not None
+    assert account.status is AccountStatus.ACTIVE
+    previous_last_validated_at = account.last_validated_at
+
+    adapter.persisted_validation_error = ProviderUnavailable(
+        "Provider session check unavailable"
+    )
+
+    with pytest.raises(ProviderUnavailable):
+        service.validate_account(start.account_id, now=LATER)
+
+    account = repo.get(start.account_id)
+    assert account is not None
+    assert account.status is AccountStatus.ACTIVE
+    assert account.last_validated_at == previous_last_validated_at
+
+
+def test_validate_account_transitions_to_auth_required_when_invalid() -> None:
+    adapter = FakeProviderAuthAdapter(provider_key="provider-x")
+    service, repo, _, _ = _build_service(adapter)
+
+    start = service.start_login("provider-x", now=NOW)
+    service.complete_login(start.account_id, now=NOW)
+
+    adapter.valid_session = False
+    view = service.validate_account(start.account_id, now=LATER)
+
+    assert view.status is AccountStatus.AUTH_REQUIRED
+    account = repo.get(start.account_id)
+    assert account is not None
+    assert account.status is AccountStatus.AUTH_REQUIRED
+
