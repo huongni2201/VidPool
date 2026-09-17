@@ -12,7 +12,7 @@ export function useAccounts(providerKey?: string) {
   })
 
   return {
-    accounts: query.data || [],
+    accounts: query.data ?? [],
     isLoading: query.isLoading,
     isError: query.isError,
     refetch: query.refetch,
