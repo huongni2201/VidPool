@@ -13,14 +13,16 @@ This file distinguishes target architecture from implemented reality.
 - architecture rules
 - ADR baseline
 - Python architecture enforcement rules
-- React/Vite/Tailwind/shadcn frontend Feature-Sliced Design (FSD) architecture (`app/`, `pages/`, `widgets/`, `features/`, `entities/`, `shared/`, `test/`)
+- React/Vite/Tailwind/shadcn frontend Feature-Sliced Design (FSD) architecture strictly enforced: runtime imports use canonical layers (`shared/api`, `shared/config`, `entities/account`, `features/account-login`, `features/account-pool`, `pages/`, `widgets/`) with legacy duplicates (`lib/api-client`, `runtime/runtime-config`, `app/api-client-context`, `features/accounts`, `app/shell`, `app/store/navigation-store`) removed
+- React Router URL state is the sole navigation source of truth with active sidebar and topbar synchronization; redundant Zustand screen state removed
+- desktop-safe local vector assets (`assets/demo/`) bundled for demo views conforming strictly to Tauri Content Security Policy (`img-src 'self' data:`) with zero remote image dependencies
 - 9-screen studio UI design baseline with client routing, navigation sidebar, topbar, and high-fidelity screen views (Tổng quan, Dự án, Chỉnh sửa, Visual Beat, Nhân vật, Voice, Account Pool, Jobs, Cài đặt)
-- frontend test/build/lint verification gate (`pnpm check`)
+- frontend test/build/lint verification gate (`pnpm check`) including architectural boundary tests
 - FastAPI application scaffold with `/api/health` probe
 - SQLite/SQLAlchemy persistence bootstrap (path resolution & engine creation)
 - Alembic migration environment configuration
 - frontend-to-local-backend health status integration
-- GitHub Actions CI workflow for frontend, backend, and desktop verification
+- GitHub Actions CI workflow for frontend, backend, and desktop verification (including full `pnpm tauri build`)
 - Tauri v2 desktop shell scaffold
 - packaged FastAPI sidecar bootstrap
 - Tauri-owned backend lifecycle
@@ -28,7 +30,7 @@ This file distinguishes target architecture from implemented reality.
 - restricted localhost CORS
 - per-session local API token validation
 - temporary protected session probe endpoint (`/api/session/probe`)
-- desktop CI compile/package gate (verified for Windows x64 / NSIS)
+- desktop CI compile/package gate (verified for Windows x64 / NSIS installer via `pnpm tauri build`)
 - Account Pool domain model
 - Account Pool application ports/fakes
 - Account Pool SQLAlchemy persistence models/repository
@@ -40,12 +42,12 @@ This file distinguishes target architecture from implemented reality.
 - backend-owned account/profile browser session mapping
 - browser session ID removed from public API and frontend
 - persistent session validation through BrowserRuntime
-- account login failure compensation
+- account login failure compensation and proactive provisional session cleanup on modal dismiss
 - explicit container shutdown lifecycle
 - SQLAlchemy Unit of Work (`SQLAlchemyAccountUnitOfWork` / `AccountUnitOfWorkPort`)
 - provider auth registry (`ProviderRegistry`)
 - protected account management FastAPI API
-- account management frontend feature (account list, actions, user-driven browser login dialog)
+- account management frontend feature derived solely from real backend data: exposes provider identity, authentication/session state, lease-ready status, enable/disable toggle, session re-validation, account deletion, and interactive browser login/relogin dialog (zero fake operational metrics/credits/stamina)
 - browser-session restart persistence verification and security regression tests
 - single-container / single-BrowserRuntime application factory (`app/factory.py`, `app/asgi.py`)
 - strict Unit of Work database transaction ownership (zero commit/rollback in repositories)
@@ -58,11 +60,11 @@ This file distinguishes target architecture from implemented reality.
 - user-visible frontend mutation error feedback with inline alerts and dismissal in `AccountsPage`
 - explicit separation of new-login cancellation (`cancel_new_login` deleting provisional record & profile with 204 response) vs relogin cancellation (`cancel_relogin` preserving existing record)
 - controlled API error mapping for `InvalidAccountState` domain conflicts (HTTP 409 Conflict)
-- verified account mutation vs lease concurrency invariants with multi-threaded SQLite WAL tests and coordinator synchronization
+- verified account mutation vs lease concurrency invariants: account validation is serialized with lease acquisition and destructive mutations within the single backend process
 - backend static analysis CI gates with Ruff and Pyright enforced in GitHub Actions (`.github/workflows/ci.yml`)
 - consolidated provider auth port contract test harness (`test_provider_auth_contract.py`)
 - structured event and debug logging for browser and account lifecycles
-- explicit backend bootstrap configuration precedence (CLI > environment > defaults) without fallback dev-token
+- explicit backend bootstrap configuration precedence (CLI > environment > defaults) without fallback dev-token or committed development credentials
 - testable browser automation boundary protocol (`BrowserAutomationRuntime`) for provider adapters
 - production Dreamina browser auth adapter implementation (`DreaminaAuthAdapter`) and probe (`DreaminaAuthProbe`) for Seedance-capable accounts
 - Dreamina provider registration in default Account Pool container (`/api/providers`)
@@ -96,10 +98,11 @@ The repository currently does not contain production implementation for:
 
 ### Automated
 
-- Ruff/Pyright/backend pytest/Alembic CI: verified on 2026-09-17
-- frontend `pnpm check`: verified on 2026-09-17
-- Windows sidecar build/Rust compile: verified on 2026-09-17
-- packaged Playwright browser runtime: verified only after the packaged browser smoke-test CI task is green
+- Ruff/Pyright/backend pytest/Alembic CI: verified on 2026-09-18
+- frontend `pnpm check` (Oxlint, Vitest, TypeScript build, Vite build): verified on 2026-09-18
+- Windows sidecar build/Rust tests/Rust compile: verified on 2026-09-18
+- Windows x64 Tauri production compile and NSIS bundle (`pnpm tauri build` producing `VidPool_0.1.0_x64-setup.exe`): verified on 2026-09-18
+- packaged Playwright browser runtime smoke test: verified on 2026-09-18
 
 ### Manual / Opt-In
 
