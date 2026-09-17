@@ -2,7 +2,10 @@ from typing import Any
 
 import pytest
 
-from app.modules.accounts.domain.errors import SessionInvalid
+from app.modules.accounts.domain.errors import (
+    ProviderUnavailable,
+    SessionInvalid,
+)
 from app.modules.accounts.infrastructure.providers.dreamina.auth_adapter import (
     DreaminaAuthAdapter,
 )
@@ -255,6 +258,30 @@ def test_resolve_identity_returns_provider_identity() -> None:
     assert fake_runtime.active_calls == ["profile-key-3"]
 
 
+class RaisingDreaminaProbe:
+    def inspect(self, context: Any) -> DreaminaAuthState:
+        raise DreaminaProbeUnavailable("probe failed")
+
+
+def test_validate_active_session_maps_probe_unavailable_to_provider_unavailable() -> None:
+    fake_runtime = FakeBrowserAutomationRuntime(FakeContext())
+    adapter = DreaminaAuthAdapter(fake_runtime, probe=RaisingDreaminaProbe())  # type: ignore
+
+    with pytest.raises(
+        ProviderUnavailable,
+        match="temporarily unavailable",
+    ):
+        adapter.validate_active_session("profile-key")
+
+
+def test_validate_persisted_session_maps_probe_unavailable_to_provider_unavailable() -> None:
+    fake_runtime = FakeBrowserAutomationRuntime(FakeContext())
+    adapter = DreaminaAuthAdapter(fake_runtime, probe=RaisingDreaminaProbe())  # type: ignore
+
+    with pytest.raises(ProviderUnavailable):
+        adapter.validate_persisted_session("profile-key")
+
+
 def test_resolve_identity_fails_when_identity_is_missing() -> None:
     page = FakePage(
         eval_responses={
@@ -267,8 +294,26 @@ def test_resolve_identity_fails_when_identity_is_missing() -> None:
     fake_runtime = FakeBrowserAutomationRuntime(context)
     adapter = DreaminaAuthAdapter(fake_runtime)
 
-    with pytest.raises(SessionInvalid):
+    with pytest.raises(
+        ProviderUnavailable,
+        match="identity",
+    ):
         adapter.resolve_identity("profile-key-4")
+
+
+def test_resolve_identity_fails_when_logged_out() -> None:
+    page = FakePage(
+        eval_responses={
+            "LOGGED_OUT": True,
+            "LOGGED_IN": False,
+        }
+    )
+    context = FakeContext(pages=[page])
+    fake_runtime = FakeBrowserAutomationRuntime(context)
+    adapter = DreaminaAuthAdapter(fake_runtime)
+
+    with pytest.raises(SessionInvalid):
+        adapter.resolve_identity("profile-key-5")
 
 
 def test_dreamina_adapter_satisfies_generic_provider_contract() -> None:
@@ -284,5 +329,6 @@ def test_dreamina_adapter_satisfies_generic_provider_contract() -> None:
     adapter = DreaminaAuthAdapter(fake_runtime)
 
     assert_provider_auth_contract(adapter, "profile-test", expected_valid=True)
+
 
 

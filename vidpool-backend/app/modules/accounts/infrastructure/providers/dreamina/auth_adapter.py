@@ -4,13 +4,17 @@ from app.modules.accounts.application.ports import (
     ProviderIdentity,
     SessionValidation,
 )
-from app.modules.accounts.domain.errors import SessionInvalid
+from app.modules.accounts.domain.errors import (
+    ProviderUnavailable,
+    SessionInvalid,
+)
 from app.modules.accounts.infrastructure.providers.browser_auth_base import (
     BrowserAutomationRuntime,
     BrowserBackedAuthAdapter,
 )
 from app.modules.accounts.infrastructure.providers.dreamina.auth_probe import (
     DreaminaAuthProbe,
+    DreaminaProbeUnavailable,
 )
 
 
@@ -36,27 +40,38 @@ class DreaminaAuthAdapter(BrowserBackedAuthAdapter):
         self,
         profile_key: str,
     ) -> SessionValidation:
-        state = self._browser.run_active(
-            profile_key,
-            self._probe.inspect,
-        )
+        try:
+            state = self._browser.run_active(
+                profile_key,
+                self._probe.inspect,
+            )
+        except DreaminaProbeUnavailable as exc:
+            raise ProviderUnavailable(
+                "Dreamina session validation is temporarily unavailable"
+            ) from exc
+
         return SessionValidation(valid=state.authenticated)
 
     def resolve_identity(
         self,
         profile_key: str,
     ) -> ProviderIdentity:
-        state = self._browser.run_active(
-            profile_key,
-            self._probe.inspect,
-        )
-        if (
-            not state.authenticated
-            or not state.display_name
-            or not state.external_identity
-        ):
-            raise SessionInvalid(
-                "Dreamina session is authenticated but account identity could not be resolved"
+        try:
+            state = self._browser.run_active(
+                profile_key,
+                self._probe.inspect,
+            )
+        except DreaminaProbeUnavailable as exc:
+            raise ProviderUnavailable(
+                "Dreamina account identity is temporarily unavailable"
+            ) from exc
+
+        if not state.authenticated:
+            raise SessionInvalid("Dreamina browser session is not authenticated")
+
+        if not state.display_name or not state.external_identity:
+            raise ProviderUnavailable(
+                "Dreamina account identity is temporarily unavailable"
             )
 
         return ProviderIdentity(
@@ -68,8 +83,15 @@ class DreaminaAuthAdapter(BrowserBackedAuthAdapter):
         self,
         profile_key: str,
     ) -> SessionValidation:
-        state = self._browser.run_persisted_profile(
-            profile_key,
-            self._probe.inspect,
-        )
+        try:
+            state = self._browser.run_persisted_profile(
+                profile_key,
+                self._probe.inspect,
+            )
+        except DreaminaProbeUnavailable as exc:
+            raise ProviderUnavailable(
+                "Dreamina session validation is temporarily unavailable"
+            ) from exc
+
         return SessionValidation(valid=state.authenticated)
+
