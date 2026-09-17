@@ -79,6 +79,40 @@ def test_disabled_account_stays_disabled_until_explicit_enable() -> None:
     assert account.status is AccountStatus.AUTH_REQUIRED
 
 
+def test_disabled_account_cannot_be_mutated_without_explicit_enable() -> None:
+    from app.modules.accounts.domain.errors import InvalidAccountStateError
+
+    account = ProviderAccount.create("fake-provider", "profile/1", now=NOW)
+    account.mark_authenticated("User", "u1", now=NOW)
+    account.disable(now=NOW)
+
+    with pytest.raises(InvalidAccountStateError):
+        account.mark_authenticated("User", "u1", now=LATER)
+
+    with pytest.raises(InvalidAccountStateError):
+        account.mark_cooldown(cooldown_until=LATER, now=LATER)
+
+    with pytest.raises(InvalidAccountStateError):
+        account.mark_auth_required(now=LATER)
+
+    with pytest.raises(InvalidAccountStateError):
+        account.clear_elapsed_cooldown(now=LATER)
+
+    with pytest.raises(InvalidAccountStateError):
+        account.record_success(now=LATER)
+
+    with pytest.raises(InvalidAccountStateError):
+        account.record_failure(now=LATER)
+
+    # Invariant: Status remained DISABLED throughout
+    assert account.status is AccountStatus.DISABLED
+
+    # Only enable() transitions it
+    account.enable(now=LATER)
+    assert account.status is AccountStatus.AUTH_REQUIRED
+
+
+
 def test_cooldown_and_elapsed_cooldown() -> None:
     account = ProviderAccount.create(
         provider_key="fake-provider",

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import uuid
 
+from .errors import InvalidAccountStateError
 from .values import AccountId, AccountStatus, new_account_id
 
 
@@ -40,12 +41,17 @@ class ProviderAccount:
             updated_at=current_time,
         )
 
+    def _require_enabled(self) -> None:
+        if self.status is AccountStatus.DISABLED:
+            raise InvalidAccountStateError("Disabled account requires explicit enable")
+
     def mark_authenticated(
         self,
         display_name: str | None = None,
         external_identity: str | None = None,
         now: datetime | None = None,
     ) -> None:
+        self._require_enabled()
         current_time = now or datetime.now(timezone.utc)
         self.status = AccountStatus.ACTIVE
         if display_name is not None:
@@ -57,11 +63,13 @@ class ProviderAccount:
         self.cooldown_until = None
 
     def mark_auth_required(self, now: datetime | None = None) -> None:
+        self._require_enabled()
         current_time = now or datetime.now(timezone.utc)
         self.status = AccountStatus.AUTH_REQUIRED
         self.updated_at = current_time
 
     def mark_cooldown(self, cooldown_until: datetime, now: datetime | None = None) -> None:
+        self._require_enabled()
         current_time = now or datetime.now(timezone.utc)
         self.status = AccountStatus.COOLDOWN
         self.cooldown_until = cooldown_until
@@ -69,6 +77,7 @@ class ProviderAccount:
 
     def clear_elapsed_cooldown(self, now: datetime | None = None) -> bool:
         """If cooldown has elapsed and account is COOLDOWN, restore ACTIVE status."""
+        self._require_enabled()
         current_time = now or datetime.now(timezone.utc)
         if self.status is AccountStatus.COOLDOWN and self.cooldown_until is not None:
             if self.cooldown_until <= current_time:
@@ -79,6 +88,7 @@ class ProviderAccount:
         return False
 
     def record_success(self, now: datetime | None = None) -> None:
+        self._require_enabled()
         current_time = now or datetime.now(timezone.utc)
         self.consecutive_failures = 0
         self.last_success_at = current_time
@@ -88,6 +98,7 @@ class ProviderAccount:
             self.cooldown_until = None
 
     def record_failure(self, now: datetime | None = None) -> None:
+        self._require_enabled()
         current_time = now or datetime.now(timezone.utc)
         self.consecutive_failures += 1
         self.last_failure_at = current_time
