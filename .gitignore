@@ -1,0 +1,28 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+ENV/
+
+# Persistence & temporary test data
+*.db
+*.sqlite
+*.sqlite3
+.tmp/
+
+# Frontend
+node_modules/
+dist/
+.vite/
+
+# OS & Editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
