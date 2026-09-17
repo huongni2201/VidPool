@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useApiClient } from "@/app/api-client-context"
+import { useApiClient } from "@/shared/api"
 import {
   deleteAccount,
   disableAccount,

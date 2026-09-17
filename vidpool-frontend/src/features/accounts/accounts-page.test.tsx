@@ -7,8 +7,8 @@ afterEach(() => {
 })
 
 
-import { ApiClientProvider } from "@/app/api-client-context"
-import type { ApiClient } from "@/lib/api-client"
+import { ApiClientProvider } from "@/shared/api"
+import type { ApiClient } from "@/shared/api"
 import { AccountRow } from "./account-row"
 import { AccountsPage } from "./accounts-page"
 import { AddAccountDialog } from "./add-account-dialog"

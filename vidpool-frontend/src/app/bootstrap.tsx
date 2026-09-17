@@ -1,8 +1,11 @@
 import { useEffect, useState, type ReactNode } from "react"
-import { sessionProbeSchema } from "@/lib/api"
-import { createApiClient, type ApiClient } from "@/lib/api-client"
-import { loadRuntimeConfig, type RuntimeConfig } from "@/runtime/runtime-config"
-import { ApiClientProvider } from "./api-client-context"
+import {
+  ApiClientProvider,
+  createApiClient,
+  sessionProbeSchema,
+  type ApiClient,
+} from "@/shared/api"
+import { loadRuntimeConfig, type RuntimeConfig } from "@/shared/config"
 
 type BootstrapState =
   | { status: "loading" }

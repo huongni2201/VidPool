@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import type { ApiClient } from "@/lib/api-client"
+import type { ApiClient } from "@/shared/api"
 import {
   cancelLogin,
   cancelNewLogin,

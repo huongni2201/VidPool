@@ -1,13 +1,13 @@
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { Bootstrap } from "./bootstrap"
-import { useApiClient } from "./api-client-context"
+import { useApiClient } from "@/shared/api"
 
-vi.mock("@/runtime/runtime-config", () => ({
+vi.mock("@/shared/config", () => ({
   loadRuntimeConfig: vi.fn(),
 }))
 
-import { loadRuntimeConfig } from "@/runtime/runtime-config"
+import { loadRuntimeConfig } from "@/shared/config"
 
 function ProbeChild() {
   const client = useApiClient()

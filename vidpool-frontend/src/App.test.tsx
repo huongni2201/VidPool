@@ -2,9 +2,8 @@ import { render, screen } from "@testing-library/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { describe, expect, it, vi } from "vitest"
 
-import { ApiClientProvider } from "./app/api-client-context"
+import { ApiClientProvider, type ApiClient } from "@/shared/api"
 import App from "./App"
-import type { ApiClient } from "./lib/api-client"
 
 describe("App", () => {
   it("renders the VidPool shell and connects to backend", async () => {

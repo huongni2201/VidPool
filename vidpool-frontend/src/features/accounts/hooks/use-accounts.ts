@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { useApiClient } from "@/app/api-client-context"
+import { useApiClient } from "@/shared/api"
 import { listAccounts } from "../accounts-api"
 import type { AccountSummary } from "../types"
 
