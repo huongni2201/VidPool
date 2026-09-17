@@ -6,6 +6,26 @@
 
 ---
 
+## Implementation Semantics
+
+This document is the canonical **target UI/interaction design**, not proof that the corresponding backend capability already exists.
+
+Implementation reality is defined only by:
+
+- `docs/CURRENT_STATUS.md`
+- production source code
+- passing tests
+
+Rules for implementation agents:
+
+1. A screen, metric, button, state, provider, or workflow shown here may be prototype-only.
+2. Never create backend behavior solely because the prototype displays it.
+3. Before wiring a UI control, verify the capability exists in `CURRENT_STATUS.md`.
+4. Mock quota/stamina/credits values are visual examples until a production provider execution/quota contract exists.
+5. Provider credentials must not be rotated to bypass provider quotas, rate limits, or platform restrictions.
+
+---
+
 ## 1. Mục Đích & Nguyên Tắc Cốt Lõi
 
 Tài liệu này và file prototype HTML đi kèm là **Source of Truth** cho toàn bộ giao diện desktop app VidPool (Tauri v2 + React 19 + Tailwind CSS v4 + Base UI/shadcn).
@@ -71,7 +91,7 @@ Tài liệu này và file prototype HTML đi kèm là **Source of Truth** cho to
   - Logo studio với nhãn phiên bản `v0.2.0-alpha`.
   - Điều hướng chính 5 màn hình: Dashboard, Projects, Studio Workspace, Account Pool, Durable Jobs.
   - Nhóm cấu hình: System & Settings.
-  - Widget trạng thái Runtime góc dưới: Trạng thái kết nối FastAPI (Port 8000), Playwright Browser Runtime (số profiles active), trạng thái SQLite WAL và FFmpeg NVENC acceleration.
+  - Widget trạng thái Runtime góc dưới: Trạng thái kết nối FastAPI Sidecar (runtime-selected loopback port; browser development defaults to 8000), Playwright Browser Runtime (số profiles active), trạng thái SQLite WAL và FFmpeg NVENC acceleration.
 - **Top Studio Bar**:
   - Breadcrumb thông minh và bộ chuyển nhanh dự án (Project Switcher Dropdown).
   - Background Tasks Ticker: Hiển thị task đang chạy dài hạn kèm % tiến độ theo thời gian thực (nhấp vào chuyển ngay tới màn hình Jobs).
@@ -89,22 +109,52 @@ Tài liệu này và file prototype HTML đi kèm là **Source of Truth** cho to
 ---
 
 ### 3.3 Màn Hình 2: Account Pool & Quota Health (`#screen-accounts`)
-- **Mục đích**: Trung tâm quản trị tài khoản provider (SeaArt, Seedance...), kiểm soát mức stamina và credits, luân phiên tài khoản theo cơ chế LRU Leasing.
-- **Thành phần**:
-  - **Dải chỉ số 5 ô**: Ready Accounts, Total Stamina (điểm miễn phí), Usable Credits (điểm trả phí fallback), Quota Exhausted (tài khoản cạn tài nguyên), Login Required (phiên hết hạn).
-  - **Thanh tóm tắt sức khỏe Provider**: Hiển thị phân bổ tài khoản theo 4 mức: Full (100%), Available (>35%), Low (<35%), Exhausted (0%).
+- **Mục đích**: Trung tâm quản trị tài khoản provider (Dreamina / Seedance), luân phiên tài khoản theo cơ chế LRU Leasing và theo dõi sức khỏe tài khoản.
+
+> [!NOTE]
+> Dreamina is the currently wired browser-auth provider. Other provider tiles shown in prototypes are mock/future examples unless listed in `CURRENT_STATUS.md`.
+> VidPool keeps authentication state inside an isolated persistent browser profile managed locally by Playwright. The application does not store the provider password or expose browser-session secrets through the API/UI.
+
+**Currently implemented account interactions:**
+
+- backend-discovered provider list;
+- Dreamina browser-session account registration;
+- isolated persistent browser profiles;
+- account states: `AUTH_REQUIRED`, `ACTIVE`, `COOLDOWN`, `DISABLED`;
+- Add Account;
+- Re-login;
+- Validate;
+- Enable/Disable;
+- Delete;
+- durable LRU account lease infrastructure.
+
+**Prototype-only / future provider-health visualization:**
+
+- stamina;
+- credits;
+- provider quota percentage;
+- quota reset countdown;
+- exhausted-quota counters;
+- refresh-all quota snapshots;
+- provider execution job assignment.
+
+These elements are mock UI until provider execution/quota contracts are implemented.
+
+- **Thành phần trong Prototype**:
+  - **Dải chỉ số 5 ô (Mock / Future Health Metrics)**: Ready Accounts, Total Stamina (điểm miễn phí), Usable Credits (điểm trả phí fallback), Quota Exhausted (tài khoản cạn tài nguyên), Login Required (phiên hết hạn).
+  - **Thanh tóm tắt sức khỏe Provider (Mock UI)**: Hiển thị phân bổ tài khoản theo 4 mức: Full (100%), Available (>35%), Low (<35%), Exhausted (0%).
   - **Thanh lọc và tìm kiếm**: Lọc theo Provider, Quota Health, Account Status, và Search input tìm kiếm theo email.
   - **Bảng dữ liệu tài khoản chuyên sâu**:
-    - **Account Identity**: Avatar nhà cung cấp (S), Email, Thẻ vai trò (Primary Worker, Leased: Job #8491, Paused by User).
-    - **Trạng thái session**: `ACTIVE` (Emerald), `IN LEASE` (Indigo), `EXHAUSTED` (Rose), `LOGIN REQUIRED` (Amber), `DISABLED` (Slate).
-    - **Thước đo Stamina**: Thanh đo trực quan (0–130 điểm) đổi màu theo ngưỡng năng lượng, nhãn % dung lượng và số lượng cụ thể.
-    - **Số dư Credits**: Số dư fallback có phí.
-    - **Bộ đếm thời gian Reset**: Đếm ngược thời gian hồi phục hạn ngạch hàng ngày (Daily Reset Countdown: e.g. `07h 32m`).
-    - **Sức khỏe phiên**: Thời điểm kiểm tra gần nhất và tình trạng cookie session.
+    - **Account Identity**: Avatar nhà cung cấp, Email / Display Name, Thẻ trạng thái và vai trò.
+    - **Trạng thái session**: `ACTIVE` (Emerald), `IN LEASE` (Indigo), `EXHAUSTED` (Rose - prototype), `LOGIN REQUIRED` (Amber), `DISABLED` (Slate).
+    - **Thước đo Stamina (Prototype / Mock)**: Thanh đo trực quan (0–130 điểm) đổi màu theo ngưỡng năng lượng, nhãn % dung lượng và số lượng cụ thể.
+    - **Số dư Credits (Prototype / Mock)**: Số dư fallback có phí.
+    - **Bộ đếm thời gian Reset (Prototype / Mock)**: Đếm ngược thời gian hồi phục hạn ngạch hàng ngày (Daily Reset Countdown: e.g. `07h 32m`).
+    - **Sức khỏe phiên**: Thời điểm kiểm tra gần nhất và tình trạng browser profile session.
     - **Hành động**: Làm mới quota từng tài khoản, xem tùy chọn, kích hoạt lại session đăng nhập.
-  - **Hành động trên đầu trang**: Nút "Refresh All Quotas" (có animation mô phỏng đồng bộ) và "+ Add Account".
+  - **Hành động trên đầu trang**: Nút "Refresh All Quotas" (animation mô phỏng đồng bộ) và "+ Add Account".
   - **Quy trình Add / Re-login Wizard (`<dialog id="accountWizardDialog">`)**:
-    - Bước 1: Chọn provider (SeaArt).
+    - Bước 1: Chọn provider (Dreamina).
     - Bước 2: Hướng dẫn mở browser profile độc lập (cửa sổ trình duyệt riêng biệt, không lưu mật khẩu).
     - Bước 3: Animation kiểm tra phiên xác thực qua Playwright Runtime.
     - Bước 4: Thông báo thành công và cập nhật trạng thái `ACTIVE`.
