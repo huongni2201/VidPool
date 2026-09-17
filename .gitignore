@@ -1,4 +1,4 @@
-﻿# Python
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -20,6 +20,11 @@ ENV/
 node_modules/
 dist/
 .vite/
+
+# Tauri & sidecar binaries
+vidpool-frontend/src-tauri/target/
+vidpool-frontend/src-tauri/binaries/*
+!vidpool-frontend/src-tauri/binaries/.gitkeep
 
 # OS & Editors
 .DS_Store
