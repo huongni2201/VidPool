@@ -1,22 +1,20 @@
-from collections.abc import Callable
-from datetime import datetime, timedelta, timezone
 import logging
 import uuid
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
 
-from ..domain.account import ProviderAccount
-from ..domain.errors import (
+from app.modules.accounts.domain.account import ProviderAccount
+from app.modules.accounts.domain.errors import (
     AccountInUse,
     AccountNotFound,
-    AccountUnavailable,
     BrowserProfileInUse,
-    BrowserSessionNotOpen,
-    LeaseNotFound,
-    ProviderNotRegistered,
-    SessionInvalid,
 )
-from ..domain.values import AccountId, AccountStatus
+from app.modules.accounts.domain.values import AccountId
+
+from .health_service import AccountHealthService
+from .lease_service import AccountLeaseService
+from .login_service import AccountLoginService
 from .ports import (
-    AccountRepositoryPort,
     BrowserSessionPort,
     ProviderDefinition,
     ProviderRegistryPort,
@@ -40,56 +38,43 @@ def _to_view(account: ProviderAccount) -> AccountView:
     )
 
 
-class _SimpleUoW(AccountUnitOfWorkPort):
-    def __init__(self, repo: AccountRepositoryPort) -> None:
-        self.accounts = repo
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc, traceback) -> None:
-        pass
-
-    def commit(self) -> None:
-        pass
-
-    def rollback(self) -> None:
-        pass
-
-
 class AccountService:
-    """Application service orchestrating account lifecycle, sessions, and leases."""
+    """Unified application facade and CRUD coordinator for Account Pool."""
 
     def __init__(
         self,
-        uow_factory: Callable[[], AccountUnitOfWorkPort] | None = None,
-        browser: BrowserSessionPort | None = None,
-        providers: ProviderRegistryPort | None = None,
-        *,
-        accounts: AccountRepositoryPort | None = None,
+        uow_factory: Callable[[], AccountUnitOfWorkPort],
+        browser: BrowserSessionPort,
+        providers: ProviderRegistryPort,
+        login_service: AccountLoginService | None = None,
+        lease_service: AccountLeaseService | None = None,
+        health_service: AccountHealthService | None = None,
     ) -> None:
-        if uow_factory is not None and not callable(uow_factory) and isinstance(uow_factory, AccountRepositoryPort):
-            repo = uow_factory
-            self._uow_factory: Callable[[], AccountUnitOfWorkPort] = lambda: _SimpleUoW(repo)
-        elif uow_factory is not None:
-            self._uow_factory = uow_factory
-        elif accounts is not None:
-            self._uow_factory = lambda: _SimpleUoW(accounts)
-        else:
-            raise ValueError("Either uow_factory or accounts must be provided")
-
-        if browser is None or providers is None:
-            raise ValueError("browser and providers must be provided")
-
+        self._uow_factory = uow_factory
         self._browser = browser
         self._providers = providers
+        self._login_service = login_service or AccountLoginService(
+            uow_factory=uow_factory,
+            browser=browser,
+            providers=providers,
+        )
+        self._lease_service = lease_service or AccountLeaseService(
+            uow_factory=uow_factory,
+        )
+        self._health_service = health_service or AccountHealthService(
+            uow_factory=uow_factory,
+            providers=providers,
+        )
+
+    # --- Providers & Queries ---
 
     def list_providers(self) -> list[ProviderDefinition]:
         return self._providers.list()
 
     def list_accounts(self, provider_key: str | None = None) -> list[AccountView]:
         with self._uow_factory() as uow:
-            return [_to_view(acc) for acc in uow.accounts.list(provider_key)]
+            accounts = uow.accounts.list(provider_key)
+            return [_to_view(acc) for acc in accounts]
 
     def get_account(self, account_id: AccountId) -> AccountView:
         with self._uow_factory() as uow:
@@ -98,184 +83,7 @@ class AccountService:
                 raise AccountNotFound(f"Account '{account_id}' not found")
             return _to_view(account)
 
-    def start_login(
-        self,
-        provider_key: str,
-        now: datetime | None = None,
-    ) -> StartLoginResult:
-        auth_adapter = self._providers.get_auth(provider_key)
-        if auth_adapter is None:
-            raise ProviderNotRegistered(f"Provider '{provider_key}' is not registered")
-
-        account_id = AccountId(uuid.uuid4())
-        profile_key = f"browser-profile/{provider_key}/{account_id}"
-
-        account = ProviderAccount.create(
-            provider_key=provider_key,
-            profile_key=profile_key,
-            account_id=account_id,
-            now=now,
-        )
-
-        try:
-            self._browser.open_login(
-                provider_key=provider_key,
-                profile_key=profile_key,
-                login_url=auth_adapter.login_url(),
-            )
-            with self._uow_factory() as uow:
-                uow.accounts.add(account)
-                uow.commit()
-        except Exception:
-            self._browser.close_profile(profile_key)
-            try:
-                self._browser.delete_profile(profile_key)
-            except Exception:
-                logger.exception("Failed to clean profile after login start failure")
-            raise
-
-        return StartLoginResult(
-            account_id=account_id,
-            status="waiting_for_user",
-        )
-
-    def complete_login(
-        self,
-        account_id: AccountId,
-        now: datetime | None = None,
-    ) -> AccountView:
-        with self._uow_factory() as uow:
-            account = uow.accounts.get(account_id)
-            if account is None:
-                raise AccountNotFound(f"Account '{account_id}' not found")
-            provider_key = account.provider_key
-            profile_key = account.profile_key
-
-        auth_adapter = self._providers.get_auth(provider_key)
-        if auth_adapter is None:
-            raise ProviderNotRegistered(f"Provider '{provider_key}' is not registered")
-
-        if not self._browser.has_open_session(profile_key):
-            raise BrowserSessionNotOpen(f"No active browser session for '{profile_key}'")
-
-        try:
-            validation = auth_adapter.validate_active_session(profile_key)
-
-            if not validation.valid:
-                current_time = now or datetime.now(timezone.utc)
-                with self._uow_factory() as uow:
-                    acc = uow.accounts.get(account_id)
-                    if acc is not None:
-                        acc.status = AccountStatus.AUTH_REQUIRED
-                        acc.updated_at = current_time
-                        uow.accounts.save(acc)
-                        uow.commit()
-                raise SessionInvalid("Browser session validation failed")
-
-            identity = auth_adapter.resolve_identity(profile_key)
-            current_time = now or datetime.now(timezone.utc)
-            with self._uow_factory() as uow:
-                acc = uow.accounts.get(account_id)
-                if acc is None:
-                    raise AccountNotFound(f"Account '{account_id}' not found")
-                acc.display_name = identity.display_name
-                acc.external_identity = identity.external_identity
-                acc.last_validated_at = current_time
-                acc.updated_at = current_time
-                acc.cooldown_until = None
-
-                if acc.status is not AccountStatus.DISABLED:
-                    acc.status = AccountStatus.ACTIVE
-
-                uow.accounts.save(acc)
-                uow.commit()
-                return _to_view(acc)
-        finally:
-            self._browser.close_profile(profile_key)
-
-    def cancel_login(
-        self,
-        account_id: AccountId,
-    ) -> AccountView:
-        with self._uow_factory() as uow:
-            account = uow.accounts.get(account_id)
-            if account is None:
-                raise AccountNotFound(f"Account '{account_id}' not found")
-            profile_key = account.profile_key
-            view = _to_view(account)
-
-        self._browser.close_profile(profile_key)
-        return view
-
-    def start_relogin(
-        self,
-        account_id: AccountId,
-        now: datetime | None = None,
-    ) -> StartLoginResult:
-        current_time = now or datetime.now(timezone.utc)
-        with self._uow_factory() as uow:
-            account = uow.accounts.get(account_id)
-            if account is None:
-                raise AccountNotFound(f"Account '{account_id}' not found")
-            if uow.accounts.has_active_lease(account_id, current_time):
-                raise AccountInUse(f"Account '{account_id}' is currently leased")
-            provider_key = account.provider_key
-            profile_key = account.profile_key
-
-        if self._browser.has_open_session(profile_key):
-            raise BrowserProfileInUse(f"Browser profile '{profile_key}' is already open")
-
-        auth_adapter = self._providers.get_auth(provider_key)
-        if auth_adapter is None:
-            raise ProviderNotRegistered(f"Provider '{provider_key}' is not registered")
-
-        self._browser.open_login(
-            provider_key=provider_key,
-            profile_key=profile_key,
-            login_url=auth_adapter.login_url(),
-        )
-
-        return StartLoginResult(
-            account_id=account_id,
-            status="waiting_for_user",
-        )
-
-    def validate_account(
-        self,
-        account_id: AccountId,
-        now: datetime | None = None,
-    ) -> AccountView:
-        with self._uow_factory() as uow:
-            account = uow.accounts.get(account_id)
-            if account is None:
-                raise AccountNotFound(f"Account '{account_id}' not found")
-            provider_key = account.provider_key
-            profile_key = account.profile_key
-
-        auth_adapter = self._providers.get_auth(provider_key)
-        if auth_adapter is None:
-            raise ProviderNotRegistered(f"Provider '{provider_key}' is not registered")
-
-        current_time = now or datetime.now(timezone.utc)
-        validation = auth_adapter.validate_persisted_session(profile_key)
-
-        with self._uow_factory() as uow:
-            acc = uow.accounts.get(account_id)
-            if acc is None:
-                raise AccountNotFound(f"Account '{account_id}' not found")
-            acc.updated_at = current_time
-            if validation.valid:
-                acc.last_validated_at = current_time
-                if acc.status is not AccountStatus.DISABLED:
-                    acc.status = AccountStatus.ACTIVE
-                    acc.cooldown_until = None
-            else:
-                if acc.status is not AccountStatus.DISABLED:
-                    acc.status = AccountStatus.AUTH_REQUIRED
-
-            uow.accounts.save(acc)
-            uow.commit()
-            return _to_view(acc)
+    # --- Lifecycle Actions ---
 
     def enable_account(
         self,
@@ -297,14 +105,21 @@ class AccountService:
         account_id: AccountId,
         now: datetime | None = None,
     ) -> AccountView:
+        current_time = now or datetime.now(UTC)
         with self._uow_factory() as uow:
             account = uow.accounts.get(account_id)
             if account is None:
                 raise AccountNotFound(f"Account '{account_id}' not found")
 
-            account.disable(now=now)
+            if uow.accounts.has_active_lease(account_id, current_time):
+                raise AccountInUse(
+                    f"Cannot disable account '{account_id}' while an active lease exists"
+                )
+
+            account.disable(now=current_time)
             uow.accounts.save(account)
             uow.commit()
+            logger.info("account_disabled account_id=%s", account_id)
             return _to_view(account)
 
     def delete_account(
@@ -312,14 +127,16 @@ class AccountService:
         account_id: AccountId,
         now: datetime | None = None,
     ) -> None:
-        current_time = now or datetime.now(timezone.utc)
+        current_time = now or datetime.now(UTC)
         with self._uow_factory() as uow:
             account = uow.accounts.get(account_id)
             if account is None:
                 raise AccountNotFound(f"Account '{account_id}' not found")
 
             if uow.accounts.has_active_lease(account_id, current_time):
-                raise AccountInUse(f"Cannot delete account '{account_id}' while an active lease exists")
+                raise AccountInUse(
+                    f"Cannot delete account '{account_id}' while an active lease exists"
+                )
 
             profile_key = account.profile_key
 
@@ -330,13 +147,44 @@ class AccountService:
 
             uow.accounts.delete(account_id)
             uow.commit()
+            logger.info("account_deleted account_id=%s", account_id)
 
         try:
             self._browser.delete_profile(profile_key)
         except Exception:
             logger.exception("Account deleted but browser profile cleanup failed")
 
-    # --- Leasing ---
+    # --- Delegations to Login Service ---
+
+    def start_login(
+        self,
+        provider_key: str,
+        account_id: AccountId | None = None,
+        now: datetime | None = None,
+    ) -> StartLoginResult:
+        return self._login_service.start_login(provider_key, account_id=account_id, now=now)
+
+    def complete_login(
+        self,
+        account_id: AccountId,
+        now: datetime | None = None,
+    ) -> AccountView:
+        return self._login_service.complete_login(account_id, now=now)
+
+    def cancel_login(
+        self,
+        account_id: AccountId,
+    ) -> AccountView:
+        return self._login_service.cancel_login(account_id)
+
+    def start_relogin(
+        self,
+        account_id: AccountId,
+        now: datetime | None = None,
+    ) -> StartLoginResult:
+        return self._login_service.start_relogin(account_id, now=now)
+
+    # --- Delegations to Lease Service ---
 
     def acquire(
         self,
@@ -345,91 +193,33 @@ class AccountService:
         ttl: timedelta,
         now: datetime | None = None,
     ) -> AccountLeaseView:
-        if ttl.total_seconds() <= 0:
-            raise ValueError("TTL must be greater than zero")
-
-        current_time = now or datetime.now(timezone.utc)
-        expires_at = current_time + ttl
-
-        with self._uow_factory() as uow:
-            result = uow.accounts.acquire_lru(
-                provider_key=provider_key,
-                owner_id=owner_id,
-                now=current_time,
-                expires_at=expires_at,
-            )
-
-            if result is None:
-                raise AccountUnavailable(f"No available account for provider '{provider_key}'")
-
-            account, lease = result
-            uow.commit()
-            return AccountLeaseView(
-                lease_id=lease.id,
-                account_id=account.id,
-                provider_key=account.provider_key,
-                profile_key=account.profile_key,
-                owner_id=lease.owner_id,
-                acquired_at=lease.acquired_at,
-                expires_at=lease.expires_at,
-            )
+        return self._lease_service.acquire(provider_key, owner_id, ttl, now=now)
 
     def release(self, lease_id: uuid.UUID) -> None:
-        with self._uow_factory() as uow:
-            released = uow.accounts.release_lease(lease_id)
-            if not released:
-                raise LeaseNotFound(f"Lease '{lease_id}' not found or already released")
-            uow.commit()
+        return self._lease_service.release(lease_id)
 
-    # --- Health and Cooldown Reporting ---
+    # --- Delegations to Health Service ---
+
+    def validate_account(
+        self,
+        account_id: AccountId,
+        now: datetime | None = None,
+    ) -> AccountView:
+        return self._health_service.validate_account(account_id, now=now)
 
     def report_success(
         self,
         account_id: AccountId,
         now: datetime | None = None,
     ) -> AccountView:
-        current_time = now or datetime.now(timezone.utc)
-        with self._uow_factory() as uow:
-            account = uow.accounts.get(account_id)
-            if account is None:
-                raise AccountNotFound(f"Account '{account_id}' not found")
-
-            account.consecutive_failures = 0
-            account.last_success_at = current_time
-            account.updated_at = current_time
-
-            if account.status is not AccountStatus.DISABLED:
-                if account.status is AccountStatus.COOLDOWN and (
-                    account.cooldown_until is None or account.cooldown_until <= current_time
-                ):
-                    account.status = AccountStatus.ACTIVE
-                    account.cooldown_until = None
-
-            uow.accounts.save(account)
-            uow.commit()
-            return _to_view(account)
+        return self._health_service.report_success(account_id, now=now)
 
     def report_auth_failure(
         self,
         account_id: AccountId,
         now: datetime | None = None,
     ) -> AccountView:
-        current_time = now or datetime.now(timezone.utc)
-        with self._uow_factory() as uow:
-            account = uow.accounts.get(account_id)
-            if account is None:
-                raise AccountNotFound(f"Account '{account_id}' not found")
-
-            account.consecutive_failures += 1
-            account.last_failure_at = current_time
-            account.updated_at = current_time
-
-            if account.status is not AccountStatus.DISABLED:
-                account.status = AccountStatus.AUTH_REQUIRED
-
-            uow.accounts.save(account)
-            uow.commit()
-            return _to_view(account)
+        return self._health_service.report_auth_failure(account_id, now=now)
 
     def report_temporary_failure(
         self,
@@ -437,28 +227,9 @@ class AccountService:
         now: datetime | None = None,
         cooldown_until: datetime | None = None,
     ) -> AccountView:
-        current_time = now or datetime.now(timezone.utc)
-        with self._uow_factory() as uow:
-            account = uow.accounts.get(account_id)
-            if account is None:
-                raise AccountNotFound(f"Account '{account_id}' not found")
-
-            account.consecutive_failures += 1
-            account.last_failure_at = current_time
-            account.updated_at = current_time
-
-            if cooldown_until is not None:
-                account.cooldown_until = cooldown_until
-                if account.status is not AccountStatus.DISABLED:
-                    account.status = AccountStatus.COOLDOWN
-            elif account.consecutive_failures >= 3:
-                account.cooldown_until = current_time + timedelta(minutes=5)
-                if account.status is not AccountStatus.DISABLED:
-                    account.status = AccountStatus.COOLDOWN
-
-            uow.accounts.save(account)
-            uow.commit()
-            return _to_view(account)
+        return self._health_service.report_temporary_failure(
+            account_id, now=now, cooldown_until=cooldown_until
+        )
 
     def report_rate_limited(
         self,
@@ -466,20 +237,6 @@ class AccountService:
         now: datetime | None = None,
         retry_after: datetime | None = None,
     ) -> AccountView:
-        current_time = now or datetime.now(timezone.utc)
-        with self._uow_factory() as uow:
-            account = uow.accounts.get(account_id)
-            if account is None:
-                raise AccountNotFound(f"Account '{account_id}' not found")
-
-            account.consecutive_failures += 1
-            account.last_failure_at = current_time
-            account.updated_at = current_time
-
-            account.cooldown_until = retry_after or (current_time + timedelta(minutes=15))
-            if account.status is not AccountStatus.DISABLED:
-                account.status = AccountStatus.COOLDOWN
-
-            uow.accounts.save(account)
-            uow.commit()
-            return _to_view(account)
+        return self._health_service.report_rate_limited(
+            account_id, now=now, retry_after=retry_after
+        )

@@ -23,7 +23,7 @@ class MockPage:
         content = self.storage_file.read_text()
         prefix = f"{key}="
         if content.startswith(prefix):
-            return content[len(prefix):]
+            return content[len(prefix) :]
         return None
 
 

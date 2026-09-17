@@ -4,7 +4,8 @@ from app.modules.accounts.application.ports import AccountRepositoryPort
 
 
 class AccountUnitOfWorkPort(Protocol):
-    accounts: AccountRepositoryPort
+    @property
+    def accounts(self) -> AccountRepositoryPort: ...
 
     def __enter__(self) -> Self: ...
 

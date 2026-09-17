@@ -1,6 +1,6 @@
-from pathlib import Path
 import re
 import shutil
+from pathlib import Path
 
 from app.infrastructure.persistence.paths import get_data_dir
 from app.modules.accounts.domain.errors import InvalidProfileKey

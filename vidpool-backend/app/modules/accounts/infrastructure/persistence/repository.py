@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
-from typing import Sequence
 import uuid
+from collections.abc import Sequence
+from datetime import datetime
 
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
@@ -11,7 +11,8 @@ from app.modules.accounts.domain.account import ProviderAccount
 from app.modules.accounts.domain.errors import AccountNotFoundError
 from app.modules.accounts.domain.lease import AccountLease
 from app.modules.accounts.domain.values import AccountId, AccountStatus
-from .mapper import account_from_model, account_to_model, lease_from_model, lease_to_model
+
+from .mapper import account_from_model, account_to_model, lease_from_model
 from .models import AccountLeaseModel, ProviderAccountModel
 
 
@@ -71,10 +72,8 @@ class SQLAlchemyAccountRepository(AccountRepositoryPort):
         expires_at: datetime,
     ) -> tuple[ProviderAccount, AccountLease] | None:
         # 1. Clean expired leases
-        self._session.execute(
-            delete(AccountLeaseModel).where(AccountLeaseModel.expires_at <= now)
-        )
-        self._session.commit()
+        self._session.execute(delete(AccountLeaseModel).where(AccountLeaseModel.expires_at <= now))
+        self._session.flush()
 
         # 2. Query candidates:
         active_lease_subq = select(AccountLeaseModel.account_id).where(
@@ -86,7 +85,8 @@ class SQLAlchemyAccountRepository(AccountRepositoryPort):
             .where(
                 ProviderAccountModel.provider_key == provider_key,
                 ProviderAccountModel.status == str(AccountStatus.ACTIVE),
-                (ProviderAccountModel.cooldown_until.is_(None)) | (ProviderAccountModel.cooldown_until <= now),
+                (ProviderAccountModel.cooldown_until.is_(None))
+                | (ProviderAccountModel.cooldown_until <= now),
                 ProviderAccountModel.id.not_in(active_lease_subq),
             )
             .order_by(
@@ -110,12 +110,12 @@ class SQLAlchemyAccountRepository(AccountRepositoryPort):
                 expires_at=expires_at,
             )
             try:
-                self._session.add(lease_model)
-                candidate.last_used_at = now
-                self._session.commit()
+                with self._session.begin_nested():
+                    self._session.add(lease_model)
+                    candidate.last_used_at = now
+                    self._session.flush()
                 return (account_from_model(candidate), lease_from_model(lease_model))
             except IntegrityError:
-                self._session.rollback()
                 continue
 
         return None

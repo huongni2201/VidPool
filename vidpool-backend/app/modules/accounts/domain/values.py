@@ -1,6 +1,6 @@
+import uuid
 from enum import StrEnum
 from typing import NewType
-import uuid
 
 
 class AccountStatus(StrEnum):

@@ -22,7 +22,9 @@ class ProviderRegistry(ProviderRegistryPort):
         definitions = [
             ProviderDefinition(
                 key=adapter.provider_key,
-                display_name=getattr(adapter, "display_name", adapter.provider_key.replace("-", " ").title()),
+                display_name=getattr(
+                    adapter, "display_name", adapter.provider_key.replace("-", " ").title()
+                ),
                 auth_kind=getattr(adapter, "auth_kind", "browser_session"),
             )
             for adapter in self._adapters.values()

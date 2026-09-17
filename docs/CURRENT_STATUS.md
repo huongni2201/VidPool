@@ -46,6 +46,15 @@ This file distinguishes target architecture from implemented reality.
 - protected account management FastAPI API
 - account management frontend feature (account list, actions, user-driven browser login dialog)
 - browser-session restart persistence verification and security regression tests
+- single-container / single-BrowserRuntime application factory (`app/factory.py`, `app/asgi.py`)
+- strict Unit of Work database transaction ownership (zero commit/rollback in repositories)
+- active lease and account state invariant enforcement on account disable, delete, and relogin
+- serialized browser profile deletion on owner thread and graceful shutdown lifecycle
+- domain-encapsulated account status transitions (`record_success`, `record_validation`, `record_auth_failure`, etc.)
+- specialized account application services (`AccountLoginService`, `AccountLeaseService`, `AccountHealthService`) coordinated by `AccountService` facade
+- frontend relogin and validation retry UX flows with custom hooks (`useAccounts`, `useAccountActions`)
+- backend static analysis gates with Ruff and Pyright (`pyproject.toml`)
+- structured event and debug logging for browser and account lifecycles
 
 ## Not Implemented Yet
 

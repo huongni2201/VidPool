@@ -1,7 +1,7 @@
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol, runtime_checkable
-import uuid
 
 from ..domain.account import ProviderAccount
 from ..domain.lease import AccountLease

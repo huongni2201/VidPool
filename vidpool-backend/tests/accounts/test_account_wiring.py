@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from fastapi.testclient import TestClient
 
 from app.core.config import AppConfig
@@ -7,6 +8,7 @@ from app.main import create_app
 from app.modules.accounts.application.service import AccountService
 from tests.accounts.fakes import (
     FakeAccountRepository,
+    FakeAccountUnitOfWork,
     FakeBrowserSessionManager,
     FakeProviderAuthAdapter,
     FakeProviderRegistry,
@@ -29,13 +31,15 @@ def test_custom_container_injection_and_lifespan_cleanup() -> None:
     registry = FakeProviderRegistry([adapter])
 
     container = build_container(
-        account_repository=repo,
+        uow_factory=lambda: FakeAccountUnitOfWork(repo),
         browser_runtime=browser,
         provider_registry=registry,
     )
 
     # Open a dummy session to verify cleanup
-    browser.open_login(provider_key="test-p", profile_key="browser-profile/test-p/1", login_url="http://test")
+    browser.open_login(
+        provider_key="test-p", profile_key="browser-profile/test-p/1", login_url="http://test"
+    )
     assert browser.has_open_session("browser-profile/test-p/1")
 
     config = AppConfig(

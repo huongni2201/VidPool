@@ -1,12 +1,13 @@
 import uuid
+
 from fastapi.testclient import TestClient
-import pytest
 
 from app.core.config import AppConfig
 from app.core.container import build_container
 from app.main import create_app
 from tests.accounts.fakes import (
     FakeAccountRepository,
+    FakeAccountUnitOfWork,
     FakeBrowserSessionManager,
     FakeProviderAuthAdapter,
     FakeProviderRegistry,
@@ -28,7 +29,7 @@ def _build_test_client(
     )
     registry = FakeProviderRegistry([adapter])
     container = build_container(
-        account_repository=repo,
+        uow_factory=lambda: FakeAccountUnitOfWork(repo),
         browser_runtime=browser,
         provider_registry=registry,
     )
@@ -75,7 +76,9 @@ def test_login_lifecycle_endpoints() -> None:
     client, repo, browser = _build_test_client()
 
     # 1. Start login
-    res_start = client.post("/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER)
+    res_start = client.post(
+        "/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER
+    )
     assert res_start.status_code == 200
     start_data = res_start.json()
     account_id = start_data["accountId"]
@@ -122,7 +125,9 @@ def test_login_lifecycle_endpoints() -> None:
 
 def test_complete_login_requires_no_browser_session_id() -> None:
     client, _, _ = _build_test_client()
-    res_start = client.post("/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER)
+    res_start = client.post(
+        "/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER
+    )
     account_id = res_start.json()["accountId"]
 
     res_complete = client.post(f"/api/accounts/{account_id}/login/complete", headers=AUTH_HEADER)
@@ -132,7 +137,9 @@ def test_complete_login_requires_no_browser_session_id() -> None:
 
 def test_cancel_login_requires_no_browser_session_id() -> None:
     client, _, _ = _build_test_client()
-    res_start = client.post("/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER)
+    res_start = client.post(
+        "/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER
+    )
     account_id = res_start.json()["accountId"]
 
     res_cancel = client.post(f"/api/accounts/{account_id}/login/cancel", headers=AUTH_HEADER)
@@ -142,7 +149,9 @@ def test_cancel_login_requires_no_browser_session_id() -> None:
 
 def test_missing_browser_profile_returns_409() -> None:
     client, _, browser = _build_test_client()
-    res_start = client.post("/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER)
+    res_start = client.post(
+        "/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER
+    )
     account_id = res_start.json()["accountId"]
 
     # Close the profile manually to simulate user closed window
@@ -156,7 +165,9 @@ def test_error_mapping() -> None:
     client, _, _ = _build_test_client()
 
     # Unknown provider -> 404
-    r_unknown_prov = client.post("/api/providers/non-existent/accounts/login/start", headers=AUTH_HEADER)
+    r_unknown_prov = client.post(
+        "/api/providers/non-existent/accounts/login/start", headers=AUTH_HEADER
+    )
     assert r_unknown_prov.status_code == 404
 
     # Unknown account -> 404
@@ -171,7 +182,9 @@ def test_error_mapping() -> None:
 def test_api_response_never_contains_forbidden_fields() -> None:
     client, _, _ = _build_test_client()
 
-    res_start = client.post("/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER)
+    res_start = client.post(
+        "/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER
+    )
     account_id = res_start.json()["accountId"]
     start_data = res_start.json()
 

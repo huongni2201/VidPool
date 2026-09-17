@@ -1,6 +1,7 @@
-from pathlib import Path
-from datetime import datetime, timezone
 import uuid
+from datetime import UTC, datetime
+from pathlib import Path
+
 import pytest
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
@@ -62,7 +63,7 @@ def test_engine_foreign_key_rejects_invalid_lease_reference(tmp_path: Path) -> N
     Base.metadata.create_all(engine)
 
     with Session(engine) as session:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         invalid_lease = AccountLeaseModel(
             id=str(uuid.uuid4()),
             account_id=str(uuid.uuid4()),  # Non-existent account
@@ -73,4 +74,3 @@ def test_engine_foreign_key_rejects_invalid_lease_reference(tmp_path: Path) -> N
         session.add(invalid_lease)
         with pytest.raises(IntegrityError):
             session.commit()
-

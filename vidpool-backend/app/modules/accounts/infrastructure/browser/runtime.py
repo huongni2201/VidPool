@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import contextlib
+import logging
+import threading
+import time
 from collections.abc import Callable
 from concurrent.futures import Future
 from dataclasses import dataclass
-import logging
+from enum import Enum
 from pathlib import Path
 from queue import Queue
 from threading import Thread
-from typing import Any, Generic, TypeVar
+from typing import Any, TypeVar
 
 from app.modules.accounts.application.ports import BrowserSessionPort
 from app.modules.accounts.domain.errors import (
@@ -26,8 +30,14 @@ T = TypeVar("T")
 LauncherType = Callable[[Path, str, bool], Any]
 
 
+class RuntimeState(Enum):
+    RUNNING = "RUNNING"
+    STOPPING = "STOPPING"
+    STOPPED = "STOPPED"
+
+
 @dataclass
-class _BrowserCommand(Generic[T]):
+class _BrowserCommand[T]:
     operation: Callable[[], T]
     future: Future[T]
 
@@ -57,7 +67,8 @@ class BrowserRuntime(BrowserSessionPort):
         self._channels = channels
 
         self._queue: Queue[object] = Queue()
-        self._stopped = False
+        self._state_lock = threading.Lock()
+        self._state = RuntimeState.RUNNING
         self._pw: Any = None
         self._sessions_by_profile: dict[str, _LiveSession] = {}
 
@@ -68,20 +79,32 @@ class BrowserRuntime(BrowserSessionPort):
         )
         self._thread.start()
 
-    def _submit(self, operation: Callable[[], T]) -> T:
-        if self._stopped:
-            raise BrowserUnavailable("Browser runtime is stopped")
+    @property
+    def state(self) -> RuntimeState:
+        with self._state_lock:
+            return self._state
 
-        future: Future[T] = Future()
-        self._queue.put(
-            _BrowserCommand(
-                operation=operation,
-                future=future,
+    @property
+    def _stopped(self) -> bool:
+        with self._state_lock:
+            return self._state != RuntimeState.RUNNING
+
+    def _submit(self, operation: Callable[[], T]) -> T:
+        with self._state_lock:
+            if self._state != RuntimeState.RUNNING:
+                raise BrowserUnavailable(f"Browser runtime is {self._state.value.lower()}")
+
+            future: Future[T] = Future()
+            self._queue.put(
+                _BrowserCommand(
+                    operation=operation,
+                    future=future,
+                )
             )
-        )
         return future.result()
 
     def _run(self) -> None:
+        logger.info("browser_runtime_start thread_id=%s", threading.get_ident())
         while True:
             item = self._queue.get()
             if item is _STOP:
@@ -170,35 +193,47 @@ class BrowserRuntime(BrowserSessionPort):
         login_url: str,
     ) -> None:
         if profile_key in self._sessions_by_profile:
-            raise BrowserProfileInUse(
-                f"Browser profile '{profile_key}' is already open"
-            )
+            raise BrowserProfileInUse(f"Browser profile '{profile_key}' is already open")
+
+        start_time = time.perf_counter()
+        logger.info("browser_open_start profile_key=%s", profile_key)
 
         profile_path = self._resolver.resolve(profile_key)
         profile_path.mkdir(parents=True, exist_ok=True)
 
-        context = self._launch_persistent_context(profile_path)
-
-        if hasattr(context, "on"):
-            try:
-                context.on("close", lambda: self._on_context_closed(profile_key))
-            except Exception:
-                pass
-
+        context = None
         try:
+            context = self._launch_persistent_context(profile_path)
+
+            if hasattr(context, "on"):
+                with contextlib.suppress(Exception):
+                    context.on("close", lambda: self._on_context_closed(profile_key))
+
             pages = context.pages
             page = pages[0] if pages else context.new_page()
             page.goto(login_url)
-        except Exception:
-            try:
-                context.close()
-            except Exception:
-                pass
+        except Exception as exc:
+            elapsed_ms = int((time.perf_counter() - start_time) * 1000)
+            logger.warning(
+                "browser_open_failed profile_key=%s elapsed_ms=%d error_type=%s",
+                profile_key,
+                elapsed_ms,
+                exc.__class__.__name__,
+            )
+            if context is not None:
+                with contextlib.suppress(Exception):
+                    context.close()
             raise
 
         self._sessions_by_profile[profile_key] = _LiveSession(
             profile_key=profile_key,
             context=context,
+        )
+        elapsed_ms = int((time.perf_counter() - start_time) * 1000)
+        logger.info(
+            "browser_open_success profile_key=%s elapsed_ms=%d",
+            profile_key,
+            elapsed_ms,
         )
 
     def close_profile(self, profile_key: str) -> None:
@@ -208,6 +243,7 @@ class BrowserRuntime(BrowserSessionPort):
         session = self._sessions_by_profile.pop(profile_key, None)
         if session is None:
             return
+        logger.info("browser_close profile_key=%s", profile_key)
         try:
             session.context.close()
         except Exception as exc:
@@ -235,9 +271,7 @@ class BrowserRuntime(BrowserSessionPort):
     ) -> T:
         session = self._sessions_by_profile.get(profile_key)
         if session is None:
-            raise BrowserSessionNotOpen(
-                f"No active browser session for '{profile_key}'"
-            )
+            raise BrowserSessionNotOpen(f"No active browser session for '{profile_key}'")
         return operation(session.context)
 
     def run_persisted_profile(
@@ -267,21 +301,30 @@ class BrowserRuntime(BrowserSessionPort):
         try:
             return operation(context)
         finally:
-            try:
+            with contextlib.suppress(Exception):
                 context.close()
-            except Exception:
-                pass
 
     def delete_profile(self, profile_key: str) -> None:
-        if not self._stopped and self.has_open_session(profile_key):
+        with self._state_lock:
+            if self._state == RuntimeState.STOPPED:
+                self._resolver.delete(profile_key)
+                return
+        self._submit(lambda: self._delete_profile(profile_key))
+
+    def _delete_profile(self, profile_key: str) -> None:
+        if profile_key in self._sessions_by_profile:
             raise BrowserProfileInUse(
                 f"Cannot delete profile '{profile_key}' while a browser session is active"
             )
+        logger.info("browser_profile_delete profile_key=%s", profile_key)
         self._resolver.delete(profile_key)
 
     def close_all(self) -> None:
-        if self._stopped:
-            return
+        with self._state_lock:
+            if self._state != RuntimeState.RUNNING:
+                return
+            self._state = RuntimeState.STOPPING
+        logger.info("browser_runtime_stopping")
 
         def shutdown() -> None:
             for session in list(self._sessions_by_profile.values()):
@@ -299,11 +342,21 @@ class BrowserRuntime(BrowserSessionPort):
                 finally:
                     self._pw = None
 
+        shutdown_future: Future[None] = Future()
+        self._queue.put(
+            _BrowserCommand(
+                operation=shutdown,
+                future=shutdown_future,
+            )
+        )
         try:
-            self._submit(shutdown)
-        except BrowserUnavailable:
-            pass
+            shutdown_future.result(timeout=10)
+        except Exception:
+            logger.exception("Failed executing browser shutdown command")
 
-        self._stopped = True
         self._queue.put(_STOP)
         self._thread.join(timeout=5)
+
+        with self._state_lock:
+            self._state = RuntimeState.STOPPED
+        logger.info("browser_runtime_stopped")

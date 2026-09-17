@@ -1,13 +1,13 @@
-from datetime import datetime, timezone, timedelta
 import uuid
+from datetime import UTC, datetime, timedelta
+
 import pytest
 
-from app.modules.accounts.domain.values import AccountStatus, AccountId
 from app.modules.accounts.domain.account import ProviderAccount
 from app.modules.accounts.domain.lease import AccountLease
+from app.modules.accounts.domain.values import AccountId, AccountStatus
 
-
-NOW = datetime(2026, 9, 17, 12, 0, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 9, 17, 12, 0, 0, tzinfo=UTC)
 LATER = NOW + timedelta(hours=1)
 
 
@@ -110,7 +110,6 @@ def test_disabled_account_cannot_be_mutated_without_explicit_enable() -> None:
     # Only enable() transitions it
     account.enable(now=LATER)
     assert account.status is AccountStatus.AUTH_REQUIRED
-
 
 
 def test_cooldown_and_elapsed_cooldown() -> None:

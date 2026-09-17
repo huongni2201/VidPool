@@ -1,4 +1,5 @@
 from urllib.parse import urlparse
+
 import pytest
 
 from app.modules.accounts.application.ports import (

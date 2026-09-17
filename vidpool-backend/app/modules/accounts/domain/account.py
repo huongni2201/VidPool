@@ -1,6 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime, timezone
-import uuid
+from datetime import UTC, datetime, timedelta
 
 from .errors import InvalidAccountStateError
 from .values import AccountId, AccountStatus, new_account_id
@@ -31,7 +30,7 @@ class ProviderAccount:
         account_id: AccountId | None = None,
         now: datetime | None = None,
     ) -> "ProviderAccount":
-        current_time = now or datetime.now(timezone.utc)
+        current_time = now or datetime.now(UTC)
         return cls(
             id=account_id or new_account_id(),
             provider_key=provider_key,
@@ -52,7 +51,7 @@ class ProviderAccount:
         now: datetime | None = None,
     ) -> None:
         self._require_enabled()
-        current_time = now or datetime.now(timezone.utc)
+        current_time = now or datetime.now(UTC)
         self.status = AccountStatus.ACTIVE
         if display_name is not None:
             self.display_name = display_name
@@ -64,13 +63,13 @@ class ProviderAccount:
 
     def mark_auth_required(self, now: datetime | None = None) -> None:
         self._require_enabled()
-        current_time = now or datetime.now(timezone.utc)
+        current_time = now or datetime.now(UTC)
         self.status = AccountStatus.AUTH_REQUIRED
         self.updated_at = current_time
 
     def mark_cooldown(self, cooldown_until: datetime, now: datetime | None = None) -> None:
         self._require_enabled()
-        current_time = now or datetime.now(timezone.utc)
+        current_time = now or datetime.now(UTC)
         self.status = AccountStatus.COOLDOWN
         self.cooldown_until = cooldown_until
         self.updated_at = current_time
@@ -78,39 +77,96 @@ class ProviderAccount:
     def clear_elapsed_cooldown(self, now: datetime | None = None) -> bool:
         """If cooldown has elapsed and account is COOLDOWN, restore ACTIVE status."""
         self._require_enabled()
-        current_time = now or datetime.now(timezone.utc)
-        if self.status is AccountStatus.COOLDOWN and self.cooldown_until is not None:
-            if self.cooldown_until <= current_time:
-                self.status = AccountStatus.ACTIVE
-                self.cooldown_until = None
-                self.updated_at = current_time
-                return True
+        current_time = now or datetime.now(UTC)
+        if (
+            self.status is AccountStatus.COOLDOWN
+            and self.cooldown_until is not None
+            and self.cooldown_until <= current_time
+        ):
+            self.status = AccountStatus.ACTIVE
+            self.cooldown_until = None
+            self.updated_at = current_time
+            return True
         return False
 
     def record_success(self, now: datetime | None = None) -> None:
         self._require_enabled()
-        current_time = now or datetime.now(timezone.utc)
+        current_time = now or datetime.now(UTC)
         self.consecutive_failures = 0
         self.last_success_at = current_time
         self.updated_at = current_time
-        if self.status is AccountStatus.COOLDOWN and (self.cooldown_until is None or self.cooldown_until <= current_time):
+        if self.status is AccountStatus.COOLDOWN and (
+            self.cooldown_until is None or self.cooldown_until <= current_time
+        ):
             self.status = AccountStatus.ACTIVE
             self.cooldown_until = None
 
     def record_failure(self, now: datetime | None = None) -> None:
         self._require_enabled()
-        current_time = now or datetime.now(timezone.utc)
+        current_time = now or datetime.now(UTC)
         self.consecutive_failures += 1
         self.last_failure_at = current_time
         self.updated_at = current_time
 
+    def record_validation(self, valid: bool, now: datetime | None = None) -> None:
+        current_time = now or datetime.now(UTC)
+        self.updated_at = current_time
+        if valid:
+            self.last_validated_at = current_time
+            if self.status is not AccountStatus.DISABLED:
+                self.status = AccountStatus.ACTIVE
+                self.cooldown_until = None
+        else:
+            if self.status is not AccountStatus.DISABLED:
+                self.status = AccountStatus.AUTH_REQUIRED
+
+    def record_auth_failure(self, now: datetime | None = None) -> None:
+        current_time = now or datetime.now(UTC)
+        self.consecutive_failures += 1
+        self.last_failure_at = current_time
+        self.updated_at = current_time
+        if self.status is not AccountStatus.DISABLED:
+            self.status = AccountStatus.AUTH_REQUIRED
+
+    def record_temporary_failure(
+        self,
+        cooldown_until: datetime | None = None,
+        now: datetime | None = None,
+    ) -> None:
+        current_time = now or datetime.now(UTC)
+        self.consecutive_failures += 1
+        self.last_failure_at = current_time
+        self.updated_at = current_time
+
+        if cooldown_until is not None:
+            self.cooldown_until = cooldown_until
+            if self.status is not AccountStatus.DISABLED:
+                self.status = AccountStatus.COOLDOWN
+        elif self.consecutive_failures >= 3:
+            self.cooldown_until = current_time + timedelta(minutes=5)
+            if self.status is not AccountStatus.DISABLED:
+                self.status = AccountStatus.COOLDOWN
+
+    def record_rate_limit(
+        self,
+        retry_after: datetime | None = None,
+        now: datetime | None = None,
+    ) -> None:
+        current_time = now or datetime.now(UTC)
+        self.consecutive_failures += 1
+        self.last_failure_at = current_time
+        self.updated_at = current_time
+        self.cooldown_until = retry_after or (current_time + timedelta(minutes=15))
+        if self.status is not AccountStatus.DISABLED:
+            self.status = AccountStatus.COOLDOWN
+
     def disable(self, now: datetime | None = None) -> None:
-        current_time = now or datetime.now(timezone.utc)
+        current_time = now or datetime.now(UTC)
         self.status = AccountStatus.DISABLED
         self.updated_at = current_time
 
     def enable(self, now: datetime | None = None) -> None:
         """Re-enabling an account returns it to AUTH_REQUIRED so its session can be verified."""
-        current_time = now or datetime.now(timezone.utc)
+        current_time = now or datetime.now(UTC)
         self.status = AccountStatus.AUTH_REQUIRED
         self.updated_at = current_time

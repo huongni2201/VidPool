@@ -1,6 +1,6 @@
-from datetime import datetime
-from typing import Sequence
 import uuid
+from collections.abc import Sequence
+from datetime import datetime
 
 from app.modules.accounts.application.ports import (
     AccountRepositoryPort,
@@ -121,9 +121,7 @@ class FakeBrowserSessionManager(BrowserSessionPort):
         login_url: str,
     ) -> None:
         if profile_key in self.open_profiles:
-            raise BrowserProfileInUse(
-                f"Browser profile '{profile_key}' is already open"
-            )
+            raise BrowserProfileInUse(f"Browser profile '{profile_key}' is already open")
 
         self.open_profiles.add(profile_key)
 
@@ -190,7 +188,6 @@ class FakeProviderRegistry(ProviderRegistryPort):
             for k, a in self._adapters.items()
         ]
 
-
     def get_auth(self, provider_key: str) -> ProviderAuthPort | None:
         return self._adapters.get(provider_key)
 
@@ -213,4 +210,3 @@ class FakeAccountUnitOfWork:
 
     def rollback(self) -> None:
         self.rolled_back = True
-

@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True, slots=True)
@@ -17,11 +17,7 @@ def _parse_origins(value: str | None) -> tuple[str, ...]:
             "http://127.0.0.1:5173",
         )
 
-    return tuple(
-        item.strip()
-        for item in value.split(",")
-        if item.strip()
-    )
+    return tuple(item.strip() for item in value.split(",") if item.strip())
 
 
 def load_config() -> AppConfig:
@@ -29,7 +25,5 @@ def load_config() -> AppConfig:
         host=os.getenv("VIDPOOL_API_HOST", "127.0.0.1"),
         port=int(os.getenv("VIDPOOL_API_PORT", "8000")),
         session_token=os.getenv("VIDPOOL_SESSION_TOKEN"),
-        allowed_origins=_parse_origins(
-            os.getenv("VIDPOOL_ALLOWED_ORIGINS")
-        ),
+        allowed_origins=_parse_origins(os.getenv("VIDPOOL_ALLOWED_ORIGINS")),
     )

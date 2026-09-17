@@ -64,4 +64,3 @@ def test_protected_route_with_unconfigured_token_returns_503() -> None:
     response = client.get("/api/protected")
     assert response.status_code == 503
     assert response.json() == {"detail": "App session is not configured"}
-

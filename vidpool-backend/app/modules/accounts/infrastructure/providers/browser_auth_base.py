@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-from collections.abc import Callable
-
 from app.modules.accounts.application.ports import (
     ProviderAuthPort,
     ProviderIdentity,

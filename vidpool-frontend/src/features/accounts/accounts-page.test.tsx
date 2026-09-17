@@ -260,4 +260,157 @@ describe("AddAccountDialog component", () => {
       expect(onClose).toHaveBeenCalled()
     })
   })
+
+  it("handles relogin flow directly without provider selection and completes login", async () => {
+    const accountId = "123e4567-e89b-12d3-a456-426614174000"
+    const mockClient: ApiClient = {
+      get: vi.fn().mockResolvedValue([]),
+      post: vi.fn().mockImplementation((path: string) => {
+        if (path === `/api/accounts/${accountId}/relogin/start`) {
+          return Promise.resolve({
+            accountId,
+            status: "waiting_for_user",
+          })
+        }
+        if (path === `/api/accounts/${accountId}/login/complete`) {
+          return Promise.resolve({
+            id: accountId,
+            providerKey: "seedance",
+            displayName: "Test User",
+            externalIdentity: "u-1",
+            status: "active",
+            lastUsedAt: null,
+            lastValidatedAt: null,
+            cooldownUntil: null,
+          })
+        }
+        return Promise.resolve({})
+      }),
+      delete: vi.fn(),
+    }
+
+    const onClose = vi.fn()
+    const onSuccess = vi.fn()
+
+    render(
+      <AddAccountDialog
+        open={true}
+        target={{ kind: "relogin", accountId }}
+        onClose={onClose}
+        onSuccess={onSuccess}
+      />,
+      { wrapper: createWrapper(mockClient) }
+    )
+
+    // Should not fetch providers
+    expect(mockClient.get).not.toHaveBeenCalledWith("/api/providers", expect.anything())
+
+    // Relogin started directly
+    await waitFor(() => {
+      expect(mockClient.post).toHaveBeenCalledWith(
+        `/api/accounts/${accountId}/relogin/start`,
+        undefined,
+        expect.anything()
+      )
+    })
+
+    // Never called startLogin
+    expect(mockClient.post).not.toHaveBeenCalledWith(
+      expect.stringContaining("/accounts/login/start"),
+      undefined,
+      expect.anything()
+    )
+
+    // Waiting state reached
+    expect(
+      await screen.findByText(/hoàn tất đăng nhập trong cửa sổ trình duyệt/i)
+    ).toBeInTheDocument()
+
+    // Complete login
+    fireEvent.click(screen.getByRole("button", { name: /đã đăng nhập/i }))
+
+    await waitFor(() => {
+      expect(mockClient.post).toHaveBeenCalledWith(
+        `/api/accounts/${accountId}/login/complete`,
+        undefined,
+        expect.anything()
+      )
+      expect(onSuccess).toHaveBeenCalled()
+      expect(onClose).toHaveBeenCalled()
+    })
+  })
+
+  it("reopens browser before retrying failed validation", async () => {
+    const accountId = "123e4567-e89b-12d3-a456-426614174000"
+    let completeCallCount = 0
+
+    const mockClient: ApiClient = {
+      get: vi.fn().mockResolvedValue([]),
+      post: vi.fn().mockImplementation((path: string) => {
+        if (path === `/api/accounts/${accountId}/relogin/start`) {
+          return Promise.resolve({
+            accountId,
+            status: "waiting_for_user",
+          })
+        }
+        if (path === `/api/accounts/${accountId}/login/complete`) {
+          completeCallCount++
+          return Promise.reject(new Error("Browser session validation failed"))
+        }
+        return Promise.resolve({})
+      }),
+      delete: vi.fn(),
+    }
+
+    render(
+      <AddAccountDialog
+        open={true}
+        target={{ kind: "relogin", accountId }}
+        onClose={vi.fn()}
+        onSuccess={vi.fn()}
+      />,
+      { wrapper: createWrapper(mockClient) }
+    )
+
+    expect(
+      await screen.findByText(/hoàn tất đăng nhập trong cửa sổ trình duyệt/i)
+    ).toBeInTheDocument()
+
+    // First completion attempt fails
+    fireEvent.click(screen.getByRole("button", { name: /đã đăng nhập/i }))
+
+    expect(await screen.findByText(/đăng nhập chưa thành công/i)).toBeInTheDocument()
+    expect(screen.getByText(/browser session validation failed/i)).toBeInTheDocument()
+
+    // It should offer "Mở lại trình duyệt" instead of calling completeLogin again
+    const reopenBtn = screen.getByRole("button", { name: /mở lại trình duyệt/i })
+    expect(reopenBtn).toBeInTheDocument()
+
+    // Reset post mock call tracking to assert the retry action
+    ;(mockClient.post as unknown as ReturnType<typeof vi.fn>).mockClear()
+
+    fireEvent.click(reopenBtn)
+
+    // Should call relogin/start again
+    await waitFor(() => {
+      expect(mockClient.post).toHaveBeenCalledWith(
+        `/api/accounts/${accountId}/relogin/start`,
+        undefined,
+        expect.anything()
+      )
+    })
+
+    // Must NOT call completeLogin immediately
+    expect(mockClient.post).not.toHaveBeenCalledWith(
+      `/api/accounts/${accountId}/login/complete`,
+      undefined,
+      expect.anything()
+    )
+
+    // Returns to waiting state
+    expect(
+      await screen.findByText(/hoàn tất đăng nhập trong cửa sổ trình duyệt/i)
+    ).toBeInTheDocument()
+    expect(completeCallCount).toBe(1)
+  })
 })

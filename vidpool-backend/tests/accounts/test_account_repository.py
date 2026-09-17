@@ -1,6 +1,6 @@
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-import uuid
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -23,7 +23,7 @@ def db_session() -> Session:
 
 def test_repository_crud_round_trip(db_session: Session) -> None:
     repo = SQLAlchemyAccountRepository(session=db_session)
-    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=UTC)
 
     account = ProviderAccount.create(
         provider_key="seedance",
@@ -37,7 +37,9 @@ def test_repository_crud_round_trip(db_session: Session) -> None:
         now=now,
     )
     account.record_failure(now=now + timedelta(minutes=1))
-    account.mark_cooldown(cooldown_until=now + timedelta(minutes=10), now=now + timedelta(minutes=1))
+    account.mark_cooldown(
+        cooldown_until=now + timedelta(minutes=10), now=now + timedelta(minutes=1)
+    )
 
     repo.add(account)
 
@@ -75,7 +77,7 @@ def test_repository_crud_round_trip(db_session: Session) -> None:
 
 def test_repository_atomic_lru_acquire_and_release(db_session: Session) -> None:
     repo = SQLAlchemyAccountRepository(session=db_session)
-    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=UTC)
 
     # Create account A (used at 10:00)
     acc_a = ProviderAccount.create("test-provider", "profile/a", now=now - timedelta(hours=3))
@@ -119,21 +121,28 @@ def test_repository_atomic_lru_acquire_and_release(db_session: Session) -> None:
     assert leased_acc2.id == acc_a.id
 
     # No more available accounts
-    assert repo.acquire_lru("test-provider", "job:job-3", now=now, expires_at=now + timedelta(minutes=5)) is None
+    assert (
+        repo.acquire_lru(
+            "test-provider", "job:job-3", now=now, expires_at=now + timedelta(minutes=5)
+        )
+        is None
+    )
 
     # Release B
     assert repo.release_lease(lease.id)
     assert not repo.has_active_lease(acc_b.id, now)
 
     # B is eligible again
-    res3 = repo.acquire_lru("test-provider", "job:job-4", now=now, expires_at=now + timedelta(minutes=5))
+    res3 = repo.acquire_lru(
+        "test-provider", "job:job-4", now=now, expires_at=now + timedelta(minutes=5)
+    )
     assert res3 is not None
     assert res3[0].id == acc_b.id
 
 
 def test_repository_lru_chooses_never_used_first(db_session: Session) -> None:
     repo = SQLAlchemyAccountRepository(session=db_session)
-    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=UTC)
 
     # Account used before
     acc_used = ProviderAccount.create("test-provider", "profile/used", now=now - timedelta(days=1))
@@ -148,67 +157,87 @@ def test_repository_lru_chooses_never_used_first(db_session: Session) -> None:
     repo.add(acc_never)
 
     # Acquire should pick never used first
-    res = repo.acquire_lru("test-provider", "job:first", now=now, expires_at=now + timedelta(minutes=5))
+    res = repo.acquire_lru(
+        "test-provider", "job:first", now=now, expires_at=now + timedelta(minutes=5)
+    )
     assert res is not None
     assert res[0].id == acc_never.id
 
 
 def test_repository_expired_lease_is_cleaned_and_recovered(db_session: Session) -> None:
     repo = SQLAlchemyAccountRepository(session=db_session)
-    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=UTC)
 
     acc = ProviderAccount.create("test-provider", "profile/exp", now=now)
     acc.mark_authenticated("Exp User", "exp", now=now)
     repo.add(acc)
 
     # Acquire with short lease that expires in 1 minute
-    res1 = repo.acquire_lru("test-provider", "job:short", now=now, expires_at=now + timedelta(minutes=1))
+    res1 = repo.acquire_lru(
+        "test-provider", "job:short", now=now, expires_at=now + timedelta(minutes=1)
+    )
     assert res1 is not None
-    lease1 = res1[1]
+    assert res1[1].id is not None
 
     # At now + 30s, lease is still active
     assert repo.has_active_lease(acc.id, now + timedelta(seconds=30))
-    assert repo.acquire_lru("test-provider", "job:attempt", now=now + timedelta(seconds=30), expires_at=now + timedelta(minutes=5)) is None
+    assert (
+        repo.acquire_lru(
+            "test-provider",
+            "job:attempt",
+            now=now + timedelta(seconds=30),
+            expires_at=now + timedelta(minutes=5),
+        )
+        is None
+    )
 
     # At now + 2m, lease has expired
     assert not repo.has_active_lease(acc.id, now + timedelta(minutes=2))
-    res2 = repo.acquire_lru("test-provider", "job:recovered", now=now + timedelta(minutes=2), expires_at=now + timedelta(minutes=7))
+    res2 = repo.acquire_lru(
+        "test-provider",
+        "job:recovered",
+        now=now + timedelta(minutes=2),
+        expires_at=now + timedelta(minutes=7),
+    )
     assert res2 is not None
     assert res2[0].id == acc.id
 
 
 def test_repository_acquire_lru_propagates_unexpected_db_error(db_session: Session) -> None:
     repo = SQLAlchemyAccountRepository(session=db_session)
-    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=UTC)
 
     acc = ProviderAccount.create("test-provider", "profile/io-fail", now=now)
     acc.mark_authenticated("IO User", "io", now=now)
     repo.add(acc)
 
     from sqlalchemy.exc import OperationalError
-    real_commit = db_session.commit
-    commit_count = 0
 
-    def mock_commit():
-        nonlocal commit_count
-        commit_count += 1
-        # First commit is for cleaning expired leases (step 1 in acquire_lru)
-        if commit_count == 1:
-            return real_commit()
-        # Second commit is when persisting candidate lease (step 2)
+    real_flush = db_session.flush
+    flush_count = 0
+
+    def mock_flush():
+        nonlocal flush_count
+        flush_count += 1
+        # First flush is for cleaning expired leases (step 1 in acquire_lru)
+        if flush_count == 1:
+            return real_flush()
+        # Second flush is when persisting candidate lease (step 2)
         raise OperationalError("INSERT ...", {}, Exception("disk I/O error"))
 
-    db_session.commit = mock_commit
+    db_session.flush = mock_flush
 
     with pytest.raises(OperationalError):
-        repo.acquire_lru("test-provider", "job:error", now=now, expires_at=now + timedelta(minutes=5))
+        repo.acquire_lru(
+            "test-provider", "job:error", now=now, expires_at=now + timedelta(minutes=5)
+        )
 
 
 def test_repository_save_raises_not_found_for_deleted_account(db_session: Session) -> None:
     from app.modules.accounts.domain.errors import AccountNotFoundError
 
     repo = SQLAlchemyAccountRepository(session=db_session)
-    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=UTC)
     account = ProviderAccount.create("test-provider", "profile/del", now=now)
     account.mark_authenticated("User Del", "del", now=now)
 
@@ -222,16 +251,18 @@ def test_repository_save_raises_not_found_for_deleted_account(db_session: Sessio
 
 
 def test_concurrent_acquire_never_leases_same_account_twice(tmp_path: Path) -> None:
+    import threading
+
+    from sqlalchemy import func, select
+
     from app.infrastructure.persistence.database import create_engine_for_path
     from app.modules.accounts.infrastructure.persistence.models import AccountLeaseModel
-    from sqlalchemy import func, select
-    import threading
 
     db_path = tmp_path / "concurrent_lease.db"
     engine = create_engine_for_path(db_path)
     Base.metadata.create_all(engine)
 
-    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=UTC)
 
     # Seed 1 single active account
     with Session(engine) as seed_session:
@@ -257,6 +288,7 @@ def test_concurrent_acquire_never_leases_same_account_twice(tmp_path: Path) -> N
                     expires_at=now + timedelta(minutes=5),
                 )
                 if res is not None:
+                    worker_session.commit()
                     successful_acquires.append((owner_id, res[0]))
             except Exception as e:
                 errors.append(e)
@@ -277,6 +309,3 @@ def test_concurrent_acquire_never_leases_same_account_twice(tmp_path: Path) -> N
             select(func.count()).select_from(AccountLeaseModel)
         )
         assert persisted_lease_count == 1
-
-
-

@@ -21,10 +21,14 @@ def test_session_token_accepted() -> None:
 
 
 def test_repeated_allowed_origin_accepted() -> None:
-    args = parse_args([
-        "--allowed-origin", "http://localhost:5173",
-        "--allowed-origin", "http://127.0.0.1:5173",
-    ])
+    args = parse_args(
+        [
+            "--allowed-origin",
+            "http://localhost:5173",
+            "--allowed-origin",
+            "http://127.0.0.1:5173",
+        ]
+    )
     assert args.allowed_origins == (
         "http://localhost:5173",
         "http://127.0.0.1:5173",

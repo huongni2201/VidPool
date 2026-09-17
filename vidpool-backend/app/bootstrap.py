@@ -1,11 +1,11 @@
 import argparse
-from dataclasses import dataclass
 import sys
+from dataclasses import dataclass
 
 import uvicorn
 
 from app.core.config import AppConfig
-from app.main import create_app
+from app.factory import create_app
 
 
 @dataclass(frozen=True, slots=True)
@@ -17,9 +17,7 @@ class BootstrapArgs:
 
 
 def parse_args(argv: list[str] | None = None) -> BootstrapArgs:
-    parser = argparse.ArgumentParser(
-        description="VidPool backend sidecar entrypoint"
-    )
+    parser = argparse.ArgumentParser(description="VidPool backend sidecar entrypoint")
     parser.add_argument(
         "--host",
         default="127.0.0.1",
@@ -50,9 +48,13 @@ def parse_args(argv: list[str] | None = None) -> BootstrapArgs:
     if args.host not in {"127.0.0.1", "localhost"}:
         parser.error("VidPool backend must bind to loopback")
 
-    origins = tuple(args.allowed_origins) if args.allowed_origins else (
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
+    origins = (
+        tuple(args.allowed_origins)
+        if args.allowed_origins
+        else (
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+        )
     )
 
     return BootstrapArgs(

@@ -1,6 +1,5 @@
 import ast
 from pathlib import Path
-import pytest
 
 APP_DIR = Path(__file__).resolve().parent.parent.parent / "app"
 ACCOUNTS_DIR = APP_DIR / "modules" / "accounts"
@@ -16,9 +15,8 @@ def _get_imports(file_path: Path) -> list[str]:
         if isinstance(node, ast.Import):
             for alias in node.names:
                 imports.append(alias.name)
-        elif isinstance(node, ast.ImportFrom):
-            if node.module:
-                imports.append(node.module)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            imports.append(node.module)
     return imports
 
 
@@ -72,4 +70,28 @@ def test_domain_does_not_import_application_or_infrastructure() -> None:
             )
             assert not mod.startswith("app.modules.accounts.infrastructure"), (
                 f"Domain file {py_file} must not import infrastructure: {mod}"
+            )
+
+
+def test_domain_never_imports_frameworks_or_orm() -> None:
+    """Rule 1: Domain must not import fastapi, sqlalchemy, playwright, or tauri."""
+    forbidden = {"fastapi", "sqlalchemy", "playwright", "tauri"}
+    for py_file in DOMAIN_DIR.glob("**/*.py"):
+        imported_modules = _get_imports(py_file)
+        for mod in imported_modules:
+            top_mod = mod.split(".")[0]
+            assert top_mod not in forbidden, (
+                f"Domain file {py_file} violates boundary by importing forbidden package: {mod}"
+            )
+
+
+def test_application_never_imports_frameworks_or_orm() -> None:
+    """Rule 2: Application must not import fastapi, sqlalchemy, or playwright."""
+    forbidden = {"fastapi", "sqlalchemy", "playwright"}
+    for py_file in APPLICATION_DIR.glob("**/*.py"):
+        imported_modules = _get_imports(py_file)
+        for mod in imported_modules:
+            top_mod = mod.split(".")[0]
+            assert top_mod not in forbidden, (
+                f"Application file {py_file} violates boundary by importing forbidden package: {mod}"
             )

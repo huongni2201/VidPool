@@ -1,57 +1,21 @@
 import { useState } from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useApiClient } from "@/app/api-client-context"
 import { Button } from "@/components/ui/button"
-import {
-  deleteAccount,
-  disableAccount,
-  enableAccount,
-  listAccounts,
-  validateAccount,
-} from "./accounts-api"
 import { AccountRow } from "./account-row"
-import { AddAccountDialog } from "./add-account-dialog"
-import type { AccountSummary } from "./types"
+import { AddAccountDialog, type LoginTarget } from "./add-account-dialog"
+import { useAccountActions } from "./hooks/use-account-actions"
+import { useAccounts } from "./hooks/use-accounts"
 
 export function AccountsPage() {
-  const client = useApiClient()
-  const queryClient = useQueryClient()
-  const [isAddOpen, setIsAddOpen] = useState(false)
-
-  const accountsQuery = useQuery<AccountSummary[]>({
-    queryKey: ["accounts"],
-    queryFn: () => listAccounts(client),
-  })
-
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["accounts"] })
-
-  const validateMutation = useMutation({
-    mutationFn: (id: string) => validateAccount(client, id),
-    onSuccess: invalidate,
-  })
-
-  const enableMutation = useMutation({
-    mutationFn: (id: string) => enableAccount(client, id),
-    onSuccess: invalidate,
-  })
-
-  const disableMutation = useMutation({
-    mutationFn: (id: string) => disableAccount(client, id),
-    onSuccess: invalidate,
-  })
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteAccount(client, id),
-    onSuccess: invalidate,
-  })
-
-  const isMutating =
-    validateMutation.isPending ||
-    enableMutation.isPending ||
-    disableMutation.isPending ||
-    deleteMutation.isPending
-
-  const accounts = accountsQuery.data || []
+  const [loginTarget, setLoginTarget] = useState<LoginTarget | null>(null)
+  const { accounts, isLoading, isError } = useAccounts()
+  const {
+    validateAccount,
+    enableAccount,
+    disableAccount,
+    deleteAccount,
+    invalidate,
+    isPending,
+  } = useAccountActions()
 
   return (
     <div className="flex flex-col gap-6">
@@ -62,22 +26,22 @@ export function AccountsPage() {
             Quản lý tài khoản AI provider cho quá trình tạo video
           </p>
         </div>
-        <Button onClick={() => setIsAddOpen(true)}>+ Add account</Button>
+        <Button onClick={() => setLoginTarget({ kind: "add" })}>+ Add account</Button>
       </div>
 
-      {accountsQuery.isLoading && (
+      {isLoading && (
         <div className="rounded-lg border border-border p-8 text-center text-sm text-muted-foreground">
           Đang tải danh sách tài khoản…
         </div>
       )}
 
-      {accountsQuery.isError && (
+      {isError && (
         <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
           Không thể tải danh sách tài khoản.
         </div>
       )}
 
-      {!accountsQuery.isLoading && !accountsQuery.isError && accounts.length === 0 && (
+      {!isLoading && !isError && accounts.length === 0 && (
         <div
           data-slot="empty-state"
           className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-12 text-center"
@@ -106,7 +70,7 @@ export function AccountsPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setIsAddOpen(true)}
+            onClick={() => setLoginTarget({ kind: "add" })}
           >
             + Add account
           </Button>
@@ -119,20 +83,21 @@ export function AccountsPage() {
             <AccountRow
               key={account.id}
               account={account}
-              isBusy={isMutating}
-              onValidate={(id) => validateMutation.mutate(id)}
-              onEnable={(id) => enableMutation.mutate(id)}
-              onDisable={(id) => disableMutation.mutate(id)}
-              onRelogin={() => setIsAddOpen(true)}
-              onDelete={(id) => deleteMutation.mutate(id)}
+              isBusy={isPending}
+              onValidate={validateAccount}
+              onEnable={enableAccount}
+              onDisable={disableAccount}
+              onRelogin={(id) => setLoginTarget({ kind: "relogin", accountId: id })}
+              onDelete={deleteAccount}
             />
           ))}
         </div>
       )}
 
       <AddAccountDialog
-        open={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
+        open={loginTarget !== null}
+        target={loginTarget}
+        onClose={() => setLoginTarget(null)}
         onSuccess={invalidate}
       />
     </div>

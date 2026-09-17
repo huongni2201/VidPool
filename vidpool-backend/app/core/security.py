@@ -21,7 +21,7 @@ def require_session(request: Request) -> None:
             detail="Invalid app session",
         )
 
-    supplied = authorization[len(prefix):]
+    supplied = authorization[len(prefix) :]
 
     if not secrets.compare_digest(supplied, expected):
         raise HTTPException(

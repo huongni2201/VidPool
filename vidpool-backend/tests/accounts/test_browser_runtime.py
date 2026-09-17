@@ -1,7 +1,9 @@
+import contextlib
+import threading
 from collections.abc import Callable
 from pathlib import Path
-import threading
 from typing import Any
+
 import pytest
 
 from app.modules.accounts.domain.errors import (
@@ -12,20 +14,22 @@ from app.modules.accounts.domain.errors import (
 from app.modules.accounts.infrastructure.browser.profile_paths import (
     BrowserProfilePathResolver,
 )
-from app.modules.accounts.infrastructure.browser.runtime import BrowserRuntime
+from app.modules.accounts.infrastructure.browser.runtime import BrowserRuntime, RuntimeState
 
 
 class FakePage:
     def __init__(self) -> None:
-        self.navigated_url: str | None = None
+        self.url = ""
+        self.navigated_url = ""
 
     def goto(self, url: str) -> None:
+        self.url = url
         self.navigated_url = url
 
 
 class FakeContext:
-    def __init__(self) -> None:
-        self.pages: list[FakePage] = [FakePage()]
+    def __init__(self, pages: list[FakePage] | None = None) -> None:
+        self.pages: list[FakePage] = pages if pages is not None else [FakePage()]
         self.closed = False
         self.close_thread_ids: list[int] = []
         self._callbacks: dict[str, list[Callable[[], None]]] = {}
@@ -42,10 +46,8 @@ class FakeContext:
         self.closed = True
         self.close_thread_ids.append(threading.get_ident())
         for cb in self._callbacks.get("close", []):
-            try:
+            with contextlib.suppress(Exception):
                 cb()
-            except Exception:
-                pass
 
     def simulate_close(self) -> None:
         self.close()
@@ -333,3 +335,80 @@ def test_persisted_profile_rejects_active_interactive_session(tmp_path: Path) ->
             runtime.run_persisted_profile(profile_key, lambda ctx: "should_fail")
     finally:
         runtime.close_all()
+
+
+def test_concurrent_delete_profile_and_open_login(tmp_path: Path) -> None:
+    fake_context = FakeContext()
+    runtime = _make_runtime(tmp_path, launcher=lambda p, c, h: fake_context)
+    profile_key = "browser-profile/test-provider/acc-race"
+
+    barrier = threading.Barrier(2)
+    errors: list[Exception] = []
+    events: list[str] = []
+
+    def run_open() -> None:
+        try:
+            barrier.wait(timeout=5)
+            runtime.open_login(
+                provider_key="test-provider",
+                profile_key=profile_key,
+                login_url="https://example.com/login",
+            )
+            events.append("open_success")
+        except Exception as e:
+            errors.append(e)
+
+    def run_delete() -> None:
+        try:
+            barrier.wait(timeout=5)
+            runtime.delete_profile(profile_key)
+            events.append("delete_success")
+        except BrowserProfileInUse:
+            events.append("delete_rejected_in_use")
+        except Exception as e:
+            errors.append(e)
+
+    t1 = threading.Thread(target=run_open)
+    t2 = threading.Thread(target=run_delete)
+
+    try:
+        t1.start()
+        t2.start()
+        t1.join(timeout=10)
+        t2.join(timeout=10)
+
+        assert errors == []
+        # Either delete ran before open (delete_success then open_success)
+        # or open ran before delete (open_success then delete_rejected_in_use)
+        assert "open_success" in events
+        assert ("delete_success" in events) or ("delete_rejected_in_use" in events)
+    finally:
+        runtime.close_all()
+
+
+def test_runtime_lifecycle_states_and_deterministic_shutdown(tmp_path: Path) -> None:
+    runtime = _make_runtime(tmp_path, launcher=lambda p, c, h: FakeContext())
+    assert runtime.state == RuntimeState.RUNNING
+
+    profile_key = "browser-profile/test-provider/acc-lifecycle"
+    runtime.open_login(
+        provider_key="test-provider",
+        profile_key=profile_key,
+        login_url="https://example.com",
+    )
+    assert runtime.has_open_session(profile_key) is True
+
+    runtime.close_all()
+    assert runtime.state == RuntimeState.STOPPED
+
+    # Idempotent double close
+    runtime.close_all()
+    assert runtime.state == RuntimeState.STOPPED
+
+    # Operations after shutdown are rejected deterministically
+    with pytest.raises(BrowserUnavailable):
+        runtime.open_login(
+            provider_key="test-provider",
+            profile_key=profile_key,
+            login_url="https://example.com",
+        )

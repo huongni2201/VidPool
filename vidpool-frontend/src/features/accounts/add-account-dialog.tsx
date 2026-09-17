@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useApiClient } from "@/app/api-client-context"
 import { Button } from "@/components/ui/button"
@@ -7,6 +7,7 @@ import {
   completeLogin,
   listProviders,
   startLogin,
+  startRelogin,
 } from "./accounts-api"
 import type { ProviderDefinition } from "./types"
 
@@ -17,14 +18,20 @@ type DialogState =
   | "validating"
   | "error"
 
+export type LoginTarget =
+  | { kind: "add" }
+  | { kind: "relogin"; accountId: string }
+
 interface AddAccountDialogProps {
   open: boolean
+  target?: LoginTarget | null
   onClose: () => void
   onSuccess: () => void
 }
 
 export function AddAccountDialog({
   open,
+  target,
   onClose,
   onSuccess,
 }: AddAccountDialogProps) {
@@ -35,10 +42,49 @@ export function AddAccountDialog({
   const [accountId, setAccountId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string>("")
 
+  const isRelogin = target?.kind === "relogin"
+
+  useEffect(() => {
+    if (!open) {
+      setState("choose_provider")
+      setSelectedProvider("")
+      setAccountId(null)
+      setErrorMessage("")
+      return
+    }
+
+    if (target?.kind === "relogin") {
+      setAccountId(target.accountId)
+      setState("starting")
+      setErrorMessage("")
+      let isCancelled = false
+      startRelogin(client, target.accountId)
+        .then(() => {
+          if (!isCancelled) {
+            setState("waiting_for_user")
+          }
+        })
+        .catch((err: unknown) => {
+          if (!isCancelled) {
+            setErrorMessage(err instanceof Error ? err.message : "Failed to start relogin")
+            setState("error")
+          }
+        })
+      return () => {
+        isCancelled = true
+      }
+    } else {
+      setState("choose_provider")
+      setSelectedProvider("")
+      setAccountId(null)
+      setErrorMessage("")
+    }
+  }, [open, target, client])
+
   const providersQuery = useQuery<ProviderDefinition[]>({
     queryKey: ["providers"],
     queryFn: () => listProviders(client),
-    enabled: open,
+    enabled: open && !isRelogin,
   })
 
   if (!open) return null
@@ -75,6 +121,21 @@ export function AddAccountDialog({
     }
   }
 
+  const handleRestartLogin = async () => {
+    if (!accountId) return
+    setState("starting")
+    setErrorMessage("")
+    try {
+      await startRelogin(client, accountId)
+      setState("waiting_for_user")
+    } catch (err: unknown) {
+      setErrorMessage(
+        err instanceof Error ? err.message : "Failed to reopen browser session",
+      )
+      setState("error")
+    }
+  }
+
   const handleCancelWaiting = async () => {
     if (accountId) {
       try {
@@ -103,7 +164,7 @@ export function AddAccountDialog({
     >
       <div className="w-full max-w-md rounded-xl border border-border bg-background p-6 shadow-xl animate-in fade-in zoom-in-95 duration-150">
         <h2 id="add-account-dialog-title" className="text-lg font-semibold text-foreground">
-          Thêm tài khoản Provider
+          {isRelogin ? "Đăng nhập lại tài khoản" : "Thêm tài khoản Provider"}
         </h2>
 
         {state === "choose_provider" && (
@@ -221,8 +282,8 @@ export function AddAccountDialog({
                 Đóng
               </Button>
               {accountId ? (
-                <Button size="sm" onClick={handleComplete}>
-                  Thử xác minh lại
+                <Button size="sm" onClick={handleRestartLogin}>
+                  Mở lại trình duyệt
                 </Button>
               ) : (
                 <Button size="sm" onClick={() => setState("choose_provider")}>

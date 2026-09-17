@@ -1,25 +1,22 @@
-from datetime import datetime, timedelta, timezone
 import uuid
+from datetime import UTC, datetime, timedelta
+
 import pytest
 
 from app.modules.accounts.application.ports import (
     AccountRepositoryPort,
     BrowserSessionPort,
     ProviderAuthPort,
-    ProviderDefinition,
-    ProviderIdentity,
     ProviderRegistryPort,
-    SessionValidation,
 )
-from app.modules.accounts.application.queries import AccountView
 from app.modules.accounts.application.service import AccountService
 from app.modules.accounts.domain.account import ProviderAccount
 from app.modules.accounts.domain.errors import (
     AccountInUse,
-    AccountNotFound,
     AccountUnavailable,
     BrowserProfileInUse,
     BrowserSessionNotOpen,
+    InvalidAccountState,
     LeaseNotFound,
     ProviderNotRegistered,
     SessionInvalid,
@@ -27,12 +24,13 @@ from app.modules.accounts.domain.errors import (
 from app.modules.accounts.domain.values import AccountId, AccountStatus
 from tests.accounts.fakes import (
     FakeAccountRepository,
+    FakeAccountUnitOfWork,
     FakeBrowserSessionManager,
     FakeProviderAuthAdapter,
     FakeProviderRegistry,
 )
 
-NOW = datetime(2026, 9, 17, 12, 0, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 9, 17, 12, 0, 0, tzinfo=UTC)
 LATER = NOW + timedelta(minutes=5)
 
 
@@ -43,7 +41,11 @@ def _build_service(
     browser = FakeBrowserSessionManager()
     adapter = auth_adapter or FakeProviderAuthAdapter(provider_key="provider-x")
     registry = FakeProviderRegistry([adapter])
-    service = AccountService(accounts=repo, browser=browser, providers=registry)
+    service = AccountService(
+        uow_factory=lambda: FakeAccountUnitOfWork(repo),
+        browser=browser,
+        providers=registry,
+    )
     return service, repo, browser, registry
 
 
@@ -101,7 +103,11 @@ def test_start_login_does_not_persist_account_when_browser_launch_fails() -> Non
     browser = FailingBrowser()
     adapter = FakeProviderAuthAdapter(provider_key="provider-x")
     registry = FakeProviderRegistry([adapter])
-    service = AccountService(accounts=repo, browser=browser, providers=registry)
+    service = AccountService(
+        uow_factory=lambda: FakeAccountUnitOfWork(repo),
+        browser=browser,
+        providers=registry,
+    )
 
     with pytest.raises(RuntimeError, match="Browser launch crash"):
         service.start_login("provider-x", now=NOW)
@@ -119,7 +125,11 @@ def test_start_login_closes_and_deletes_profile_when_repository_add_fails() -> N
     browser = FakeBrowserSessionManager()
     adapter = FakeProviderAuthAdapter(provider_key="provider-x")
     registry = FakeProviderRegistry([adapter])
-    service = AccountService(accounts=repo, browser=browser, providers=registry)
+    service = AccountService(
+        uow_factory=lambda: FakeAccountUnitOfWork(repo),
+        browser=browser,
+        providers=registry,
+    )
 
     with pytest.raises(RuntimeError, match="DB insert failed"):
         service.start_login("provider-x", now=NOW)
@@ -236,7 +246,6 @@ def test_complete_login_closes_only_accounts_own_profile() -> None:
     assert browser.has_open_session(acc2.profile_key)
 
 
-
 def test_start_relogin_reuses_existing_profile_key() -> None:
     service, repo, browser, _ = _build_service()
 
@@ -268,6 +277,52 @@ def test_start_relogin_rejects_active_lease() -> None:
 
     with pytest.raises(AccountInUse):
         service.start_relogin(start.account_id, now=NOW)
+
+
+def test_start_relogin_rejects_active_account() -> None:
+    service, repo, _, _ = _build_service()
+
+    start = service.start_login("provider-x", now=NOW)
+    service.complete_login(start.account_id, now=NOW)
+
+    # Account is now ACTIVE and not leased
+    with pytest.raises(InvalidAccountState):
+        service.start_relogin(start.account_id, now=NOW)
+
+
+def test_start_relogin_rejects_disabled_account() -> None:
+    service, repo, _, _ = _build_service()
+
+    start = service.start_login("provider-x", now=NOW)
+    service.disable_account(start.account_id, now=NOW)
+
+    with pytest.raises(InvalidAccountState):
+        service.start_relogin(start.account_id, now=NOW)
+
+
+def test_disable_account_rejects_active_lease() -> None:
+    service, repo, _, _ = _build_service()
+
+    start = service.start_login("provider-x", now=NOW)
+    service.complete_login(start.account_id, now=NOW)
+
+    service.acquire("provider-x", "job:1", ttl=timedelta(minutes=10), now=NOW)
+
+    with pytest.raises(AccountInUse):
+        service.disable_account(start.account_id, now=NOW)
+
+
+def test_validate_account_rejects_active_lease() -> None:
+    auth = FakeProviderAuthAdapter(provider_key="provider-x", valid_session=True)
+    service, repo, _, _ = _build_service(auth)
+
+    start = service.start_login("provider-x", now=NOW)
+    service.complete_login(start.account_id, now=NOW)
+
+    service.acquire("provider-x", "job:1", ttl=timedelta(minutes=10), now=NOW)
+
+    with pytest.raises(AccountInUse):
+        service.validate_account(start.account_id, now=NOW)
 
 
 def test_validate_account_valid_and_invalid() -> None:
@@ -355,7 +410,11 @@ def test_delete_account_keeps_record_when_repository_delete_fails() -> None:
     browser = FakeBrowserSessionManager()
     adapter = FakeProviderAuthAdapter(provider_key="provider-x")
     registry = FakeProviderRegistry([adapter])
-    service = AccountService(accounts=repo, browser=browser, providers=registry)
+    service = AccountService(
+        uow_factory=lambda: FakeAccountUnitOfWork(repo),
+        browser=browser,
+        providers=registry,
+    )
 
     start = service.start_login("provider-x", now=NOW)
     service.cancel_login(start.account_id)
@@ -375,7 +434,11 @@ def test_delete_account_does_not_restore_record_when_profile_cleanup_fails() -> 
     browser = FailingDeleteBrowser()
     adapter = FakeProviderAuthAdapter(provider_key="provider-x")
     registry = FakeProviderRegistry([adapter])
-    service = AccountService(accounts=repo, browser=browser, providers=registry)
+    service = AccountService(
+        uow_factory=lambda: FakeAccountUnitOfWork(repo),
+        browser=browser,
+        providers=registry,
+    )
 
     start = service.start_login("provider-x", now=NOW)
     service.cancel_login(start.account_id)

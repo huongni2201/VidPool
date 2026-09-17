@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from sqlalchemy import DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -15,7 +16,9 @@ class ProviderAccountModel(Base):
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     profile_key: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    last_validated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_validated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     last_success_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_failure_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     consecutive_failures: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -56,6 +59,4 @@ class AccountLeaseModel(Base):
         back_populates="lease",
     )
 
-    __table_args__ = (
-        Index("ix_account_leases_expires_at", "expires_at"),
-    )
+    __table_args__ = (Index("ix_account_leases_expires_at", "expires_at"),)

@@ -15,4 +15,3 @@ def get_data_dir() -> Path:
 
 def get_database_path() -> Path:
     return get_data_dir() / "vidpool.db"
-

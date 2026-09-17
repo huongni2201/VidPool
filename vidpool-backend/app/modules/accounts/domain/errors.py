@@ -9,6 +9,9 @@ class InvalidAccountStateError(AccountDomainError):
     """Raised when an operation is invalid for the account's current state."""
 
 
+InvalidAccountState = InvalidAccountStateError
+
+
 class AccountNotFoundError(AccountDomainError):
     """Raised when an account is not found."""
 

@@ -15,6 +15,7 @@ from app.modules.accounts.domain.errors import (
     SessionInvalid,
 )
 from app.modules.accounts.domain.values import AccountId
+
 from .schemas import (
     AccountResponse,
     ProviderResponse,
@@ -37,11 +38,11 @@ def get_account_service(request: Request) -> AccountService:
 def parse_account_id(account_id: str) -> AccountId:
     try:
         return AccountId(uuid.UUID(account_id))
-    except ValueError:
+    except ValueError as err:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Invalid account ID: '{account_id}'",
-        )
+        ) from err
 
 
 def _handle_error(exc: Exception) -> None:
@@ -52,7 +53,9 @@ def _handle_error(exc: Exception) -> None:
     if isinstance(exc, BrowserUnavailable):
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
     if isinstance(exc, InvalidProfileKey):
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal profile error")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal profile error"
+        )
     raise exc
 
 
@@ -70,7 +73,9 @@ def _serialize_account(view: AccountView) -> AccountResponse:
 
 
 @router.get("/providers", response_model=list[ProviderResponse])
-def list_providers(service: AccountService = Depends(get_account_service)) -> list[ProviderResponse]:
+def list_providers(
+    service: AccountService = Depends(get_account_service),
+) -> list[ProviderResponse]:
     return [
         ProviderResponse(
             key=p.key,

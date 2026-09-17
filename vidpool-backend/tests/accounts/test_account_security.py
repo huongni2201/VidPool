@@ -1,15 +1,13 @@
-import json
 import logging
-from pathlib import Path
+
 from fastapi.testclient import TestClient
-import pytest
 
 from app.core.config import AppConfig
 from app.core.container import build_container
 from app.main import create_app
-from app.modules.accounts.domain.errors import BrowserLaunchFailed
 from tests.accounts.fakes import (
     FakeAccountRepository,
+    FakeAccountUnitOfWork,
     FakeBrowserSessionManager,
     FakeProviderAuthAdapter,
     FakeProviderRegistry,
@@ -41,8 +39,8 @@ def test_api_responses_never_contain_sensitive_keys() -> None:
     )
     registry = FakeProviderRegistry([adapter])
     container = build_container(
-        account_repository=repo,
-        browser_session_manager=browser,
+        uow_factory=lambda: FakeAccountUnitOfWork(repo),
+        browser_runtime=browser,
         provider_registry=registry,
     )
 
@@ -55,7 +53,9 @@ def test_api_responses_never_contain_sensitive_keys() -> None:
     client = TestClient(create_app(config=config, container=container))
 
     # 1. Start login
-    res_start = client.post("/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER)
+    res_start = client.post(
+        "/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER
+    )
     assert res_start.status_code == 200
     account_id = res_start.json()["accountId"]
 
@@ -89,7 +89,9 @@ def test_api_responses_never_contain_sensitive_keys() -> None:
     for payload in all_payloads:
         lower_payload = payload.lower()
         for term in FORBIDDEN_TERMS:
-            assert term.lower() not in lower_payload, f"Forbidden term '{term}' leaked in response: {payload}"
+            assert term.lower() not in lower_payload, (
+                f"Forbidden term '{term}' leaked in response: {payload}"
+            )
 
 
 def test_internal_browser_exception_with_secret_does_not_leak(caplog) -> None:
@@ -98,6 +100,7 @@ def test_internal_browser_exception_with_secret_does_not_leak(caplog) -> None:
     class LeakyLauncherManager(FakeBrowserSessionManager):
         def open_login(self, *, provider_key: str, profile_key: str, login_url: str):
             from app.modules.accounts.domain.errors import BrowserUnavailable
+
             raise BrowserUnavailable("Failed to connect: SECRET_TEST_VALUE_IN_PLAYWRIGHT")
 
     repo = FakeAccountRepository()
@@ -105,8 +108,8 @@ def test_internal_browser_exception_with_secret_does_not_leak(caplog) -> None:
     adapter = FakeProviderAuthAdapter(provider_key="test-p")
     registry = FakeProviderRegistry([adapter])
     container = build_container(
-        account_repository=repo,
-        browser_session_manager=browser,
+        uow_factory=lambda: FakeAccountUnitOfWork(repo),
+        browser_runtime=browser,
         provider_registry=registry,
     )
 
