@@ -14,7 +14,7 @@ class BootstrapArgs:
     host: str
     port: int
     session_token: str | None
-    allowed_origins: tuple[str, ...]
+    allowed_origins: tuple[str, ...] | None
 
 
 def parse_args(argv: list[str] | None = None) -> BootstrapArgs:
@@ -49,14 +49,7 @@ def parse_args(argv: list[str] | None = None) -> BootstrapArgs:
     if args.host not in {"127.0.0.1", "localhost"}:
         parser.error("VidPool backend must bind to loopback")
 
-    origins = (
-        tuple(args.allowed_origins)
-        if args.allowed_origins
-        else (
-            "http://localhost:5173",
-            "http://127.0.0.1:5173",
-        )
-    )
+    origins = tuple(args.allowed_origins) if args.allowed_origins else None
 
     return BootstrapArgs(
         host=args.host,
@@ -66,21 +59,27 @@ def parse_args(argv: list[str] | None = None) -> BootstrapArgs:
     )
 
 
-def main(argv: list[str] | None = None) -> None:
-    args = parse_args(argv)
-    session_token = args.session_token or os.getenv("VIDPOOL_SESSION_TOKEN") or "dev-token"
-    allowed_origins = args.allowed_origins
-    if not args.allowed_origins and os.getenv("VIDPOOL_ALLOWED_ORIGINS"):
+def resolve_config(args: BootstrapArgs) -> AppConfig:
+    session_token = args.session_token or os.getenv("VIDPOOL_SESSION_TOKEN")
+
+    if args.allowed_origins is not None:
+        allowed_origins = args.allowed_origins
+    else:
         from app.core.config import _parse_origins
 
         allowed_origins = _parse_origins(os.getenv("VIDPOOL_ALLOWED_ORIGINS"))
 
-    config = AppConfig(
+    return AppConfig(
         host=args.host,
         port=args.port,
         session_token=session_token,
         allowed_origins=allowed_origins,
     )
+
+
+def main(argv: list[str] | None = None) -> None:
+    args = parse_args(argv)
+    config = resolve_config(args)
     app = create_app(config)
     uvicorn.run(
         app,

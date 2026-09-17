@@ -1,6 +1,6 @@
 import pytest
 
-from app.bootstrap import parse_args
+from app.bootstrap import parse_args, resolve_config
 
 
 def test_default_host_is_loopback() -> None:
@@ -8,6 +8,11 @@ def test_default_host_is_loopback() -> None:
     assert args.host == "127.0.0.1"
     assert args.port == 8000
     assert args.session_token is None
+
+
+def test_allowed_origins_are_none_when_cli_not_supplied() -> None:
+    args = parse_args([])
+    assert args.allowed_origins is None
 
 
 def test_supplied_port_accepted() -> None:
@@ -38,3 +43,45 @@ def test_repeated_allowed_origin_accepted() -> None:
 def test_external_host_rejected() -> None:
     with pytest.raises(SystemExit):
         parse_args(["--host", "0.0.0.0"])
+
+
+def test_resolve_config_uses_environment_session_token(monkeypatch) -> None:
+    monkeypatch.setenv("VIDPOOL_SESSION_TOKEN", "env-token")
+    args = parse_args([])
+
+    config = resolve_config(args)
+
+    assert config.session_token == "env-token"
+
+
+def test_resolve_config_keeps_missing_session_token_as_none(monkeypatch) -> None:
+    monkeypatch.delenv("VIDPOOL_SESSION_TOKEN", raising=False)
+    args = parse_args([])
+
+    config = resolve_config(args)
+
+    assert config.session_token is None
+
+
+def test_resolve_config_uses_environment_allowed_origins(monkeypatch) -> None:
+    monkeypatch.setenv(
+        "VIDPOOL_ALLOWED_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    )
+    args = parse_args([])
+
+    config = resolve_config(args)
+
+    assert config.allowed_origins == (
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    )
+
+
+def test_cli_session_token_overrides_environment(monkeypatch) -> None:
+    monkeypatch.setenv("VIDPOOL_SESSION_TOKEN", "env-token")
+    args = parse_args(["--session-token", "cli-token"])
+
+    config = resolve_config(args)
+
+    assert config.session_token == "cli-token"
