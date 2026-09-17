@@ -1,6 +1,6 @@
 # Current Implementation Status
 
-**Status:** FOUNDATION / SCAFFOLD  
+**Status:** DESKTOP RUNTIME & SIDECAR FOUNDATION  
 **Last reviewed:** 2026-09-17
 
 ## Purpose
@@ -19,14 +19,21 @@ This file distinguishes target architecture from implemented reality.
 - SQLite/SQLAlchemy persistence bootstrap (path resolution & engine creation)
 - Alembic migration environment configuration
 - frontend-to-local-backend health status integration
-- GitHub Actions CI workflow for frontend and backend
+- GitHub Actions CI workflow for frontend, backend, and desktop verification
+- Tauri v2 desktop shell scaffold
+- packaged FastAPI sidecar bootstrap
+- Tauri-owned backend lifecycle
+- runtime API endpoint injection via minimal Tauri IPC
+- restricted localhost CORS
+- per-session local API token validation
+- temporary protected session probe endpoint (`/api/session/probe`)
+- desktop CI compile/package gate
 
 ## Not Implemented Yet
 
 The repository currently does not contain production implementation for:
 
-- Tauri desktop shell
-- production domain modules
+- production project/domain modules
 - Story Engine
 - Story Memory
 - Character continuity engine
@@ -39,7 +46,6 @@ The repository currently does not contain production implementation for:
 - Timeline Engine
 - FFmpeg render pipeline
 - quality-control pipeline
-- local API session security
 - OS keyring integration
 
 ## Documentation Semantics

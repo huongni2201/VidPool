@@ -39,3 +39,28 @@ jobs:
       - run: python -m pip install -e ".[dev]"
       - run: pytest -q
       - run: alembic current
+
+  desktop:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -e "vidpool-backend[dev]"
+      - name: Verify Rust compiles
+        run: cargo check --manifest-path vidpool-frontend/src-tauri/Cargo.toml
+      - name: Build sidecar binary
+        run: python scripts/build-sidecar.py
+      - name: Verify sidecar binary exists
+        shell: pwsh
+        run: |
+          $bin = "vidpool-frontend/src-tauri/binaries/vidpool-backend-x86_64-pc-windows-msvc.exe"
+          if (-not (Test-Path $bin)) {
+            throw "Expected sidecar binary not found at $bin"
+          }
+          if ((Get-Item $bin).Length -le 0) {
+            throw "Sidecar binary is empty"
+          }

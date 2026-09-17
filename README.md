@@ -7,7 +7,7 @@ Its target workflow converts long-form stories into structured story memory, nar
 ## Target Stack
 
 ```text
-Desktop shell : Tauri
+Desktop shell : Tauri v2
 Frontend      : React + Vite + TypeScript + Tailwind CSS
 Backend       : FastAPI
 Persistence   : SQLite + SQLAlchemy 2.x + Alembic
@@ -27,6 +27,39 @@ Clean Architecture
 Hexagonal / Ports & Adapters
 +
 Lightweight DDD
+```
+
+## Development Workflows
+
+VidPool supports two development workflows:
+
+### Mode A — Browser Frontend Development
+
+Backend:
+
+```powershell
+$env:VIDPOOL_SESSION_TOKEN="dev-token"
+$env:VIDPOOL_ALLOWED_ORIGINS="http://localhost:5173"
+vidpool-backend --port 8000
+```
+
+Frontend:
+
+```powershell
+$env:VITE_API_BASE_URL="http://127.0.0.1:8000"
+$env:VITE_SESSION_TOKEN="dev-token"
+cd vidpool-frontend
+pnpm dev
+```
+
+### Mode B — Desktop Development
+
+Desktop mode is the canonical runtime where Tauri generates the session token, selects an ephemeral loopback port, and manages the FastAPI sidecar lifecycle:
+
+```bash
+python scripts/build-sidecar.py
+cd vidpool-frontend
+pnpm tauri dev
 ```
 
 ## Start Here
