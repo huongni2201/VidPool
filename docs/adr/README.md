@@ -22,3 +22,4 @@ Do not delete or rewrite an accepted ADR. If a decision changes, mark the old AD
 | 0014 | Local API security boundary |
 | 0015 | FastAPI packaged as Tauri sidecar |
 | 0016 | Modular Monolith + Clean/Hexagonal backend |
+| 0017 | Account Pool uses isolated persistent browser profiles |

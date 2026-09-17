@@ -47,6 +47,7 @@ The repository currently does not contain production implementation for:
 - FFmpeg render pipeline
 - quality-control pipeline
 - OS keyring integration
+- Account Pool / Browser Session subsystem
 
 ## Documentation Semantics
 
