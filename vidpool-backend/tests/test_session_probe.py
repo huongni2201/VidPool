@@ -41,3 +41,11 @@ def test_probe_valid_token_returns_200() -> None:
     )
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+
+def test_probe_unconfigured_token_returns_503() -> None:
+    client = _build_client(session_token=None)
+    response = client.get("/api/session/probe")
+    assert response.status_code == 503
+    assert response.json() == {"detail": "App session is not configured"}
+

@@ -1,8 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.health import router as health_router
-from app.api.session_probe import router as session_probe_router
+from app.api.router import protected_api_router, public_api_router
 from app.core.config import AppConfig, load_config
 
 
@@ -23,8 +22,8 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
         allow_headers=["Authorization", "Content-Type"],
     )
 
-    app.include_router(health_router, prefix="/api")
-    app.include_router(session_probe_router, prefix="/api")
+    app.include_router(public_api_router, prefix="/api")
+    app.include_router(protected_api_router, prefix="/api")
     return app
 
 
