@@ -137,6 +137,10 @@ class FakeBrowserSessionManager(BrowserSessionPort):
         self.open_sessions.pop(profile_key, None)
         self.deleted_profiles.append(profile_key)
 
+    def close_all(self) -> None:
+        self.open_sessions.clear()
+
+
 
 class FakeProviderAuthAdapter(ProviderAuthPort):
     def __init__(
