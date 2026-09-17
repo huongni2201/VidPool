@@ -6,6 +6,7 @@ from sqlalchemy import engine_from_config, pool
 from app.infrastructure.persistence.base import Base
 from app.infrastructure.persistence.database import build_sqlite_url
 from app.infrastructure.persistence.paths import get_database_path
+import app.modules.accounts.infrastructure.persistence.models  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
