@@ -10,10 +10,12 @@ from app.core.container import AppContainer, build_container
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    yield
-    container = getattr(app.state, "container", None)
-    if container is not None and hasattr(container, "browser_session_manager"):
-        container.browser_session_manager.close_all()
+    try:
+        yield
+    finally:
+        container = getattr(app.state, "container", None)
+        if container is not None:
+            container.close()
 
 
 def create_app(

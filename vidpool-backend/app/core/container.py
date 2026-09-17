@@ -8,15 +8,14 @@ from app.infrastructure.persistence.database import create_engine_for_path
 from app.infrastructure.persistence.paths import get_data_dir, get_database_path
 from app.modules.accounts.application.ports import (
     AccountRepositoryPort,
+    BrowserSessionPort,
     ProviderRegistryPort,
 )
 from app.modules.accounts.application.service import AccountService
-from app.modules.accounts.infrastructure.browser.playwright_session import (
-    PlaywrightBrowserSessionManager,
-)
 from app.modules.accounts.infrastructure.browser.profile_paths import (
     BrowserProfilePathResolver,
 )
+from app.modules.accounts.infrastructure.browser.runtime import BrowserRuntime
 from app.modules.accounts.infrastructure.persistence.repository import (
     SQLAlchemyAccountRepository,
 )
@@ -26,15 +25,20 @@ from app.modules.accounts.infrastructure.providers.registry import ProviderRegis
 @dataclass
 class AppContainer:
     account_service: AccountService
-    browser_session_manager: PlaywrightBrowserSessionManager
+    browser_runtime: BrowserRuntime | BrowserSessionPort
     engine: Engine | None = None
     provider_registry: ProviderRegistryPort | None = None
+
+    def close(self) -> None:
+        self.browser_runtime.close_all()
+        if self.engine is not None:
+            self.engine.dispose()
 
 
 def build_container(
     config: AppConfig | None = None,
     account_repository: AccountRepositoryPort | None = None,
-    browser_session_manager: PlaywrightBrowserSessionManager | None = None,
+    browser_runtime: BrowserRuntime | BrowserSessionPort | None = None,
     provider_registry: ProviderRegistryPort | None = None,
 ) -> AppContainer:
     del config  # May be used for provider API keys/environment configs in future
@@ -47,23 +51,23 @@ def build_container(
     else:
         account_repo = account_repository
 
-    if browser_session_manager is None:
+    if browser_runtime is None:
         resolver = BrowserProfilePathResolver(get_data_dir())
-        browser_mgr = PlaywrightBrowserSessionManager(resolver=resolver)
+        runtime = BrowserRuntime(resolver=resolver)
     else:
-        browser_mgr = browser_session_manager
+        runtime = browser_runtime
 
     providers = provider_registry if provider_registry is not None else ProviderRegistry()
 
     account_service = AccountService(
         accounts=account_repo,
-        browser=browser_mgr,
+        browser=runtime,
         providers=providers,
     )
 
     return AppContainer(
         account_service=account_service,
-        browser_session_manager=browser_mgr,
+        browser_runtime=runtime,
         engine=engine,
         provider_registry=providers,
     )

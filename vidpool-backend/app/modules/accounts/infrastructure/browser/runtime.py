@@ -273,7 +273,7 @@ class BrowserRuntime(BrowserSessionPort):
                 pass
 
     def delete_profile(self, profile_key: str) -> None:
-        if self.has_open_session(profile_key):
+        if not self._stopped and self.has_open_session(profile_key):
             raise BrowserProfileInUse(
                 f"Cannot delete profile '{profile_key}' while a browser session is active"
             )

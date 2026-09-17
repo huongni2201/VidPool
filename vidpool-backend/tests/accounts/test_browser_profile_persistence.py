@@ -1,12 +1,10 @@
 from pathlib import Path
 from typing import Any
 
-from app.modules.accounts.infrastructure.browser.playwright_session import (
-    PlaywrightBrowserSessionManager,
-)
 from app.modules.accounts.infrastructure.browser.profile_paths import (
     BrowserProfilePathResolver,
 )
+from app.modules.accounts.infrastructure.browser.runtime import BrowserRuntime
 
 
 class MockPage:
@@ -40,65 +38,64 @@ class MockContext:
         self.closed = True
 
 
-def test_persistent_profile_survives_manager_restart_and_preserves_isolation(
+def test_persistent_profile_survives_runtime_restart_and_preserves_isolation(
     tmp_path: Path,
 ) -> None:
     def mock_launcher(path: Path, channel: str, headless: bool) -> Any:
         return MockContext(path)
 
     resolver = BrowserProfilePathResolver(data_dir=tmp_path)
-    manager_a = PlaywrightBrowserSessionManager(resolver=resolver, launcher=mock_launcher)
+    runtime_a = BrowserRuntime(resolver=resolver, launcher=mock_launcher)
 
     profile_a = "browser-profile/test-provider/acc-1"
-    handle_a = manager_a.open_login(
+    runtime_a.open_login(
         provider_key="test-provider",
         profile_key=profile_a,
         login_url="http://test/login",
     )
 
-    session_a = manager_a._sessions_by_id[handle_a.id]
-    page_a: MockPage = session_a.context.pages[0]
-    page_a.set_item("auth_token", "saved_token_123")
-    assert page_a.get_item("auth_token") == "saved_token_123"
+    runtime_a.run_active(
+        profile_a,
+        lambda ctx: ctx.pages[0].set_item("auth_token", "saved_token_123"),
+    )
+    val_a = runtime_a.run_active(profile_a, lambda ctx: ctx.pages[0].get_item("auth_token"))
+    assert val_a == "saved_token_123"
 
-    manager_a.close_all()
-    del manager_a
+    runtime_a.close_all()
 
-    # Manager B instance loads profile A
-    manager_b = PlaywrightBrowserSessionManager(resolver=resolver, launcher=mock_launcher)
-    handle_b = manager_b.open_login(
+    # Runtime B instance loads profile A
+    runtime_b = BrowserRuntime(resolver=resolver, launcher=mock_launcher)
+    runtime_b.open_login(
         provider_key="test-provider",
         profile_key=profile_a,
         login_url="http://test/login",
     )
 
-    session_b = manager_b._sessions_by_id[handle_b.id]
-    page_b: MockPage = session_b.context.pages[0]
-    assert page_b.get_item("auth_token") == "saved_token_123"
+    val_b = runtime_b.run_active(profile_a, lambda ctx: ctx.pages[0].get_item("auth_token"))
+    assert val_b == "saved_token_123"
 
     # Profile B is isolated from Profile A
     profile_b = "browser-profile/test-provider/acc-2"
-    handle_b2 = manager_b.open_login(
+    runtime_b.open_login(
         provider_key="test-provider",
         profile_key=profile_b,
         login_url="http://test/login",
     )
 
-    session_b2 = manager_b._sessions_by_id[handle_b2.id]
-    page_b2: MockPage = session_b2.context.pages[0]
-    assert page_b2.get_item("auth_token") is None
+    val_b2 = runtime_b.run_active(profile_b, lambda ctx: ctx.pages[0].get_item("auth_token"))
+    assert val_b2 is None
 
-    manager_b.close_all()
+    runtime_b.close_all()
 
     # Deleting profile A clears its disk storage
-    manager_b.delete_profile(profile_a)
+    runtime_b.delete_profile(profile_a)
 
-    manager_c = PlaywrightBrowserSessionManager(resolver=resolver, launcher=mock_launcher)
-    handle_c = manager_c.open_login(
+    runtime_c = BrowserRuntime(resolver=resolver, launcher=mock_launcher)
+    runtime_c.open_login(
         provider_key="test-provider",
         profile_key=profile_a,
         login_url="http://test/login",
     )
-    session_c = manager_c._sessions_by_id[handle_c.id]
-    page_c: MockPage = session_c.context.pages[0]
-    assert page_c.get_item("auth_token") is None
+    val_c = runtime_c.run_active(profile_a, lambda ctx: ctx.pages[0].get_item("auth_token"))
+    assert val_c is None
+    runtime_c.close_all()

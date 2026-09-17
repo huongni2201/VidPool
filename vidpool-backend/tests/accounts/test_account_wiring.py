@@ -18,7 +18,8 @@ def test_build_container_resolves_services(tmp_path: Path, monkeypatch) -> None:
     container = build_container()
 
     assert isinstance(container.account_service, AccountService)
-    assert container.browser_session_manager is not None
+    assert container.browser_runtime is not None
+    container.close()
 
 
 def test_custom_container_injection_and_lifespan_cleanup() -> None:
@@ -29,7 +30,7 @@ def test_custom_container_injection_and_lifespan_cleanup() -> None:
 
     container = build_container(
         account_repository=repo,
-        browser_session_manager=browser,
+        browser_runtime=browser,
         provider_registry=registry,
     )
 

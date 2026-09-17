@@ -13,12 +13,10 @@ repo_root = Path(__file__).resolve().parent.parent
 backend_dir = repo_root / "vidpool-backend"
 sys.path.insert(0, str(backend_dir))
 
-from app.modules.accounts.infrastructure.browser.playwright_session import (
-    PlaywrightBrowserSessionManager,
-)
 from app.modules.accounts.infrastructure.browser.profile_paths import (
     BrowserProfilePathResolver,
 )
+from app.modules.accounts.infrastructure.browser.runtime import BrowserRuntime
 
 HTML_CONTENT = """<!DOCTYPE html>
 <html>
@@ -59,35 +57,38 @@ def main() -> int:
     try:
         # 2. Instance A: Open profile and write localStorage
         resolver = BrowserProfilePathResolver(data_dir=temp_data_dir)
-        manager_a = PlaywrightBrowserSessionManager(resolver=resolver, headless=True)
-        handle_a = manager_a.open_login(
+        runtime_a = BrowserRuntime(resolver=resolver, headless=True)
+        runtime_a.open_login(
             provider_key="smoke-provider",
             profile_key=profile_key,
             login_url=test_url,
         )
 
-        session_a = manager_a._sessions_by_id[handle_a.id]
-        page_a = session_a.context.pages[0]
-        page_a.evaluate("localStorage.setItem('vidpool-smoke', 'persisted')")
-        value_a = page_a.evaluate("localStorage.getItem('vidpool-smoke')")
+        def write_token(ctx) -> str:
+            page = ctx.pages[0]
+            page.evaluate("localStorage.setItem('vidpool-smoke', 'persisted')")
+            return page.evaluate("localStorage.getItem('vidpool-smoke')")
+
+        value_a = runtime_a.run_active(profile_key, write_token)
         if value_a != "persisted":
             print(f"FAIL: localStorage write failed, got '{value_a}'")
             return 1
 
-        manager_a.close_all()
-        del manager_a
+        runtime_a.close_all()
+        del runtime_a
 
-        # 3. Instance B: Recreate manager using the same data directory, verify persistence
-        manager_b = PlaywrightBrowserSessionManager(resolver=resolver, headless=True)
-        handle_b = manager_b.open_login(
+        # 3. Instance B: Recreate runtime using the same data directory, verify persistence
+        runtime_b = BrowserRuntime(resolver=resolver, headless=True)
+        runtime_b.open_login(
             provider_key="smoke-provider",
             profile_key=profile_key,
             login_url=test_url,
         )
 
-        session_b = manager_b._sessions_by_id[handle_b.id]
-        page_b = session_b.context.pages[0]
-        value_b = page_b.evaluate("localStorage.getItem('vidpool-smoke')")
+        value_b = runtime_b.run_active(
+            profile_key,
+            lambda ctx: ctx.pages[0].evaluate("localStorage.getItem('vidpool-smoke')"),
+        )
         if value_b != "persisted":
             print(f"FAIL: persistent profile did not retain localStorage, got '{value_b}'")
             return 1
@@ -95,41 +96,43 @@ def main() -> int:
 
         # 4. Profile B: Verify state from A does not exist in B (profile isolation)
         profile_key_b = "browser-profile/smoke-provider/acc-smoke-2"
-        handle_b2 = manager_b.open_login(
+        runtime_b.open_login(
             provider_key="smoke-provider",
             profile_key=profile_key_b,
             login_url=test_url,
         )
-        session_b2 = manager_b._sessions_by_id[handle_b2.id]
-        page_b2 = session_b2.context.pages[0]
-        value_b2 = page_b2.evaluate("localStorage.getItem('vidpool-smoke')")
+        value_b2 = runtime_b.run_active(
+            profile_key_b,
+            lambda ctx: ctx.pages[0].evaluate("localStorage.getItem('vidpool-smoke')"),
+        )
         if value_b2 is not None:
             print(f"FAIL: expected profile isolation, but profile B saw '{value_b2}'")
             return 1
         print("PASS: account profiles remain isolated")
-        manager_b.close(handle_b2.id)
-        manager_b.close(handle_b.id)
+        runtime_b.close_profile(profile_key_b)
+        runtime_b.close_profile(profile_key)
 
         # 5. Delete profile and assert state is absent
-        manager_b.delete_profile(profile_key)
-        manager_b.close_all()
-        del manager_b
+        runtime_b.delete_profile(profile_key)
+        runtime_b.close_all()
+        del runtime_b
 
-        manager_c = PlaywrightBrowserSessionManager(resolver=resolver, headless=True)
-        handle_c = manager_c.open_login(
+        runtime_c = BrowserRuntime(resolver=resolver, headless=True)
+        runtime_c.open_login(
             provider_key="smoke-provider",
             profile_key=profile_key,
             login_url=test_url,
         )
-        session_c = manager_c._sessions_by_id[handle_c.id]
-        page_c = session_c.context.pages[0]
-        value_c = page_c.evaluate("localStorage.getItem('vidpool-smoke')")
+        value_c = runtime_c.run_active(
+            profile_key,
+            lambda ctx: ctx.pages[0].evaluate("localStorage.getItem('vidpool-smoke')"),
+        )
         if value_c is not None:
             print(f"FAIL: expected cleared state after delete, got '{value_c}'")
             return 1
         print("PASS: profile deletion clears browser state")
 
-        manager_c.close_all()
+        runtime_c.close_all()
         return 0
     finally:
         server.shutdown()
