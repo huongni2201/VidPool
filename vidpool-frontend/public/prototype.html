@@ -1237,7 +1237,7 @@
       </div>
       <div class="runtime-sub">Tauri v2 · FastAPI Sidecar · SQLite WAL</div>
       <div class="runtime-chips">
-        <span class="chip">Port 8000</span>
+        <span class="chip">FastAPI Sidecar · Runtime Port</span>
         <span class="chip">Playwright</span>
         <span class="chip">NVENC OK</span>
       </div>
@@ -1274,6 +1274,12 @@
         <div class="avatar-btn" title="Developer / Creator">HN</div>
       </div>
     </header>
+
+    <!-- PROTOTYPE DISCLAIMER BANNER -->
+    <div style="background:rgba(99,102,241,0.15);border-bottom:1px solid rgba(99,102,241,0.3);padding:6px 16px;font-size:11.5px;color:var(--text-sub);display:flex;align-items:center;gap:8px">
+      <span style="font-weight:700;color:var(--accent-light)">UI PROTOTYPE</span>
+      <span>— Some metrics and workflows are mock/future capabilities.</span>
+    </div>
 
     <!-- CONTENT SCROLL AREA -->
     <div class="content-area">
@@ -2364,7 +2370,7 @@
             <div class="panel-body">
               <div style="display:flex;flex-direction:column;gap:12px">
                 <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--line-subtle)">
-                  <div><strong>FastAPI Sidecar</strong><div style="font-size:11px;color:var(--text-muted)">http://127.0.0.1:8000 · Protected token</div></div>
+                  <div><strong>FastAPI Sidecar</strong><div style="font-size:11px;color:var(--text-muted)">FastAPI Sidecar · Runtime Port · Protected token</div></div>
                   <span class="badge badge-emerald">Active (1.2ms)</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--line-subtle)">
@@ -2435,9 +2441,9 @@
     <div id="wizardStepContent">
       <!-- Step 1: Select Provider -->
       <div style="display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--accent);border-radius:12px;background:var(--accent-soft)">
-        <div class="provider-avatar" style="color:var(--accent-light)">S</div>
+        <div class="provider-avatar" style="color:var(--accent-light)">D</div>
         <div style="flex:1">
-          <div style="font-weight:700">SeaArt AI</div>
+          <div style="font-weight:700">Dreamina (Seedance)</div>
           <div style="font-size:11.5px;color:var(--text-sub)">Video generation & Character asset creation</div>
         </div>
         <span class="badge badge-indigo">Selected</span>
@@ -2496,7 +2502,7 @@
   </div>
   <div class="dialog-body" style="padding:16px 20px">
     <div style="display:flex;flex-direction:column;gap:10px;font-size:12.5px">
-      <div style="display:flex;justify-content:space-between"><span>FastAPI Status:</span><span style="color:var(--emerald);font-weight:700">OK (Port 8000)</span></div>
+      <div style="display:flex;justify-content:space-between"><span>FastAPI Status:</span><span style="color:var(--emerald);font-weight:700">OK (Runtime Port)</span></div>
       <div style="display:flex;justify-content:space-between"><span>Playwright Runtime:</span><span style="color:var(--emerald);font-weight:700">Ready</span></div>
       <div style="display:flex;justify-content:space-between"><span>SQLite Engine:</span><span style="color:var(--emerald);font-weight:700">WAL Mode Clean</span></div>
       <div style="display:flex;justify-content:space-between"><span>Hardware Accel:</span><span style="color:var(--emerald);font-weight:700">NVIDIA CUDA NVENC</span></div>
@@ -2624,9 +2630,9 @@
       sub.textContent = 'Choose an AI provider to link using an isolated browser profile.';
       content.innerHTML = `
         <div style="display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--accent);border-radius:12px;background:var(--accent-soft)">
-          <div class="provider-avatar" style="color:var(--accent-light)">S</div>
+          <div class="provider-avatar" style="color:var(--accent-light)">D</div>
           <div style="flex:1">
-            <div style="font-weight:700">SeaArt AI</div>
+            <div style="font-weight:700">Dreamina (Seedance)</div>
             <div style="font-size:11.5px;color:var(--text-sub)">Video generation & Character asset creation</div>
           </div>
           <span class="badge badge-indigo">Selected</span>
@@ -2641,21 +2647,21 @@
           <div style="font-size:32px;margin-bottom:8px">🌐</div>
           <div style="font-weight:700;font-size:14px">Cửa sổ trình duyệt đã được mở</div>
           <p style="font-size:12px;color:var(--text-sub);margin:8px 0 12px;line-height:1.5">
-            1. Đăng nhập Google / SeaArt như thông thường.<br>
+            1. Đăng nhập Dreamina bằng phương thức đăng nhập bạn sử dụng bình thường.<br>
             2. Vượt qua captcha hoặc 2FA nếu có.<br>
             3. Quay lại VidPool và bấm nút <strong>"Đã đăng nhập xong"</strong> bên dưới.
           </p>
-          <div style="font-size:11px;color:var(--text-muted)">VidPool không lưu password của bạn. Chỉ lưu persistent cookie session.</div>
+          <div style="font-size:11px;color:var(--text-muted)">VidPool không lưu password của bạn. Phiên đăng nhập được giữ trong browser profile biệt lập trên máy.</div>
         </div>
       `;
       nextBtn.textContent = 'Đã đăng nhập xong';
     } else if (wizardStep === 3) {
-      title.textContent = 'Verifying Session & Quota';
-      sub.textContent = 'Đang kiểm tra tính hợp lệ của cookie và đo lường stamina/credits khả dụng...';
+      title.textContent = 'Verifying Session';
+      sub.textContent = 'Đang kiểm tra tính hợp lệ của session qua Playwright Runtime...';
       content.innerHTML = `
         <div style="text-align:center;padding:24px 0">
           <div style="width:36px;height:36px;border:3px solid var(--surface-3);border-top-color:var(--accent-light);border-radius:50%;margin:0 auto 16px;animation:spin 0.8s linear infinite"></div>
-          <div style="font-weight:700;font-size:14px">Checking SeaArt Session…</div>
+          <div style="font-weight:700;font-size:14px">Checking Dreamina Session…</div>
           <div style="font-size:11.5px;color:var(--text-muted);margin-top:4px">Đang kết nối qua Playwright Runtime</div>
         </div>
         <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
@@ -2670,7 +2676,7 @@
           <div style="text-align:center;padding:20px 0">
             <div style="width:48px;height:48px;border-radius:50%;background:var(--emerald-soft);color:var(--emerald);display:grid;place-items:center;font-size:24px;margin:0 auto 12px">✓</div>
             <div style="font-weight:700;font-size:15px">Kết nối thành công!</div>
-            <div style="font-size:12px;color:var(--text-sub);margin-top:4px">SeaArt Account · 130/130 Stamina · ACTIVE</div>
+            <div style="font-size:12px;color:var(--text-sub);margin-top:4px">Dreamina Account · ACTIVE</div>
           </div>
         `;
         nextBtn.style.display = 'inline-flex';
