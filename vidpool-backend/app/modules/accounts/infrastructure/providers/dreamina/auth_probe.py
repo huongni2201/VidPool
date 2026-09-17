@@ -7,6 +7,10 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+class DreaminaProbeUnavailable(RuntimeError):
+    """Raised when Dreamina authentication state cannot be determined reliably."""
+
+
 LOGGED_OUT_SCRIPT = """/* LOGGED_OUT */ () => {
     const gtwEl = document.getElementById('__GTW_USER_ID__');
     if (gtwEl && gtwEl.textContent) {
@@ -34,7 +38,7 @@ LOGGED_IN_SCRIPT = """/* LOGGED_IN */ () => {
             }
         } catch (e) {}
     }
-    const avatar = document.querySelector('[data-testid="user-avatar"], [class*="avatar"], [aria-label*="account" i]');
+    const avatar = document.querySelector('[data-testid="user-avatar"], [aria-label*="account" i]');
     return Boolean(avatar);
 }"""
 
@@ -52,7 +56,7 @@ IDENTITY_SCRIPT = """/* IDENTITY */ () => {
         } catch (e) {}
     }
 
-    const nameEl = document.querySelector('[data-testid="user-name"], [class*="user-name"], [class*="userName"]');
+    const nameEl = document.querySelector('[data-testid="user-name"]');
     if (nameEl && nameEl.textContent) {
         displayName = nameEl.textContent.trim();
     }
@@ -95,30 +99,21 @@ class DreaminaAuthProbe:
         start_time = time.perf_counter()
         try:
             page = _get_or_create_page(context)
-            current_url = getattr(page, "url", "")
-            if (
-                not current_url
-                or current_url == "about:blank"
-                or not current_url.startswith("https://dreamina.capcut.com")
-            ):
-                page.goto(
-                    self._workspace_url,
-                    wait_until="domcontentloaded",
-                    timeout=self._timeout_ms,
-                )
+            self._ensure_workspace(page)
 
-            if self._is_logged_out(page) or not self._is_logged_in(page):
+            if self._is_logged_out(page):
                 state = DreaminaAuthState(authenticated=False)
-            else:
+            elif self._is_logged_in(page):
                 display_name, external_identity = self._read_identity(page)
-                if not display_name or not external_identity:
-                    state = DreaminaAuthState(authenticated=False)
-                else:
-                    state = DreaminaAuthState(
-                        authenticated=True,
-                        display_name=display_name,
-                        external_identity=external_identity,
-                    )
+                state = DreaminaAuthState(
+                    authenticated=True,
+                    display_name=display_name,
+                    external_identity=external_identity,
+                )
+            else:
+                raise DreaminaProbeUnavailable(
+                    "Dreamina authentication state is indeterminate"
+                )
 
             elapsed_ms = int((time.perf_counter() - start_time) * 1000)
             logger.info(
@@ -127,6 +122,8 @@ class DreaminaAuthProbe:
                 elapsed_ms,
             )
             return state
+        except DreaminaProbeUnavailable:
+            raise
         except Exception as exc:
             elapsed_ms = int((time.perf_counter() - start_time) * 1000)
             logger.warning(
@@ -134,30 +131,37 @@ class DreaminaAuthProbe:
                 exc.__class__.__name__,
                 elapsed_ms,
             )
-            return DreaminaAuthState(authenticated=False)
+            raise DreaminaProbeUnavailable(
+                "Dreamina authentication probe could not complete"
+            ) from exc
+
+    def _ensure_workspace(self, page: Any) -> None:
+        current_url = getattr(page, "url", "")
+        if (
+            not current_url
+            or current_url == "about:blank"
+            or not current_url.startswith("https://dreamina.capcut.com")
+        ):
+            page.goto(
+                self._workspace_url,
+                wait_until="domcontentloaded",
+                timeout=self._timeout_ms,
+            )
 
     def _is_logged_out(self, page: Any) -> bool:
         url = getattr(page, "url", "")
         if "need_login=true" in url or "/login" in url or "/signin" in url:
             return True
-        try:
-            res = page.evaluate(LOGGED_OUT_SCRIPT)
-            return bool(res)
-        except Exception:
-            return True
+        return bool(page.evaluate(LOGGED_OUT_SCRIPT))
 
     def _is_logged_in(self, page: Any) -> bool:
-        try:
-            res = page.evaluate(LOGGED_IN_SCRIPT)
-            return bool(res)
-        except Exception:
-            return False
+        return bool(page.evaluate(LOGGED_IN_SCRIPT))
 
     def _read_identity(self, page: Any) -> tuple[str | None, str | None]:
-        try:
-            res = page.evaluate(IDENTITY_SCRIPT)
-            if isinstance(res, dict):
-                return res.get("display_name"), res.get("external_identity")
-            return None, None
-        except Exception:
-            return None, None
+        result = page.evaluate(IDENTITY_SCRIPT)
+        if not isinstance(result, dict):
+            raise DreaminaProbeUnavailable(
+                "Dreamina identity result has an unexpected shape"
+            )
+        return result.get("display_name"), result.get("external_identity")
+

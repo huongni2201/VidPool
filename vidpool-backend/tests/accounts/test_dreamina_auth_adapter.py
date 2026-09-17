@@ -9,6 +9,7 @@ from app.modules.accounts.infrastructure.providers.dreamina.auth_adapter import 
 from app.modules.accounts.infrastructure.providers.dreamina.auth_probe import (
     DreaminaAuthProbe,
     DreaminaAuthState,
+    DreaminaProbeUnavailable,
 )
 from tests.accounts.test_provider_auth_contract import assert_provider_auth_contract
 
@@ -19,13 +20,17 @@ class FakePage:
         url: str = "https://dreamina.capcut.com/tools/ai-video-generator",
         eval_responses: dict[str, Any] | None = None,
         default_eval: Any = None,
+        goto_error: Exception | None = None,
     ) -> None:
         self.url = url
         self.goto_calls: list[str] = []
         self._eval_responses = eval_responses or {}
         self._default_eval = default_eval
+        self.goto_error = goto_error
 
     def goto(self, url: str, **kwargs: Any) -> None:
+        if self.goto_error is not None:
+            raise self.goto_error
         self.goto_calls.append(url)
         self.url = url
 
@@ -90,7 +95,7 @@ def test_probe_returns_authenticated_with_identity() -> None:
     assert result.external_identity == "dreamina-user-98765"
 
 
-def test_probe_returns_false_when_no_trusted_authenticated_signal_exists() -> None:
+def test_probe_raises_when_auth_state_is_indeterminate() -> None:
     page = FakePage(
         eval_responses={
             "LOGGED_OUT": False,
@@ -98,11 +103,55 @@ def test_probe_returns_false_when_no_trusted_authenticated_signal_exists() -> No
         }
     )
     context = FakeContext(pages=[page])
-    probe = DreaminaAuthProbe("https://dreamina.capcut.com/tools/ai-video-generator")
+    probe = DreaminaAuthProbe()
+
+    with pytest.raises(
+        DreaminaProbeUnavailable,
+        match="indeterminate",
+    ):
+        probe.inspect(context)
+
+
+def test_probe_raises_when_evaluation_fails() -> None:
+    def raise_eval(expression: str, arg: Any = None) -> Any:
+        raise RuntimeError("javascript evaluation failed")
+
+    page = FakePage(default_eval=raise_eval)
+    context = FakeContext(pages=[page])
+    probe = DreaminaAuthProbe()
+
+    with pytest.raises(DreaminaProbeUnavailable):
+        probe.inspect(context)
+
+
+def test_probe_raises_when_navigation_fails() -> None:
+    page = FakePage(url="about:blank", goto_error=RuntimeError("navigation timeout"))
+    context = FakeContext(pages=[page])
+    probe = DreaminaAuthProbe()
+
+    with pytest.raises(DreaminaProbeUnavailable):
+        probe.inspect(context)
+
+
+def test_probe_returns_authenticated_without_identity() -> None:
+    page = FakePage(
+        eval_responses={
+            "LOGGED_OUT": False,
+            "LOGGED_IN": True,
+            "IDENTITY": {
+                "external_identity": None,
+                "display_name": None,
+            },
+        }
+    )
+    context = FakeContext(pages=[page])
+    probe = DreaminaAuthProbe()
 
     result = probe.inspect(context)
 
-    assert result.authenticated is False
+    assert result.authenticated is True
+    assert result.display_name is None
+    assert result.external_identity is None
 
 
 def test_probe_never_requires_cookie_values() -> None:
