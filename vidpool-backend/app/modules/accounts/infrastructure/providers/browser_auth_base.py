@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from collections.abc import Callable
-from typing import Any, Protocol, TypeVar
+from typing import Any, Protocol, TypeVar, runtime_checkable
 
 from app.modules.accounts.application.ports import (
     ProviderAuthPort,
@@ -12,6 +10,7 @@ from app.modules.accounts.application.ports import (
 T = TypeVar("T")
 
 
+@runtime_checkable
 class BrowserAutomationRuntime(Protocol):
     def run_active(
         self,

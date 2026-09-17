@@ -20,6 +20,12 @@ from app.modules.accounts.infrastructure.browser.runtime import BrowserRuntime
 from app.modules.accounts.infrastructure.persistence.uow import (
     SQLAlchemyAccountUnitOfWork,
 )
+from app.modules.accounts.infrastructure.providers.browser_auth_base import (
+    BrowserAutomationRuntime,
+)
+from app.modules.accounts.infrastructure.providers.dreamina import (
+    DreaminaAuthAdapter,
+)
 from app.modules.accounts.infrastructure.providers.registry import ProviderRegistry
 
 
@@ -62,7 +68,16 @@ def build_container(
     else:
         runtime = browser_runtime
 
-    providers = provider_registry if provider_registry is not None else ProviderRegistry()
+    if provider_registry is not None:
+        providers = provider_registry
+    else:
+        if not isinstance(runtime, BrowserAutomationRuntime):
+            raise TypeError("Default provider registry requires a BrowserAutomationRuntime")
+        providers = ProviderRegistry(
+            auth_adapters=[
+                DreaminaAuthAdapter(runtime),
+            ]
+        )
 
     account_service = AccountService(
         uow_factory=resolved_uow_factory,
