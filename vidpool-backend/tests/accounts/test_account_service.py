@@ -217,6 +217,26 @@ def test_cancel_login_closes_only_accounts_own_profile() -> None:
     assert browser.has_open_session(acc2.profile_key)
 
 
+def test_complete_login_closes_only_accounts_own_profile() -> None:
+    auth = FakeProviderAuthAdapter(provider_key="provider-x", valid_session=True)
+    service, repo, browser, _ = _build_service(auth)
+
+    start1 = service.start_login("provider-x", now=NOW)
+    start2 = service.start_login("provider-x", now=NOW)
+
+    acc1 = repo.get(start1.account_id)
+    acc2 = repo.get(start2.account_id)
+
+    assert browser.has_open_session(acc1.profile_key)
+    assert browser.has_open_session(acc2.profile_key)
+
+    service.complete_login(start1.account_id, now=NOW)
+
+    assert not browser.has_open_session(acc1.profile_key)
+    assert browser.has_open_session(acc2.profile_key)
+
+
+
 def test_start_relogin_reuses_existing_profile_key() -> None:
     service, repo, browser, _ = _build_service()
 
