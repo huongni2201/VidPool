@@ -93,9 +93,23 @@ def main() -> int:
             return 1
         print("PASS: persistent profile survives manager restart")
 
-        manager_b.close_all()
+        # 4. Profile B: Verify state from A does not exist in B (profile isolation)
+        profile_key_b = "browser-profile/smoke-provider/acc-smoke-2"
+        handle_b2 = manager_b.open_login(
+            provider_key="smoke-provider",
+            profile_key=profile_key_b,
+            login_url=test_url,
+        )
+        session_b2 = manager_b._sessions_by_id[handle_b2.id]
+        page_b2 = session_b2.context.pages[0]
+        value_b2 = page_b2.evaluate("localStorage.getItem('vidpool-smoke')")
+        if value_b2 is not None:
+            print(f"FAIL: expected profile isolation, but profile B saw '{value_b2}'")
+            return 1
+        print("PASS: account profiles remain isolated")
+        manager_b.close(handle_b2.id)
 
-        # 4. Delete profile and assert state is absent
+        # 5. Delete profile and assert state is absent
         manager_b.delete_profile(profile_key)
 
         manager_c = PlaywrightBrowserSessionManager(resolver=resolver, headless=True)
