@@ -36,6 +36,20 @@ def test_engine_enforces_foreign_keys(tmp_path: Path) -> None:
     assert fk == 1
 
 
+def test_get_data_dir_uses_vidpool_directory(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("VIDPOOL_DATA_DIR", str(tmp_path))
+    from app.infrastructure.persistence.paths import get_data_dir
+
+    assert get_data_dir() == tmp_path
+
+
+def test_engine_enforces_busy_timeout(tmp_path: Path) -> None:
+    engine = create_engine_for_path(tmp_path / "test.db")
+    with engine.connect() as conn:
+        timeout = conn.execute(text("PRAGMA busy_timeout")).scalar()
+    assert timeout >= 5000
+
+
 def test_file_backed_engine_enforces_wal_journal_mode(tmp_path: Path) -> None:
     engine = create_engine_for_path(tmp_path / "test.db")
     with engine.connect() as conn:

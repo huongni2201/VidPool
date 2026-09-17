@@ -20,6 +20,7 @@ def create_engine_for_path(path: Path) -> Engine:
         cursor = dbapi_connection.cursor()
         try:
             cursor.execute("PRAGMA foreign_keys=ON")
+            cursor.execute("PRAGMA busy_timeout=5000")
             cursor.execute("PRAGMA journal_mode=WAL")
         finally:
             cursor.close()
