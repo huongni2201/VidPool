@@ -68,6 +68,16 @@ jobs:
             throw "Sidecar binary is empty"
           }
 
+      - name: Verify packaged Playwright browser runtime
+        shell: pwsh
+        run: |
+          $bin = "vidpool-frontend/src-tauri/binaries/vidpool-backend-x86_64-pc-windows-msvc.exe"
+          & $bin --browser-smoke-test
+          if ($LASTEXITCODE -ne 0) {
+            throw "Packaged VidPool backend failed browser smoke test with exit code $LASTEXITCODE"
+          }
+
+
       - name: Run Rust tests
         run: cargo test --locked --manifest-path vidpool-frontend/src-tauri/Cargo.toml
 
