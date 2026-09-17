@@ -1,26 +1,31 @@
 # Module Boundaries
 
-## Rule
-
-Each business module owns its concepts and exposes explicit application contracts.
-
-A module must not access another module's concrete infrastructure.
-
-## Ownership
-
-### story
+## project
 
 Owns:
 
-- Project story structure
+- Project
+- project settings
+- project manifest
+- snapshots
+- project lifecycle
+
+## story
+
+Owns:
+
 - Chapter
 - Scene
 - VisualBeat
 - StoryBible
+- GlobalStorySummary
 - EventLedger
 - OpenPlotThread
+- WorldState
+- ItemState
+- StyleBible
 
-### characters
+## characters
 
 Owns:
 
@@ -28,36 +33,37 @@ Owns:
 - CharacterState
 - CharacterEvolution
 - RelationshipGraph
-- character reference metadata
+- character master references
 
-### generation
+## generation
 
 Owns:
 
 - provider-neutral generation request
-- generation lifecycle
-- generation phase/state
+- generation phase
 - generation orchestration contracts
+- generation lineage inputs
 
-### audio
+## audio
 
 Owns:
 
 - VoiceProfile
-- spoken-text preparation
+- PronunciationDictionary
+- spoken text
 - TTS request semantics
-- pronunciation dictionary
-- audio segment metadata
+- AudioSegment
 
-### timing
+## timing
 
 Owns:
 
-- aligned timestamp model
+- alignment output
 - TimingPlan
-- duration reconciliation policy
+- duration reconciliation
+- subtitle timing source
 
-### timeline
+## timeline
 
 Owns:
 
@@ -65,62 +71,64 @@ Owns:
 - tracks
 - TimelineClip
 - editing state
-- render-plan compilation inputs
+- RenderPlan compilation inputs
 
-### jobs
+## jobs
 
 Owns:
 
-- durable Job
-- queue/claim semantics
-- retry/recovery
+- Job
+- JobStatus
+- queue/claim
+- retries
+- leases
 - dependencies
-- idempotency/replay metadata
+- recovery
+- idempotency metadata
 
-### media
+## media
 
 Owns:
 
 - MediaAsset
-- download/validation contracts
-- probing/transcoding/thumbnail contracts
-- media lineage metadata
+- download
+- probing
+- transcoding
+- thumbnailing
+- media validation
+- artifact lineage metadata
 
-### credentials
+## credentials
 
 Owns:
 
 - ProviderCredential metadata
-- `secret_ref`
-- eligibility/cooldown/auth-expired state
+- secret reference
+- eligibility
+- cooldown
+- auth-expired / quota state
 
 ## Cross-Module Rule
 
-Prefer an explicit application contract or query port.
+Modules interact through explicit application contracts or ports.
 
-Avoid:
+Forbidden examples:
 
 ```text
 story -> characters SQLAlchemy model
 generation -> credentials repository implementation
-timeline -> media persistence table
+timeline -> media ORM table
 ```
 
 ## Shared Code
 
-Keep shared/common code very small.
+Keep shared code minimal.
 
 Good shared primitives:
 
 - typed IDs
 - Clock protocol
 - pagination
-- generic Result type
+- generic Result
 
-Do not put business concepts in `shared/` merely to avoid deciding ownership.
-
-## Circular Dependencies
-
-Circular imports between business modules mean ownership is unclear.
-
-Fix ownership or introduce a contract. Do not normalize circular imports as acceptable architecture.
+Do not move business concepts to `shared/` to avoid choosing an owner.

@@ -5,15 +5,9 @@
 
 ## Purpose
 
-This file distinguishes the accepted target architecture from the code that actually exists in the repository.
-
-`docs/architecture/`, `docs/rules/`, and accepted ADRs define the target and constraints.
-
-This file defines the current implementation state.
+This file distinguishes target architecture from implemented reality.
 
 ## Implemented
-
-At the time of this review:
 
 - architecture documentation baseline
 - architecture rules
@@ -22,7 +16,7 @@ At the time of this review:
 
 ## Not Implemented Yet
 
-The repository does not yet contain production implementation for:
+The repository currently does not contain production implementation for:
 
 - Tauri desktop shell
 - React/Vite frontend
@@ -46,17 +40,15 @@ The repository does not yet contain production implementation for:
 
 ## Documentation Semantics
 
-Unless explicitly marked otherwise:
+- `docs/architecture/` = accepted target architecture
+- `docs/rules/` = mandatory implementation constraints
+- `docs/adr/` = architecture decision history
+- this file = implemented reality
 
-- `docs/architecture/` describes **target architecture**
-- `docs/rules/` describes **mandatory implementation constraints**
-- `docs/adr/` records **accepted architecture decisions**
-- this file describes **implemented reality**
-
-Do not infer that a class/module/service exists merely because architecture documentation names it.
+Do not infer that a class/module exists because documentation names it.
 
 ## Update Rule
 
-Whenever a feature or architectural component becomes implemented, update this file in the same change.
+When implementation changes, update this file in the same change.
 
-Never mark a component implemented based only on scaffolding, placeholder classes, or an unconnected prototype.
+Do not mark a component implemented based only on scaffolding, placeholder classes, or disconnected prototypes.

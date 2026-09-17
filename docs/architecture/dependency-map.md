@@ -2,90 +2,80 @@
 
 ## Domain
 
-May depend on:
+May import:
 
-- Python standard library
+- standard library
 - domain-local modules
 - small dependency-free shared primitives
 
-Must not depend on:
+Must not import:
 
 - FastAPI
 - SQLAlchemy
-- API Pydantic DTOs
-- httpx/requests
+- Pydantic API DTOs
+- httpx / requests
+- provider SDKs
+- keyring
 - FFmpeg wrappers
 - Tauri
-- keyring
-- provider SDKs
+- filesystem implementations
 
 ## Application
 
-May depend on:
+May import:
 
 - domain
 - ports
-- application commands/queries/results
+- commands
+- queries
+- result DTOs
 
-Must not depend on:
+Must not import:
 
 - concrete provider adapters
-- concrete repository implementations
-- SQLAlchemy models
+- concrete repositories
+- ORM models
 - API routers
 - keyring implementation
 - filesystem implementation
+- concrete renderer
 
 ## Infrastructure
 
-May depend on:
+May import:
 
 - application ports
 - domain types
 - SQLAlchemy
-- httpx/provider SDKs
+- HTTP clients
+- provider SDKs
 - keyring
 - subprocess/FFmpeg integrations
 
 ## API
 
-May depend on:
+May import:
 
-- application commands/queries
+- application handlers
 - API DTOs
-- dependency/composition container
+- composition container
 
-Routes must not own business rules.
-
-## Runtime vs Source Dependency
-
-Runtime call flow can be:
-
-```text
-Application -> VideoProviderPort -> SeedanceAdapter
-```
-
-but source dependencies remain:
-
-```text
-Application -> VideoProviderPort
-SeedanceAdapter -> VideoProviderPort
-```
-
-Application never imports `SeedanceAdapter`.
+API must not own business rules.
 
 ## Composition Root
 
 Concrete wiring happens at startup:
 
 ```text
-VideoProviderPort implementation = SeedanceAdapter(...)
-JobRepository implementation = SqlAlchemyJobRepository(...)
-Renderer implementation = FFmpegRenderer(...)
+VideoProviderPort = SeedanceAdapter(...)
+TTSProviderPort = VoiceStudioAdapter(...)
+JobRepository = SqlAlchemyJobRepository(...)
+RendererPort = FFmpegRenderer(...)
+SecretStorePort = KeyringSecretStore(...)
 ```
 
-The composition root may know all layers because its purpose is assembly.
+The composition root may know all layers because its only responsibility is assembly.
 
-## Enforcement
+## Architecture Enforcement
 
-Architecture tests should fail on forbidden imports rather than relying only on code review.
+Automated architecture tests should detect forbidden imports.

@@ -2,57 +2,52 @@
 
 ## Purpose
 
-This repository contains a desktop-first, single-user AI Story Video Studio.
+This file is the mandatory entrypoint for any human or coding agent modifying VidPool.
 
-The application turns long-form story text into structured story data, narration, visual assets, synchronized timelines, and final rendered video.
+Before changing code, read:
 
-This file is the mandatory entrypoint for any human or coding agent modifying the repository.
+- `docs/CURRENT_STATUS.md`
+- `ARCHITECTURE-CHECKLIST.md`
+- the relevant documents under `docs/rules/`
+- the relevant documents under `docs/architecture/`
+- the relevant ADRs under `docs/adr/`
 
-Before changing code, read this file, `docs/CURRENT_STATUS.md`, and the relevant documents under:
+Architecture documents define the accepted target. `docs/CURRENT_STATUS.md` defines implementation reality.
 
-- `docs/rules/`
-- `docs/architecture/`
-- `docs/adr/`
+## Non-Negotiable Rules
 
-Architecture documents describe the accepted target architecture. `docs/CURRENT_STATUS.md` is the authority for what is actually implemented today.
+1. VidPool is desktop-first, single-user, and local-first.
+2. Tauri is a shell and lifecycle host, not the business backend.
+3. React must never call external AI/TTS/image/video providers directly.
+4. FastAPI routes contain transport logic only.
+5. Domain code must not depend on FastAPI, SQLAlchemy, Pydantic API DTOs, HTTP clients, FFmpeg, Tauri, keyring, provider SDKs, or OS APIs.
+6. External systems are accessed through application-owned ports and infrastructure adapters.
+7. Backend architecture is a Modular Monolith with Clean Architecture dependency direction, Hexagonal boundaries, and lightweight DDD.
+8. Project continuity belongs to persisted project data, never to an LLM conversation.
+9. Character identity and character state are separate concepts.
+10. Actual aligned audio timestamps are the master timing source once real audio exists.
+11. Timeline is the editing source of truth. FFmpeg is only a renderer.
+12. Long-running work must be represented as durable jobs.
+13. Durable job state must exist before an external operation begins whenever recovery requires knowing that operation exists.
+14. Media binaries belong on the filesystem. Metadata belongs in SQLite. Secrets belong in OS credential storage.
+15. Regeneration invalidates only affected downstream dependencies.
+16. User locks and approved assets must never be silently overwritten.
+17. Generated assets must be traceable through lineage metadata.
+18. Provider-specific payloads must not leak into domain, application, timeline, or frontend code.
+19. SQLAlchemy models are persistence representations, not domain entities.
+20. Do not create a global business `services/` dumping ground.
+21. Do not introduce Redis, Celery, PostgreSQL, message brokers, Kubernetes, or microservices without a concrete requirement and ADR.
+22. In pre-production, remove superseded implementations instead of keeping permanent compatibility layers.
+23. Do not trust provider timestamps or estimated text duration once aligned audio exists.
+24. Do not log tokens, cookies, refresh credentials, or authorization headers.
+25. Bug fixes require regression tests when behavior is testable.
+26. AI output is candidate data until validation and merge.
+27. User decisions override AI suggestions.
+28. Credential scheduling may only use authorized credentials and must not bypass quotas, rate limits, or platform restrictions.
 
-## Non-Negotiable Project Rules
+## Dependency Direction
 
-1. This is a desktop-first, single-user application.
-2. Tauri is a desktop shell, not the application backend.
-3. React must never call external AI, TTS, image, or video providers directly.
-4. FastAPI routes must contain transport logic only, not business logic.
-5. Domain code must not depend on FastAPI, SQLAlchemy, HTTP clients, FFmpeg, Tauri, provider SDKs, or OS APIs.
-6. External providers must be accessed through application ports and infrastructure adapters.
-7. Project continuity belongs to persisted project data, never to an LLM conversation's memory.
-8. Character identity and character state are separate concepts.
-9. Actual aligned audio timestamps are the master timing source whenever audio exists.
-10. Timeline data is the source of truth for editing. FFmpeg is only a renderer.
-11. Long-running operations must run as durable jobs.
-12. Media belongs on the filesystem. Metadata belongs in SQLite. Secrets belong in OS credential storage.
-13. Regeneration must invalidate only downstream dependencies.
-14. Never silently overwrite a user-locked field, asset, voice, prompt, timing value, or approved generation.
-15. Generated assets must remain traceable through lineage metadata.
-16. Do not introduce Redis, PostgreSQL, Celery, message brokers, Kubernetes, or microservices unless a real requirement justifies them.
-17. In pre-production, remove superseded implementations instead of maintaining unnecessary compatibility layers.
-18. Every architectural change must preserve provider, model, TTS, renderer, and storage replaceability.
-19. Do not let provider-specific payloads leak into application or domain layers.
-20. Do not trust provider timestamps, generated clip duration, or estimated reading duration when actual aligned audio timestamps are available.
-21. Do not use provider account rotation to bypass quotas, rate limits, or platform restrictions.
-22. Never log tokens, cookies, refresh credentials, secret values, or full authorization headers.
-23. Bug fixes require a regression test when the behavior is testable.
-24. User decisions override AI suggestions.
-25. AI output is always candidate data until validated and persisted by the application.
-26. Backend architecture is a Modular Monolith with Clean Architecture dependency direction, Hexagonal boundaries, and lightweight DDD.
-27. Do not create a global business `services/` dumping ground; organize backend behavior by domain module.
-28. SQLAlchemy models are infrastructure persistence models, not domain entities.
-29. Long-running work must be persisted before external execution begins whenever recovery requires knowing the operation exists.
-
-## Architecture Dependency Direction
-
-The backend uses dependency inversion.
-
-Source-code dependencies must point inward:
+Source-code dependencies point inward:
 
 ```text
 API / Worker
@@ -64,155 +59,129 @@ Application -----> Port <----- Infrastructure Adapter
 Domain
 ```
 
-More explicitly:
+Allowed:
 
 ```text
+API -> Application
 Application -> Domain
 Application -> Port
 Infrastructure -> Port
 Infrastructure -> Domain when mapping requires it
-API -> Application
-
-Application -X-> concrete Infrastructure
-Domain      -X-> Application / Infrastructure / API
 ```
 
-At runtime an application use case may call an adapter through a port, but the application source code must not import that concrete adapter.
-
-External presentation layers call inward:
+Forbidden:
 
 ```text
-Tauri / React
-      |
-      v
-FastAPI
-      |
-      v
-Application
-      |
-      v
-Domain
-```
-
-Forbidden examples:
-
-```text
-Domain -> FastAPI
-Domain -> SQLAlchemy
-Domain -> httpx
-Domain -> FFmpeg
-Domain -> Tauri
-Domain -> Seedance
-
+Domain -> API
+Domain -> Infrastructure
+Application -> concrete Infrastructure
+Application -> concrete Provider Client
+Application -> SQLAlchemy Model
 React -> SQLite
-React -> provider HTTP APIs
-React -> provider tokens
-
-Application -> concrete SeaArtClient
-Application -> concrete SQLAlchemy models
-Application -> concrete FFmpeg renderer
+React -> provider HTTP API
+React -> provider secret
 ```
 
-Concrete wiring belongs in the composition root, normally `core/container.py` or an equivalent bootstrap module.
+Runtime call direction may be:
 
-## When to Add an Abstraction
+```text
+Application -> VideoProviderPort -> SeedanceAdapter
+```
 
-Do not add abstractions by default.
+but source dependencies remain:
 
-Add one when there is a real boundary, especially:
+```text
+Application -> VideoProviderPort
+SeedanceAdapter -> VideoProviderPort
+```
 
-- external provider
-- persistence
-- secret storage
-- media renderer
-- operating-system integration
-- filesystem/object storage
-- external AI/TTS/video/image service
-
-Do not create interfaces for simple internal helpers with one stable implementation.
-
-Do not skip an abstraction at an external boundary merely to reduce file count.
+Concrete wiring belongs in the composition root such as `core/container.py`.
 
 ## Source of Truth
 
 ### Story meaning
 
-`VisualBeat` is the source of truth for a beat's narrative and visual intent.
+`VisualBeat`
 
 ### Character identity
 
-`CharacterProfile` is the source of truth for stable identity.
+`CharacterProfile`
 
-### Character scene state
+### Mutable character state
 
-`CharacterState` is the source of truth for mutable state.
+`CharacterState`
 
-### Story continuity
+### Long-term continuity
 
-The project database is the source of truth for:
+Persisted project state:
 
-- Story Bible
-- Event Ledger
-- Character State
-- Relationship Graph
-- Location State
-- World State
-- Open Plot Threads
-- Item State
+- StoryBible
+- GlobalStorySummary
+- CharacterProfile
+- CharacterState
+- CharacterEvolution
+- RelationshipGraph
+- LocationProfile / LocationState
+- WorldState
+- EventLedger
+- OpenPlotThread
+- ItemState
+- StyleBible
 
 ### Timing
 
-Actual aligned narration/dialogue timestamps are the source of truth once generated.
+Aligned narration/dialogue timestamps.
 
 ### Editing
 
-The Timeline is the source of truth.
+Timeline.
 
 ### Rendering
 
-`RenderPlan` is a compiled representation of Timeline data.
+`RenderPlan` compiled from Timeline.
 
-The final MP4 is never used as the canonical project state.
+The final MP4 is never canonical project state.
 
 ## Required Reading by Change Type
 
 | Change | Required docs |
 |---|---|
-| Any backend architecture work | `16-python-module-architecture.md`, `17-domain-application-separation.md`, `23-import-and-dependency-rules.md`, `26-architecture-review-gates.md` |
-| New backend module | `01-architecture-boundaries.md`, `16-python-module-architecture.md`, `17-domain-application-separation.md`, `18-dependency-injection.md`, `23-import-and-dependency-rules.md` |
-| Domain/entity changes | `02-domain-modeling.md`, `07-ai-story-continuity.md`, `17-domain-application-separation.md` |
-| FastAPI/API changes | `03-backend-fastapi.md`, `20-commands-queries-usecases.md` |
-| React UI changes | `04-frontend-react.md` |
-| Database changes | `05-database-persistence.md`, `19-repositories-and-mappers.md`, `14-migrations-compatibility.md` |
-| Job/worker changes | `06-jobs-and-orchestration.md`, `20-commands-queries-usecases.md` |
-| Story/AI changes | `07-ai-story-continuity.md`, `21-boundary-contracts.md` |
-| Provider/model changes | `08-provider-adapters.md`, `21-boundary-contracts.md`, `24-architecture-testing.md` |
-| Audio/subtitle/timing | `09-audio-timing-sync.md` |
-| FFmpeg/rendering | `10-media-rendering.md`, `21-boundary-contracts.md` |
-| Credentials/security | `11-security-secrets.md` |
-| Dependency injection/composition | `18-dependency-injection.md` |
-| Repository/mapping work | `19-repositories-and-mappers.md` |
-| Python implementation style | `22-python-coding-standards.md`, `23-import-and-dependency-rules.md` |
-| Tests/quality | `12-testing-quality.md`, `24-architecture-testing.md` |
-| Refactoring/migrations | `14-migrations-compatibility.md`, `25-refactoring-and-migration.md` |
-| Errors/logging | `13-errors-observability.md` |
-| Architecture changes | `15-documentation-adr.md`, `26-architecture-review-gates.md` |
+| Any backend architecture work | `16`, `17`, `23`, `26` |
+| New backend module | `01`, `16`, `17`, `18`, `23` |
+| Domain/entity changes | `02`, `07`, `17` |
+| FastAPI/API changes | `03`, `20` |
+| React UI changes | `04` |
+| Database changes | `05`, `19`, `14` |
+| Jobs/worker | `06`, `20`, `24` |
+| Story/AI | `07`, `21` |
+| Provider/model | `08`, `21`, `24` |
+| Audio/subtitle/timing | `09` |
+| FFmpeg/rendering | `10`, `21` |
+| Credentials/security | `11` |
+| Dependency injection | `18` |
+| Repository/mapping | `19` |
+| Python implementation | `22`, `23` |
+| Testing | `12`, `24` |
+| Refactoring/migration | `14`, `25` |
+| Architecture decisions | `15`, `26` |
 
-## Pre-Commit Questions
+Rule numbers refer to files under `docs/rules/`.
 
-Before finalizing a change, answer:
+## Before Completion
 
-1. Did this introduce provider-specific logic outside an adapter?
-2. Did this bypass a port at an external boundary?
-3. Did this create a second source of truth?
-4. Could this overwrite user-approved or locked data?
-5. Does this invalidate more downstream work than necessary?
-6. Can the operation resume after app restart?
-7. Was durable job state persisted before an external operation that may outlive the process?
-8. Are secrets protected?
-9. Are story, character, audio, and timeline continuity preserved?
-10. Did domain/application code import concrete infrastructure?
-11. Is a migration required?
-12. Is an ADR required?
-13. Are the relevant tests present and passing?
-14. Does `ARCHITECTURE-CHECKLIST.md` pass for this change?
+Check:
+
+1. no provider-specific logic leaked outside its adapter
+2. no external boundary bypassed its port
+3. no second mutable source of truth was introduced
+4. no locked data can be silently overwritten
+5. invalidation is no broader than necessary
+6. long-running work can recover after restart
+7. job state exists before recoverable external execution
+8. secrets remain protected
+9. story/audio/timeline continuity remains correct
+10. domain/application do not import concrete infrastructure
+11. migrations are present when needed
+12. ADR is present when architecture changed
+13. tests are present and passing
+14. `ARCHITECTURE-CHECKLIST.md` passes

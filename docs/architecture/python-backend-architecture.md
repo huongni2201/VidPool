@@ -2,29 +2,17 @@
 
 ## Decision
 
-The Python backend uses:
+Use:
 
 > Modular Monolith + Clean Architecture + Hexagonal Boundaries + Lightweight DDD
 
-This is the default architecture unless an ADR explicitly supersedes it.
-
 ## Why
 
-The product contains several domains that evolve independently but do not require independent deployment:
+The application contains multiple substantial domains but does not require independent deployment.
 
-- story
-- characters
-- generation
-- audio
-- timing
-- timeline
-- jobs
-- media
-- credentials
+Modular boundaries provide maintainability without microservice complexity.
 
-A modular monolith keeps operational complexity low while preserving strong internal boundaries.
-
-## Dependency Model
+## Layer Model
 
 ```text
 API / Worker
@@ -36,95 +24,58 @@ Application -----> Port <----- Infrastructure
 Domain
 ```
 
-Source-code dependency rules:
-
-```text
-Application -> Domain
-Application -> Port
-Infrastructure -> Port
-Infrastructure -> Domain when mapping requires it
-API -> Application
-```
-
-Forbidden:
-
-```text
-Domain -> Infrastructure
-Domain -> API
-Application -> concrete provider
-Application -> ORM model
-```
-
-## Recommended Layout
+## Recommended Backend Layout
 
 ```text
 app/
+├── project/
 ├── story/
-│   ├── domain/
-│   ├── application/
-│   └── ports/
 ├── characters/
-│   ├── domain/
-│   ├── application/
-│   └── ports/
 ├── generation/
-│   ├── domain/
-│   ├── application/
-│   └── ports/
 ├── audio/
-│   ├── domain/
-│   ├── application/
-│   └── ports/
 ├── timing/
-│   ├── domain/
-│   ├── application/
-│   └── ports/
 ├── timeline/
-│   ├── domain/
-│   ├── application/
-│   └── ports/
 ├── jobs/
-│   ├── domain/
-│   ├── application/
-│   └── ports/
 ├── media/
-│   ├── domain/
-│   ├── application/
-│   └── ports/
 ├── credentials/
-│   ├── domain/
-│   ├── application/
-│   └── ports/
 ├── infrastructure/
 ├── api/
 ├── core/
 └── main.py
 ```
 
+Each substantial business module may contain:
+
+```text
+domain/
+application/
+ports/
+```
+
+Infrastructure contains concrete implementations.
+
 ## Lightweight DDD
 
-Use rich domain modeling where business invariants exist.
-
-Strong candidates:
+Use rich models where invariants exist:
 
 - story continuity
 - character identity/state/evolution
 - generation lifecycle
-- durable job lifecycle
+- job lifecycle
 - timing
 - timeline/invalidation
 
 Do not force DDD ceremony onto:
 
-- file helpers
-- ffprobe wrappers
 - hashing
+- ffprobe wrappers
+- file helpers
 - DTO mapping
-- simple stateless utilities
+- stateless utilities
 
-## No Global Service Dumping Ground
+## No Global Technical-Layer Architecture
 
-Do not organize the entire backend as:
+Do not organize the whole backend as:
 
 ```text
 routes/
@@ -134,10 +85,12 @@ models/
 schemas/
 ```
 
-Technical-layer-only organization causes unrelated domains to become coupled.
+because unrelated domains will become coupled.
 
-## Microservices
+Technical subfolders are allowed inside a module when they help readability.
 
-Do not split the system into microservices while the product remains single-user and desktop-first.
+## No Microservices Yet
 
-Clean boundaries inside the monolith are the migration path if independent deployment is ever needed.
+Do not split into services while the product remains single-user and desktop-first.
+
+If independent deployment is ever required, clean internal module boundaries provide the migration path.

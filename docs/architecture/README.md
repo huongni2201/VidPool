@@ -1,48 +1,50 @@
 # Architecture Overview
 
-## Documentation Status
+## Status
 
-This directory describes the accepted **target architecture**.
+This directory describes the accepted target architecture.
 
-For the code that actually exists today, read `docs/CURRENT_STATUS.md`.
+Read `../CURRENT_STATUS.md` for implementation reality.
 
-## System
-
-AI Story Video Studio is a desktop-first, single-user production application.
-
-Primary target flow:
+## End-to-End Target Flow
 
 ```text
 Source Story
   ↓
-Story Engine
+Story Normalization
+  ↓
+Story Analysis
   ↓
 Story Memory / Character / World State
   ↓
-Script + TTS
+Script / Spoken Text
   ↓
-Audio Alignment
+TTS
+  ↓
+Forced Alignment
   ↓
 Timing Plan
   ↓
 Visual Planning / Prompt Compiler
   ↓
-Asset Generation
+Durable Generation Jobs
+  ↓
+Generated Assets
   ↓
 Sound Design
   ↓
 Timeline
   ↓
-Render Plan
+RenderPlan
   ↓
 FFmpeg Renderer
   ↓
-Quality Control
+Post-Render Quality Control
   ↓
 Export
 ```
 
-Storyboard Studio surrounds the pipeline and allows human review, locking, version comparison, selective regeneration, and editing.
+Storyboard Studio surrounds the flow and allows review, locks, versions, selective regeneration, and editing.
 
 ## Backend Architecture
 
@@ -56,30 +58,27 @@ Hexagonal / Ports & Adapters
 Lightweight DDD
 ```
 
-See:
+## Core Architecture Files
 
+- `context.md`
+- `containers.md`
 - `python-backend-architecture.md`
 - `module-boundaries.md`
 - `dependency-map.md`
-- `../adr/0016-use-modular-monolith-clean-hexagonal-backend.md`
+- `data-model.md`
+- `generation-flow.md`
+- `state-machines.md`
+- `dependency-invalidation.md`
 
 ## Target Technology
 
 ```text
-Desktop: Tauri
-Frontend: React + Vite + TypeScript + Tailwind
-Backend: FastAPI
-Persistence: SQLite + SQLAlchemy + Alembic
-Realtime: SSE
-Worker: Durable DB-backed worker
-Media: FFmpeg + ffprobe
-Secrets: OS keyring
+Desktop      Tauri
+Frontend     React + Vite + TypeScript + Tailwind CSS
+Backend      FastAPI
+Persistence  SQLite + SQLAlchemy 2.x + Alembic
+Realtime     SSE
+Worker       Durable DB-backed worker
+Media        FFmpeg + ffprobe
+Secrets      OS credential store
 ```
-
-## Key Design Decisions
-
-See `docs/adr/`.
-
-## Implementation Constraints
-
-See `docs/rules/`.

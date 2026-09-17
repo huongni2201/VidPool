@@ -1,64 +1,74 @@
 # Generation Flow
 
-## Chapter Processing
+## Story Processing
 
 ```text
 Import Chapter
   ↓
 Normalize Source
   ↓
-Analyze Chapter
+Pass 1: Chapter Understanding
   ↓
-Scene Segmentation
+Pass 2: Scene Segmentation
   ↓
-Entity/State Extraction
+Pass 3: Entity / State Extraction
+  ↓
+Candidate State Updates
   ↓
 Continuity Validation
   ↓
-Visual Beat Creation
+Merge Canonical State
+  ↓
+Pass 4: Visual Beat Generation
+  ↓
+Pass 5: Continuity Validation
 ```
 
-## Audio-First Flow
+## Audio-First Timing
 
 ```text
-Visual Beat / Script
+VisualBeat / Script
   ↓
 Spoken Text
   ↓
-TTS Job persisted
+Persist TTS Job
   ↓
-Worker executes TTS
+Worker
+  ↓
+TTS Provider
   ↓
 Actual WAV
   ↓
-Alignment Job persisted
+Persist Alignment Job
   ↓
-Worker executes alignment
+Worker
   ↓
-Actual Timestamps
+Alignment Engine
   ↓
-Timing Plan
+Actual Sentence / Word Timestamps
+  ↓
+TimingPlan
 ```
 
-## Visual Generation Flow
+## Visual Generation
 
-Durable state must exist before remote execution begins.
+Durable state exists before remote execution:
 
 ```text
-Timing Plan
+TimingPlan
   ↓
-Context Resolver
+ContextResolver
   ↓
-Prompt Compiler
+PromptCompiler
   ↓
 Character / Location References
   ↓
 Create Generation Request
   ↓
-Persist GenerationJob
+Persist Job
 status = QUEUED
   ↓
-Worker atomically claims job
+Worker atomically claims Job
   ↓
 Credential / Provider selection
   ↓
@@ -70,7 +80,7 @@ Remote Submit
   ↓
 Persist remote_job_id / submission checkpoint
   ↓
-REMOTE_QUEUED / REMOTE_PROCESSING
+WAITING_EXTERNAL
   ↓
 Scheduled Polling
   ↓
@@ -78,9 +88,11 @@ Result Available
   ↓
 DOWNLOADING
   ↓
-Temporary .part file
+.part file
   ↓
-Media Validation / ffprobe
+Validate
+  ↓
+ffprobe
   ↓
 Atomic Rename
   ↓
@@ -89,58 +101,42 @@ Persist MediaAsset + lineage
 COMPLETED
 ```
 
-## Why Job Persistence Comes First
+## Why Persistence Comes First
 
-Never make a remote generation request and only then create the durable job.
+Never submit a remote generation request and only then create local durable state.
 
-If the provider accepts the request and the application crashes before persistence, the remote task may become orphaned or be submitted twice during recovery.
+If the provider accepts the request and the app crashes before persistence, the remote task can become orphaned or be submitted twice.
 
-The durable job and submission checkpoint are therefore part of the recovery contract.
-
-## Editing Flow
+## Editing / Rendering
 
 ```text
 Media Assets
   ↓
 Timeline
   ↓
-Render Plan
+Compile RenderPlan
   ↓
 Persist Render Job
   ↓
 Worker
   ↓
-Preview Render
+FFmpeg Renderer
   ↓
-Validation
+Post-Render Validation
   ↓
-User Review
-  ↓
-Final Render Job
-  ↓
-Validation
-  ↓
-Export
+Preview / Final Artifact
 ```
 
-## Regeneration
-
-Regenerating one beat invalidates only affected downstream nodes.
-
-Approved or locked unrelated work must remain intact.
-
 ## Recovery
-
-On restart:
 
 ```text
 Load unfinished jobs
   ↓
-Resolve stale claims
+Resolve stale leases
   ↓
-Reconcile submitted remote jobs
+Reconcile remote submissions
   ↓
-Resume polling/download/render where safe
+Resume polling / download / render
   ↓
-Retry only when idempotency/replay policy allows it
+Retry only when replay policy allows
 ```
