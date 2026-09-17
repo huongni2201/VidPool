@@ -63,9 +63,10 @@ This file distinguishes target architecture from implemented reality.
 - structured event and debug logging for browser and account lifecycles
 - explicit backend bootstrap configuration precedence (CLI > environment > defaults) without fallback dev-token
 - testable browser automation boundary protocol (`BrowserAutomationRuntime`) for provider adapters
-- production Dreamina browser auth adapter (`DreaminaAuthAdapter`) and probe (`DreaminaAuthProbe`) for Seedance-capable accounts
+- production Dreamina browser auth adapter implementation (`DreaminaAuthAdapter`) and probe (`DreaminaAuthProbe`) for Seedance-capable accounts
 - Dreamina provider registration in default Account Pool container (`/api/providers`)
 - opt-in guarded live Dreamina session smoke test harness (`test_dreamina_live.py`)
+- packaged Playwright browser runtime smoke-test command (`--browser-smoke-test`)
 
 ## Not Implemented Yet
 
@@ -79,6 +80,7 @@ The repository currently does not contain production implementation for:
 - durable job worker
 - provider execution jobs
 - Seedance video submission/poll/download execution adapter
+- quota/stamina/credit provider contract
 - durable job integration with account leases
 - TTS/audio engine
 - forced alignment
@@ -88,6 +90,21 @@ The repository currently does not contain production implementation for:
 - FFmpeg render pipeline
 - quality-control pipeline
 - OS keyring integration
+
+## Verification Gates
+
+### Automated
+
+- Ruff/Pyright/backend pytest/Alembic CI: verified on 2026-09-17
+- frontend `pnpm check`: verified on 2026-09-17
+- Windows sidecar build/Rust compile: verified on 2026-09-17
+- packaged Playwright browser runtime: verified only after the packaged browser smoke-test CI task is green
+
+### Manual / Opt-In
+
+- real Dreamina logged-out signal: verified in `docs/verification/2026-09-17-dreamina-auth-signals.md` on 2026-09-17
+- real Dreamina logged-in signal and identity: verified in `docs/verification/2026-09-17-dreamina-auth-signals.md` on 2026-09-17
+- persisted Dreamina session across restart: verified only after `test_dreamina_live.py` passes against an actual local profile
 
 ## Documentation Semantics
 
