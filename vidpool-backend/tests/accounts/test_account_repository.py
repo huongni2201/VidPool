@@ -202,3 +202,21 @@ def test_repository_acquire_lru_propagates_unexpected_db_error(db_session: Sessi
     with pytest.raises(OperationalError):
         repo.acquire_lru("test-provider", "job:error", now=now, expires_at=now + timedelta(minutes=5))
 
+
+def test_repository_save_raises_not_found_for_deleted_account(db_session: Session) -> None:
+    from app.modules.accounts.domain.errors import AccountNotFoundError
+
+    repo = SQLAlchemyAccountRepository(session=db_session)
+    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=timezone.utc)
+    account = ProviderAccount.create("test-provider", "profile/del", now=now)
+    account.mark_authenticated("User Del", "del", now=now)
+
+    repo.add(account)
+    repo.delete(account.id)
+
+    with pytest.raises(AccountNotFoundError):
+        repo.save(account)
+
+    assert repo.get(account.id) is None
+
+

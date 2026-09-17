@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.modules.accounts.application.ports import AccountRepositoryPort
 from app.modules.accounts.domain.account import ProviderAccount
+from app.modules.accounts.domain.errors import AccountNotFoundError
 from app.modules.accounts.domain.lease import AccountLease
 from app.modules.accounts.domain.values import AccountId, AccountStatus
 from .mapper import account_from_model, account_to_model, lease_from_model, lease_to_model
@@ -40,8 +41,7 @@ class SQLAlchemyAccountRepository(AccountRepositoryPort):
     def save(self, account: ProviderAccount) -> None:
         model = self._session.get(ProviderAccountModel, str(account.id))
         if model is None:
-            self.add(account)
-            return
+            raise AccountNotFoundError(f"Account {account.id} was not found")
 
         model.provider_key = account.provider_key
         model.display_name = account.display_name
