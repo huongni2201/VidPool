@@ -262,3 +262,27 @@ def test_api_response_never_contains_forbidden_fields() -> None:
     }
     for field in forbidden_fields:
         assert field not in data, f"Forbidden field '{field}' was returned in response"
+
+
+def test_validate_account_returns_503_when_provider_unavailable() -> None:
+    from app.modules.accounts.domain.errors import ProviderUnavailable
+
+    adapter = FakeProviderAuthAdapter(
+        provider_key="test-provider",
+        persisted_validation_error=ProviderUnavailable("Provider session check unavailable"),
+    )
+    client, _, _ = _build_test_client(auth_adapter=adapter)
+
+    res_start = client.post(
+        "/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER
+    )
+    account_id = res_start.json()["accountId"]
+    client.post(f"/api/accounts/{account_id}/login/complete", headers=AUTH_HEADER)
+
+    res = client.post(
+        f"/api/accounts/{account_id}/validate",
+        headers=AUTH_HEADER,
+    )
+    assert res.status_code == 503
+    assert res.json()["detail"] == "Provider session check unavailable"
+

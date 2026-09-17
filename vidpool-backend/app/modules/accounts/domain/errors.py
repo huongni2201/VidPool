@@ -53,6 +53,10 @@ class ProviderNotRegistered(AccountDomainError):
     """Raised when requesting an unregistered provider key."""
 
 
+class ProviderUnavailable(AccountDomainError):
+    """Raised when a provider operation is temporarily unavailable."""
+
+
 class SessionInvalid(AccountDomainError):
     """Raised when browser session validation fails during login completion."""
 

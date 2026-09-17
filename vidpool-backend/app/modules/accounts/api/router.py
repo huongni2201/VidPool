@@ -13,6 +13,7 @@ from app.modules.accounts.domain.errors import (
     InvalidAccountState,
     InvalidProfileKey,
     ProviderNotRegistered,
+    ProviderUnavailable,
     SessionInvalid,
 )
 from app.modules.accounts.domain.values import AccountId
@@ -60,7 +61,7 @@ def _handle_error(exc: Exception) -> None:
         ),
     ):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
-    if isinstance(exc, BrowserUnavailable):
+    if isinstance(exc, (BrowserUnavailable, ProviderUnavailable)):
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
     if isinstance(exc, InvalidProfileKey):
         raise HTTPException(

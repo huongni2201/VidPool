@@ -146,11 +146,17 @@ class FakeProviderAuthAdapter(ProviderAuthPort):
         valid_session: bool = True,
         display_name: str = "Fake User",
         external_identity: str = "fake-user-id",
+        active_validation_error: Exception | None = None,
+        persisted_validation_error: Exception | None = None,
+        identity_error: Exception | None = None,
     ) -> None:
         self.provider_key = provider_key
         self.valid_session = valid_session
         self.display_name = display_name
         self.external_identity = external_identity
+        self.active_validation_error = active_validation_error
+        self.persisted_validation_error = persisted_validation_error
+        self.identity_error = identity_error
 
     def login_url(self) -> str:
         return f"https://auth.{self.provider_key}.example.com/login"
@@ -159,18 +165,24 @@ class FakeProviderAuthAdapter(ProviderAuthPort):
         self,
         profile_key: str,
     ) -> SessionValidation:
+        if self.active_validation_error is not None:
+            raise self.active_validation_error
         return SessionValidation(valid=self.valid_session)
 
     def resolve_identity(
         self,
         profile_key: str,
     ) -> ProviderIdentity:
+        if self.identity_error is not None:
+            raise self.identity_error
         return ProviderIdentity(
             display_name=self.display_name,
             external_identity=self.external_identity,
         )
 
     def validate_persisted_session(self, profile_key: str) -> SessionValidation:
+        if self.persisted_validation_error is not None:
+            raise self.persisted_validation_error
         return SessionValidation(valid=self.valid_session)
 
 
