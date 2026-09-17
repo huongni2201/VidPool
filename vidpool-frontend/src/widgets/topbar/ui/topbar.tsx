@@ -66,15 +66,25 @@ export function Topbar({
     if (path.startsWith(ROUTES.VOICE)) {
       return {
         title: "Voice",
-        primaryLabel: "Xuất video",
-        action: () => navigate(ROUTES.EDITOR),
+        primaryLabel: "+ Tạo giọng đọc",
+        icon: (
+          <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        ),
+        action: () => onPrimaryAction?.(),
       }
     }
     if (path.startsWith(ROUTES.JOBS) || path.startsWith(ROUTES.GENERATIONS)) {
       return {
         title: "Jobs",
-        primaryLabel: "+ Thêm account",
-        action: () => navigate(ROUTES.ACCOUNTS),
+        primaryLabel: "+ Tạo job mới",
+        icon: (
+          <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        ),
+        action: () => onPrimaryAction?.(),
       }
     }
     if (path.startsWith(ROUTES.SETTINGS)) {
@@ -94,36 +104,36 @@ export function Topbar({
   const info = getPageInfo()
 
   return (
-    <header className="flex h-14 w-full items-center justify-between border-b border-white/[0.08] bg-[#0c1017]/80 px-6 backdrop-blur-md select-none sticky top-0 z-20">
+    <header className="flex h-14 w-full items-center justify-between border-b border-border bg-sidebar/85 px-6 backdrop-blur-md select-none sticky top-0 z-20">
       {/* Left Project Info & Saved status */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <div className="flex size-7 items-center justify-center rounded-lg bg-white/[0.06] text-[#9ca8bc]">
+          <div className="flex size-7 items-center justify-center rounded-lg bg-white/[0.06] text-muted-foreground border border-white/[0.06]">
             <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           </div>
-          <span className="text-sm font-semibold text-[#f3f6fc]">{projectName}</span>
-          <button className="text-[#64748b] hover:text-[#9ca8bc] p-0.5 transition-colors" title="Đổi tên dự án">
+          <span className="text-sm font-semibold text-foreground tracking-tight">{projectName}</span>
+          <button className="text-studio-subtle hover:text-muted-foreground p-0.5 transition-colors cursor-pointer" title="Đổi tên dự án">
             <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
           </button>
         </div>
 
-        <div className="flex items-center gap-1.5 text-xs text-[#9ca8bc]">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <svg className="size-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 00-9.78 2.096A4.001 4.001 0 003 15z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13l2 2 4-4" />
           </svg>
-          <span>Đã lưu lúc {savedTime}</span>
+          <span className="text-[11.5px] text-studio-subtle">Đã lưu lúc {savedTime}</span>
         </div>
       </div>
 
       {/* Right Top Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2.5">
         <button
-          className="flex size-8 items-center justify-center rounded-lg border border-white/[0.08] bg-[#121824] text-[#9ca8bc] hover:border-white/[0.16] hover:bg-[#182132] hover:text-[#f3f6fc] transition-all"
+          className="flex size-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:border-studio-border-hover hover:bg-studio-hover hover:text-foreground transition-all cursor-pointer"
           title="Thu nhỏ/Toàn màn hình"
         >
           <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,7 +141,7 @@ export function Topbar({
           </svg>
         </button>
         <button
-          className="flex size-8 items-center justify-center rounded-lg border border-white/[0.08] bg-[#121824] text-[#9ca8bc] hover:border-white/[0.16] hover:bg-[#182132] hover:text-[#f3f6fc] transition-all"
+          className="flex size-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:border-studio-border-hover hover:bg-studio-hover hover:text-foreground transition-all cursor-pointer"
           title="Tùy chọn hiển thị"
         >
           <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,7 +149,7 @@ export function Topbar({
           </svg>
         </button>
         <button
-          className="flex size-8 items-center justify-center rounded-lg border border-white/[0.08] bg-[#121824] text-[#9ca8bc] hover:border-white/[0.16] hover:bg-[#182132] hover:text-[#f3f6fc] transition-all"
+          className="flex size-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:border-studio-border-hover hover:bg-studio-hover hover:text-foreground transition-all cursor-pointer"
           title="Tùy chọn thêm"
         >
           <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -147,14 +157,16 @@ export function Topbar({
           </svg>
         </button>
 
-        {/* Primary Action Button */}
-        <button
-          onClick={info.action}
-          className="ml-2 flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-1.5 text-xs font-semibold text-white shadow-md shadow-blue-500/25 hover:from-blue-500 hover:to-blue-400 active:scale-[0.98] transition-all"
-        >
-          {info.icon}
-          <span>{info.primaryLabel}</span>
-        </button>
+        {/* Primary Page Action Button */}
+        {info.primaryLabel && (
+          <button
+            onClick={info.action}
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-blue-500/25 hover:from-blue-500 hover:to-indigo-500 active:scale-95 transition-all cursor-pointer"
+          >
+            {info.icon}
+            <span>{info.primaryLabel}</span>
+          </button>
+        )}
       </div>
     </header>
   )

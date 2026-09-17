@@ -24,8 +24,8 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status, className = "", size = "md" }: StatusBadgeProps) {
-  let style = "bg-white/[0.06] text-[#9ca8bc] border-white/[0.08]"
-  let dotColor = "bg-[#9ca8bc]"
+  let style = "bg-white/[0.06] text-muted-foreground border-border"
+  let dotColor = "bg-muted-foreground"
 
   switch (status) {
     case "Đang hoạt động":
@@ -61,8 +61,8 @@ export function StatusBadge({ status, className = "", size = "md" }: StatusBadge
       dotColor = "bg-rose-400"
       break
     case "Đã tắt":
-      style = "bg-white/[0.05] text-[#64748b] border-white/[0.08]"
-      dotColor = "bg-[#64748b]"
+      style = "bg-white/[0.05] text-studio-subtle border-border"
+      dotColor = "bg-studio-subtle"
       break
   }
 

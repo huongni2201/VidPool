@@ -20,7 +20,7 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
       label: "Tổng quan",
       icon: (active) => (
         <svg
-          className={`size-4.5 ${active ? "text-white" : "text-[#9ca8bc]"}`}
+          className={`size-4.5 ${active ? "text-white" : "text-muted-foreground"}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -40,7 +40,7 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
       badge: "12",
       icon: (active) => (
         <svg
-          className={`size-4.5 ${active ? "text-white" : "text-[#9ca8bc]"}`}
+          className={`size-4.5 ${active ? "text-white" : "text-muted-foreground"}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -59,7 +59,7 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
       label: "Chỉnh sửa",
       icon: (active) => (
         <svg
-          className={`size-4.5 ${active ? "text-white" : "text-[#9ca8bc]"}`}
+          className={`size-4.5 ${active ? "text-white" : "text-muted-foreground"}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -68,7 +68,7 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={1.8}
-            d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879a3 3 0 11-4.242-4.242L10.757 8.5m1.243 3.5l-2.879-2.879a3 3 0 10-4.242 4.242L7.757 16.5"
+            d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 3h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z"
           />
         </svg>
       ),
@@ -78,7 +78,7 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
       label: "Visual Beat",
       icon: (active) => (
         <svg
-          className={`size-4.5 ${active ? "text-white" : "text-[#9ca8bc]"}`}
+          className={`size-4.5 ${active ? "text-white" : "text-muted-foreground"}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -97,7 +97,7 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
       label: "Nhân vật",
       icon: (active) => (
         <svg
-          className={`size-4.5 ${active ? "text-white" : "text-[#9ca8bc]"}`}
+          className={`size-4.5 ${active ? "text-white" : "text-muted-foreground"}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -116,7 +116,7 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
       label: "Voice",
       icon: (active) => (
         <svg
-          className={`size-4.5 ${active ? "text-white" : "text-[#9ca8bc]"}`}
+          className={`size-4.5 ${active ? "text-white" : "text-muted-foreground"}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -136,7 +136,7 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
       badge: "8",
       icon: (active) => (
         <svg
-          className={`size-4.5 ${active ? "text-white" : "text-[#9ca8bc]"}`}
+          className={`size-4.5 ${active ? "text-white" : "text-muted-foreground"}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -156,7 +156,7 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
       badge: "3",
       icon: (active) => (
         <svg
-          className={`size-4.5 ${active ? "text-white" : "text-[#9ca8bc]"}`}
+          className={`size-4.5 ${active ? "text-white" : "text-muted-foreground"}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -173,7 +173,7 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
   ]
 
   return (
-    <aside className="flex h-screen w-60 flex-col border-r border-white/[0.08] bg-[#0c1017] p-3 text-[#9ca8bc] select-none">
+    <aside className="flex h-screen w-60 flex-col border-r border-sidebar-border bg-sidebar p-3 text-sidebar-foreground select-none">
       {/* Brand Header */}
       <div className="flex items-center gap-3 px-2 py-3 border-b border-white/[0.06] mb-3">
         <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-500 to-blue-400 text-white shadow-lg shadow-blue-500/25">
@@ -183,7 +183,7 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
         </div>
         <div>
           <h1 className="text-base font-bold tracking-tight text-white leading-tight">VidPool</h1>
-          <span className="text-[11px] font-medium text-blue-400/90 block">AI Video Studio</span>
+          <span className="text-[11px] font-medium text-muted-foreground block">Video Production Studio</span>
         </div>
       </div>
 
@@ -198,7 +198,7 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
               className={`group flex items-center justify-between rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all ${
                 isActive
                   ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/25"
-                  : "hover:bg-white/[0.05] hover:text-[#f3f6fc]"
+                  : "hover:bg-white/[0.05] hover:text-foreground"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -210,7 +210,7 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
                   className={`rounded-full px-1.5 py-0.5 text-[10.5px] font-semibold ${
                     isActive
                       ? "bg-white/20 text-white"
-                      : "bg-white/[0.08] text-[#9ca8bc] group-hover:bg-white/[0.12] group-hover:text-white"
+                      : "bg-white/[0.08] text-muted-foreground group-hover:bg-white/[0.12] group-hover:text-white"
                   }`}
                 >
                   {item.badge}
@@ -229,12 +229,12 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
           className={`flex items-center justify-between rounded-lg px-3 py-2 text-[13px] font-medium transition-all ${
             activeScreen === "settings"
               ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md shadow-blue-500/25"
-              : "hover:bg-white/[0.05] hover:text-[#f3f6fc]"
+              : "hover:bg-white/[0.05] hover:text-foreground"
           }`}
         >
           <div className="flex items-center gap-3">
             <svg
-              className={`size-4.5 ${activeScreen === "settings" ? "text-white" : "text-[#9ca8bc]"}`}
+              className={`size-4.5 ${activeScreen === "settings" ? "text-white" : "text-muted-foreground"}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -268,17 +268,17 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
                   : "bg-amber-500 animate-pulse"
               }`}
             />
-            <span className="text-[#9ca8bc]">
+            <span className="text-muted-foreground">
               {backendStatus === "pending" && "Starting VidPool…"}
               {backendStatus === "error" && "Backend unavailable"}
               {backendStatus === "ok" && "Backend connected"}
             </span>
           </div>
-          <span className="text-[10px] text-[#64748b]">v0.2.0</span>
+          <span className="text-[10px] text-studio-subtle">v0.2.0</span>
         </div>
 
         {/* User profile card */}
-        <div className="flex items-center gap-2.5 rounded-xl border border-white/[0.08] bg-[#121824] p-2.5 transition-all hover:bg-[#182132]">
+        <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 transition-all hover:bg-studio-hover">
           <div className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-indigo-600 text-sm font-bold text-white ring-2 ring-indigo-500/30">
             <span className="text-xs">TX</span>
             <span className="absolute -bottom-0.5 -right-0.5 rounded-full bg-blue-600 px-1 py-0.2 text-[8px] font-bold text-white">
@@ -286,10 +286,10 @@ export function Sidebar({ backendStatus = "ok" }: SidebarProps) {
             </span>
           </div>
           <div className="flex flex-col overflow-hidden leading-tight">
-            <span className="truncate text-xs font-semibold text-[#f3f6fc]">
+            <span className="truncate text-xs font-semibold text-foreground">
               Thanh Xuân Trở Lại
             </span>
-            <span className="truncate text-[10.5px] text-[#64748b]">user@vidpool.ai</span>
+            <span className="truncate text-[10.5px] text-studio-subtle">user@vidpool.ai</span>
           </div>
         </div>
       </div>

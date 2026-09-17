@@ -15,7 +15,7 @@ export function WaveformVisualizer({
   height = 36,
   barCount = 48,
   color = "rgba(255, 255, 255, 0.2)",
-  activeColor = "#3b82f6",
+  activeColor = "var(--primary)",
   className = "",
   onSeek,
 }: WaveformVisualizerProps) {

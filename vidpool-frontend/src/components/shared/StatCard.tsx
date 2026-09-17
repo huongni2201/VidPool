@@ -29,12 +29,12 @@ export function StatCard({
   badge,
 }: StatCardProps) {
   return (
-    <div className="relative flex flex-col justify-between rounded-xl border border-white/[0.08] bg-[#121824] p-4 transition-all hover:border-white/[0.14] hover:bg-[#151c2a]">
+    <div className="relative flex flex-col justify-between rounded-xl border border-border bg-card p-4 transition-all hover:border-studio-border-hover hover:bg-studio-hover">
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col">
-          <span className="text-[12px] font-medium text-[#9ca8bc]">{title}</span>
+          <span className="text-[12px] font-medium text-muted-foreground">{title}</span>
           <div className="mt-1.5 flex items-baseline gap-2">
-            <span className="text-2xl font-bold tracking-tight text-[#f3f6fc]">{value}</span>
+            <span className="text-2xl font-bold tracking-tight text-foreground">{value}</span>
             {trend && (
               <span
                 className={`inline-flex items-center gap-0.5 text-xs font-semibold ${
@@ -66,7 +66,7 @@ export function StatCard({
               style={{ width: `${Math.min(100, Math.max(0, progress.percent))}%` }}
             />
           </div>
-          <div className="flex items-center justify-between text-[11px] text-[#64748b]">
+          <div className="flex items-center justify-between text-[11px] text-studio-subtle">
             <span>{progress.current} GB / {progress.max} GB</span>
             <span>{progress.percent}%</span>
           </div>
@@ -74,7 +74,7 @@ export function StatCard({
       )}
 
       {subtext && !progress && (
-        <div className="mt-2 text-[11.5px] text-[#64748b]">{subtext}</div>
+        <div className="mt-2 text-[11.5px] text-studio-subtle">{subtext}</div>
       )}
     </div>
   )

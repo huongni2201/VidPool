@@ -30,17 +30,17 @@ export function AccountsPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold tracking-tight text-[#f3f6fc]">Account Pool</h2>
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">Account Pool</h2>
             <span className="sr-only">Accounts</span>
           </div>
-          <p className="text-xs text-[#9ca8bc] mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             Quản lý các tài khoản provider và theo dõi quota, stamina, credits để tối ưu quá trình tạo video.
           </p>
         </div>
 
         {/* Right Header Controls */}
         <div className="flex items-center gap-2.5">
-          <select className="h-9 rounded-xl border border-white/[0.08] bg-[#121824] px-3 text-xs text-[#9ca8bc] focus:border-blue-500 focus:outline-none cursor-pointer">
+          <select className="h-9 rounded-xl border border-border bg-card px-3 text-xs text-muted-foreground focus:border-primary focus:outline-none cursor-pointer">
             <option>Tất cả provider</option>
             <option>SeaArt</option>
             <option>Seedance</option>
@@ -51,16 +51,16 @@ export function AccountsPage() {
             <input
               type="text"
               placeholder="Tìm kiếm account..."
-              className="h-9 w-52 rounded-xl border border-white/[0.08] bg-[#121824] pl-8 pr-3 text-xs text-white placeholder-[#64748b] focus:border-blue-500 focus:outline-none"
+              className="h-9 w-52 rounded-xl border border-border bg-card pl-8 pr-3 text-xs text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
             />
-            <svg className="absolute left-2.5 top-2.5 size-4 text-[#64748b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
 
           <button
             onClick={() => invalidate()}
-            className="flex size-9 items-center justify-center rounded-xl border border-white/[0.08] bg-[#121824] text-[#9ca8bc] hover:text-white transition-colors"
+            className="flex size-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground transition-colors"
             title="Làm mới"
           >
             <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,7 +131,7 @@ export function AccountsPage() {
       </div>
 
       {/* Pool Health Banner */}
-      <div className="flex items-center justify-between rounded-2xl border border-blue-500/30 bg-gradient-to-r from-blue-950/40 via-[#121824] to-[#121824] p-4">
+      <div className="flex items-center justify-between rounded-2xl border border-blue-500/30 bg-card p-4">
         <div className="flex items-center gap-3">
           <div className="flex size-9 items-center justify-center rounded-xl bg-blue-600/20 text-blue-400">
             <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -139,8 +139,8 @@ export function AccountsPage() {
             </svg>
           </div>
           <div>
-            <h3 className="text-sm font-bold text-[#f3f6fc]">Pool đang hoạt động tốt</h3>
-            <p className="text-xs text-[#9ca8bc]">
+            <h3 className="text-sm font-bold text-foreground">Pool đang hoạt động tốt</h3>
+            <p className="text-xs text-muted-foreground">
               8/12 account sẵn sàng sử dụng. Bạn có thể tiếp tục tạo video.
             </p>
           </div>
@@ -174,7 +174,7 @@ export function AccountsPage() {
       )}
 
       {isLoading && (
-        <div className="rounded-xl border border-white/[0.08] bg-[#121824] p-12 text-center text-sm text-[#9ca8bc]">
+        <div className="rounded-xl border border-border bg-card p-12 text-center text-sm text-muted-foreground">
           Đang tải danh sách tài khoản…
         </div>
       )}
@@ -188,9 +188,9 @@ export function AccountsPage() {
       {!isLoading && !isError && accounts.length === 0 && (
         <div
           data-slot="empty-state"
-          className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-white/[0.12] bg-[#121824]/50 p-12 text-center"
+          className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border bg-card/50 p-12 text-center"
         >
-          <div className="rounded-full bg-white/[0.06] p-3 text-[#9ca8bc]">
+          <div className="rounded-full bg-secondary p-3 text-muted-foreground">
             <svg
               className="size-6"
               fill="none"
@@ -222,10 +222,10 @@ export function AccountsPage() {
       )}
 
       {accounts.length > 0 && (
-        <div className="rounded-xl border border-white/[0.08] bg-[#121824] p-4 flex flex-col gap-3">
-          <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
-            <h3 className="text-sm font-bold text-[#f3f6fc]">Danh sách account</h3>
-            <span className="text-xs text-[#9ca8bc]">Hiển thị {accounts.length} account</span>
+        <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <h3 className="text-sm font-bold text-foreground">Danh sách account</h3>
+            <span className="text-xs text-muted-foreground">Hiển thị {accounts.length} account</span>
           </div>
           <div className="flex flex-col gap-3">
             {accounts.map((account) => (

@@ -63,13 +63,13 @@ export function AccountRow({
     <div
       data-slot="account-row"
       data-testid={`account-row-${account.id}`}
-      className="flex flex-col gap-3 rounded-xl border border-white/[0.08] bg-[#121824] p-3.5 transition-all hover:border-white/[0.14] hover:bg-[#151c2a] sm:flex-row sm:items-center sm:justify-between"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3.5 transition-all hover:border-border hover:bg-secondary/40 sm:flex-row sm:items-center sm:justify-between"
     >
       <div className="flex items-center gap-3 min-w-0 flex-1">
         {/* Checkbox representation */}
         <input
           type="checkbox"
-          className="size-4 rounded border-white/[0.2] bg-white/[0.05] accent-blue-600 cursor-pointer"
+          className="size-4 rounded border-border bg-secondary accent-blue-600 cursor-pointer"
         />
 
         {/* Provider Icon */}
@@ -78,7 +78,7 @@ export function AccountRow({
         {/* Identity info */}
         <div className="flex flex-col min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-xs text-[#f3f6fc] truncate">
+            <span className="font-semibold text-xs text-foreground truncate">
               {account.displayName || account.externalIdentity || "Unnamed Account"}
             </span>
             <span
@@ -90,8 +90,8 @@ export function AccountRow({
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-3 text-[11px] text-[#64748b] mt-0.5">
-            <span>Provider: <strong className="font-medium text-[#9ca8bc] capitalize">{account.providerKey}</strong></span>
+          <div className="flex flex-wrap items-center gap-x-3 text-[11px] text-muted-foreground mt-0.5">
+            <span>Provider: <strong className="font-medium text-foreground capitalize">{account.providerKey}</strong></span>
             {account.externalIdentity && (
               <span className="truncate">ID: {account.externalIdentity}</span>
             )}
@@ -99,7 +99,7 @@ export function AccountRow({
               <span>Validated: {new Date(account.lastValidatedAt).toLocaleTimeString()}</span>
             )}
             {account.cooldownUntil && (
-              <span className="text-orange-400 font-medium">
+              <span className="text-amber-400 font-medium">
                 Cooldown until: {new Date(account.cooldownUntil).toLocaleTimeString()}
               </span>
             )}
@@ -109,14 +109,14 @@ export function AccountRow({
 
       {/* Stamina / Quota representation matching Screen 7 */}
       <div className="hidden md:flex flex-col gap-1 w-36 px-2">
-        <div className="flex justify-between text-[10.5px] text-[#9ca8bc]">
+        <div className="flex justify-between text-[10.5px] text-muted-foreground">
           <span>Stamina</span>
-          <span className="font-medium text-[#f3f6fc]">{account.status === "active" ? "500/500" : "0/500"}</span>
+          <span className="font-medium text-foreground">{account.status === "active" ? "500/500" : "0/500"}</span>
         </div>
-        <div className="h-1.5 w-full rounded-full bg-white/[0.08] overflow-hidden">
+        <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
           <div
             className={`h-full rounded-full transition-all ${
-              account.status === "active" ? "bg-blue-500 w-full" : "bg-zinc-600 w-0"
+              account.status === "active" ? "bg-blue-500 w-full" : "bg-muted-foreground/30 w-0"
             }`}
           />
         </div>

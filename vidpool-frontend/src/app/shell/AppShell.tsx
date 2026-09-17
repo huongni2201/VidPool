@@ -44,7 +44,7 @@ export function AppShell({ backendStatus = "ok" }: AppShellProps) {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#07090e] text-[#f3f6fc]">
+    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
       {/* Left Sidebar */}
       <Sidebar backendStatus={backendStatus} />
 
@@ -54,7 +54,7 @@ export function AppShell({ backendStatus = "ok" }: AppShellProps) {
         <Topbar />
 
         {/* Dynamic Content Area */}
-        <main className="flex-1 overflow-y-auto bg-[#07090e]">
+        <main className="flex-1 overflow-y-auto bg-background">
           {renderScreen()}
         </main>
       </div>

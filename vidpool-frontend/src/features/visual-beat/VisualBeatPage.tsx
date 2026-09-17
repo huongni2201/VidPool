@@ -133,15 +133,15 @@ export function VisualBeatPage() {
       {/* Header Bar */}
       <div className="flex items-center justify-between pb-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-[#f3f6fc]">Visual Beat</h2>
-          <p className="text-xs text-[#9ca8bc] mt-0.5">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">Visual Beat</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
             Lên kế hoạch từng phân cảnh, tạo video bằng AI theo kịch bản của bạn.
           </p>
         </div>
 
         {/* Right Action Tools */}
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#121824] px-3 py-1.5 text-xs font-semibold text-[#f3f6fc] hover:border-white/[0.16] transition-all">
+          <button className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:border-border transition-all">
             <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
@@ -149,14 +149,14 @@ export function VisualBeatPage() {
           </button>
 
           {/* Progress widget */}
-          <div className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-[#121824] px-3 py-1.5">
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-1.5">
             <div className="flex flex-col">
               <div className="flex items-center gap-2 text-[11px]">
-                <span className="text-[#9ca8bc]">Tiến độ tạo video</span>
-                <span className="font-semibold text-white">6/12</span>
+                <span className="text-muted-foreground">Tiến độ tạo video</span>
+                <span className="font-semibold text-foreground">6/12</span>
                 <span className="text-[10px] text-blue-400">50%</span>
               </div>
-              <div className="h-1 w-28 rounded-full bg-white/[0.1] overflow-hidden mt-1">
+              <div className="h-1 w-28 rounded-full bg-secondary overflow-hidden mt-1">
                 <div className="h-full rounded-full bg-blue-500" style={{ width: "50%" }} />
               </div>
             </div>
@@ -172,11 +172,11 @@ export function VisualBeatPage() {
 
       {/* Filter and Search Bar */}
       <div className="flex items-center justify-between pb-3">
-        <div className="flex items-center gap-1 rounded-xl border border-white/[0.08] bg-[#121824] p-1">
+        <div className="flex items-center gap-1 rounded-xl border border-border bg-card p-1">
           <button
             onClick={() => setFilter("all")}
             className={`rounded-lg px-3 py-1 text-xs font-semibold transition-all ${
-              filter === "all" ? "bg-blue-600 text-white" : "text-[#9ca8bc] hover:text-white"
+              filter === "all" ? "bg-blue-600 text-white" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Tất cả (12)
@@ -184,7 +184,7 @@ export function VisualBeatPage() {
           <button
             onClick={() => setFilter("pending")}
             className={`rounded-lg px-3 py-1 text-xs font-semibold transition-all ${
-              filter === "pending" ? "bg-blue-600 text-white" : "text-[#9ca8bc] hover:text-white"
+              filter === "pending" ? "bg-blue-600 text-white" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Chờ tạo (3)
@@ -192,7 +192,7 @@ export function VisualBeatPage() {
           <button
             onClick={() => setFilter("generating")}
             className={`rounded-lg px-3 py-1 text-xs font-semibold transition-all ${
-              filter === "generating" ? "bg-blue-600 text-white" : "text-[#9ca8bc] hover:text-white"
+              filter === "generating" ? "bg-blue-600 text-white" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Đang tạo (2)
@@ -200,7 +200,7 @@ export function VisualBeatPage() {
           <button
             onClick={() => setFilter("completed")}
             className={`rounded-lg px-3 py-1 text-xs font-semibold transition-all ${
-              filter === "completed" ? "bg-blue-600 text-white" : "text-[#9ca8bc] hover:text-white"
+              filter === "completed" ? "bg-blue-600 text-white" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             Đã hoàn thành (6)
@@ -212,18 +212,22 @@ export function VisualBeatPage() {
             <input
               type="text"
               placeholder="Tìm kiếm cảnh..."
-              className="h-8 w-52 rounded-xl border border-white/[0.08] bg-[#121824] pl-7 pr-3 text-xs text-white placeholder-[#64748b] focus:border-blue-500 focus:outline-none"
+              className="h-8 w-52 rounded-xl border border-border bg-card pl-7 pr-3 text-xs text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
             />
-            <svg className="absolute left-2.5 top-2.5 size-3.5 text-[#64748b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <div className="flex items-center rounded-xl border border-white/[0.08] bg-[#121824] p-1">
-            <button className="flex size-6 items-center justify-center rounded-lg bg-blue-600 text-white text-xs">
-              ☰
+          <div className="flex items-center rounded-xl border border-border bg-card p-1">
+            <button className="flex size-6 items-center justify-center rounded-lg bg-blue-600 text-white text-xs" title="Danh sách">
+              <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
             </button>
-            <button className="flex size-6 items-center justify-center rounded-lg text-[#9ca8bc] hover:text-white text-xs">
-              ⊞
+            <button className="flex size-6 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground text-xs" title="Lưới">
+              <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
             </button>
           </div>
         </div>
@@ -232,13 +236,13 @@ export function VisualBeatPage() {
       {/* Main Split View: Table (Left 8 cols) & Inspector (Right 4 cols) */}
       <div className="grid flex-1 grid-cols-12 gap-4 overflow-hidden">
         {/* Left: Beat Scenes Table */}
-        <div className="col-span-8 flex flex-col rounded-xl border border-white/[0.08] bg-[#121824] overflow-hidden">
+        <div className="col-span-8 flex flex-col rounded-xl border border-border bg-card overflow-hidden">
           <div className="flex-1 overflow-y-auto">
             <table className="w-full text-left text-xs">
-              <thead className="sticky top-0 bg-[#151c2a] border-b border-white/[0.08] text-[11px] font-semibold text-[#9ca8bc]">
+              <thead className="sticky top-0 bg-secondary/70 backdrop-blur-sm border-b border-border text-[11px] font-semibold text-muted-foreground">
                 <tr>
                   <th className="p-3 w-8">
-                    <input type="checkbox" className="rounded border-white/20 bg-white/10" />
+                    <input type="checkbox" className="rounded border-border bg-secondary" />
                   </th>
                   <th className="py-3 px-2 w-10">#</th>
                   <th className="py-3 px-2 w-20">Hình ảnh</th>
@@ -251,7 +255,7 @@ export function VisualBeatPage() {
                   <th className="py-3 px-2 w-10"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.05]">
+              <tbody className="divide-y divide-border">
                 {scenes.map((s) => {
                   const isSelected = selectedId === s.id
                   return (
@@ -259,7 +263,7 @@ export function VisualBeatPage() {
                       key={s.id}
                       onClick={() => setSelectedId(s.id)}
                       className={`group transition-colors cursor-pointer ${
-                        isSelected ? "bg-blue-600/15" : "hover:bg-white/[0.03]"
+                        isSelected ? "bg-blue-600/15" : "hover:bg-secondary/40"
                       }`}
                     >
                       <td className="p-3" onClick={(e) => e.stopPropagation()}>
@@ -267,23 +271,23 @@ export function VisualBeatPage() {
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => setSelectedId(s.id)}
-                          className="rounded border-white/20 bg-white/10 accent-blue-500"
+                          className="rounded border-border bg-secondary accent-blue-500"
                         />
                       </td>
-                      <td className="py-3 px-2 font-mono text-[#9ca8bc]">{s.num}</td>
+                      <td className="py-3 px-2 font-mono text-muted-foreground">{s.num}</td>
                       <td className="py-2 px-2">
                         <img
                           src={s.thumb}
                           alt={s.title}
-                          className="size-10 rounded-md object-cover border border-white/[0.08]"
+                          className="size-10 rounded-md object-cover border border-border"
                         />
                       </td>
                       <td className="py-3 px-2">
                         <div className="flex flex-col max-w-[200px]">
-                          <span className="font-semibold text-white group-hover:text-blue-400 transition-colors">
+                          <span className="font-semibold text-foreground group-hover:text-blue-400 transition-colors">
                             {s.title}
                           </span>
-                          <span className="truncate text-[10.5px] text-[#64748b]">{s.prompt}</span>
+                          <span className="truncate text-[10.5px] text-muted-foreground">{s.prompt}</span>
                         </div>
                       </td>
                       <td className="py-3 px-2">
@@ -292,24 +296,24 @@ export function VisualBeatPage() {
                             <img
                               src={s.characterAvatar}
                               alt={s.character}
-                              className="size-6 rounded-full object-cover border border-white/20"
+                              className="size-6 rounded-full object-cover border border-border"
                             />
-                            <span className="text-[11px] text-[#9ca8bc]">{s.character}</span>
+                            <span className="text-[11px] text-muted-foreground">{s.character}</span>
                           </div>
                         ) : (
-                          <span className="text-[#64748b]">-</span>
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </td>
-                      <td className="py-3 px-2 max-w-[140px] truncate text-[#9ca8bc]">
+                      <td className="py-3 px-2 max-w-[140px] truncate text-muted-foreground">
                         {s.dialogue !== "-" ? `"${s.dialogue}"` : "-"}
                       </td>
-                      <td className="py-3 px-2 font-mono text-[#9ca8bc]">{s.duration}</td>
-                      <td className="py-3 px-2 text-[#9ca8bc]">{s.cameraAngle}</td>
+                      <td className="py-3 px-2 font-mono text-muted-foreground">{s.duration}</td>
+                      <td className="py-3 px-2 text-muted-foreground">{s.cameraAngle}</td>
                       <td className="py-3 px-2">
                         <StatusBadge status={s.status} size="sm" />
                       </td>
                       <td className="py-3 px-2 text-right">
-                        <button className="text-[#64748b] hover:text-white p-1">
+                        <button className="text-muted-foreground hover:text-foreground p-1">
                           <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
                           </svg>
@@ -324,18 +328,18 @@ export function VisualBeatPage() {
         </div>
 
         {/* Right: Scene Details Inspector */}
-        <div className="col-span-4 flex flex-col rounded-xl border border-white/[0.08] bg-[#121824] p-4 overflow-y-auto">
+        <div className="col-span-4 flex flex-col rounded-xl border border-border bg-card p-4 overflow-y-auto">
           {/* Top Title & Nav */}
-          <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
-            <h3 className="text-sm font-bold text-[#f3f6fc]">Chi tiết cảnh</h3>
+          <div className="flex items-center justify-between pb-3 border-b border-border">
+            <h3 className="text-sm font-bold text-foreground">Chi tiết cảnh</h3>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-[#9ca8bc] font-mono">&lt; {currentScene.id} / 12 &gt;</span>
-              <button className="text-[#64748b] hover:text-white">✕</button>
+              <span className="text-xs text-muted-foreground font-mono">&lt; {currentScene.id} / 12 &gt;</span>
+              <button className="text-muted-foreground hover:text-foreground">✕</button>
             </div>
           </div>
 
           {/* Preview Video Frame */}
-          <div className="relative mt-3 aspect-video w-full rounded-lg overflow-hidden bg-black border border-white/[0.08]">
+          <div className="relative mt-3 aspect-video w-full rounded-lg overflow-hidden bg-black border border-border">
             <img src={currentScene.thumb} alt={currentScene.title} className="size-full object-cover" />
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-2 flex items-center justify-between text-[11px] text-white">
               <div className="flex items-center gap-2">
@@ -353,30 +357,30 @@ export function VisualBeatPage() {
           {/* Inspector Form Fields */}
           <div className="flex flex-col gap-3 mt-3 text-xs">
             <div>
-              <label className="text-[11px] font-semibold text-[#9ca8bc]">Tên cảnh</label>
+              <label className="text-[11px] font-semibold text-muted-foreground">Tên cảnh</label>
               <input
                 type="text"
                 value={currentScene.title}
                 readOnly
-                className="mt-1 h-8 w-full rounded-lg border border-white/[0.08] bg-[#182132] px-2.5 text-white"
+                className="mt-1 h-8 w-full rounded-lg border border-border bg-secondary px-2.5 text-foreground"
               />
             </div>
 
             <div>
-              <div className="flex justify-between text-[11px] font-semibold text-[#9ca8bc]">
+              <div className="flex justify-between text-[11px] font-semibold text-muted-foreground">
                 <span>Prompt (mô tả hình ảnh)</span>
-                <span className="text-[10px] text-[#64748b]">125/500</span>
+                <span className="text-[10px] text-muted-foreground">125/500</span>
               </div>
               <textarea
                 rows={3}
                 value={currentScene.prompt}
                 readOnly
-                className="mt-1 w-full rounded-lg border border-white/[0.08] bg-[#182132] p-2 text-xs text-white leading-relaxed resize-none"
+                className="mt-1 w-full rounded-lg border border-border bg-secondary p-2 text-xs text-foreground leading-relaxed resize-none"
               />
             </div>
 
             {/* Character info */}
-            <div className="flex items-center justify-between rounded-lg border border-white/[0.08] bg-[#182132] p-2">
+            <div className="flex items-center justify-between rounded-lg border border-border bg-secondary/50 p-2">
               <div className="flex items-center gap-2">
                 {currentScene.characterAvatar && (
                   <img
@@ -386,54 +390,60 @@ export function VisualBeatPage() {
                   />
                 )}
                 <div>
-                  <span className="text-xs font-semibold text-white block">{currentScene.character}</span>
-                  <span className="text-[10.5px] text-[#9ca8bc]">Nữ tự nhiên, trẻ trung</span>
+                  <span className="text-xs font-semibold text-foreground block">{currentScene.character}</span>
+                  <span className="text-[10.5px] text-muted-foreground">Nữ tự nhiên, trẻ trung</span>
                 </div>
               </div>
-              <button className="rounded bg-white/[0.08] px-2 py-1 text-[10.5px] font-semibold text-white hover:bg-white/[0.14]">
+              <button className="rounded bg-secondary px-2 py-1 text-[10.5px] font-semibold text-foreground hover:bg-secondary/80 border border-border">
                 Chỉnh sửa
               </button>
             </div>
 
             {/* TTS line */}
             <div>
-              <div className="flex justify-between text-[11px] font-semibold text-[#9ca8bc]">
+              <div className="flex justify-between text-[11px] font-semibold text-muted-foreground">
                 <span>Thoại</span>
-                <span className="text-[10px] text-[#64748b]">25/100</span>
+                <span className="text-[10px] text-muted-foreground">25/100</span>
               </div>
               <input
                 type="text"
                 value={currentScene.dialogue}
                 readOnly
-                className="mt-1 h-8 w-full rounded-lg border border-white/[0.08] bg-[#182132] px-2.5 text-white"
+                className="mt-1 h-8 w-full rounded-lg border border-border bg-secondary px-2.5 text-foreground"
               />
             </div>
 
             {/* Camera angle & Duration */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <span className="text-[11px] text-[#9ca8bc] block">Thời lượng</span>
-                <span className="text-xs font-semibold text-white font-mono mt-0.5 block">
-                  ⏱ {currentScene.duration}
+                <span className="text-[11px] text-muted-foreground block">Thời lượng</span>
+                <span className="flex items-center gap-1 text-xs font-semibold text-foreground font-mono mt-0.5">
+                  <svg className="size-3.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {currentScene.duration}
                 </span>
               </div>
               <div>
-                <span className="text-[11px] text-[#9ca8bc] block">Góc máy</span>
-                <span className="text-xs font-semibold text-white mt-0.5 block">
-                  📹 {currentScene.cameraAngle}
+                <span className="text-[11px] text-muted-foreground block">Góc máy</span>
+                <span className="flex items-center gap-1 text-xs font-semibold text-foreground mt-0.5">
+                  <svg className="size-3.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  {currentScene.cameraAngle}
                 </span>
               </div>
             </div>
 
             {/* Bottom Actions */}
-            <div className="flex items-center gap-2 pt-2 border-t border-white/[0.08] mt-1">
+            <div className="flex items-center gap-2 pt-2 border-t border-border mt-1">
               <button
                 onClick={() => setScreen("editor")}
-                className="flex-1 rounded-lg border border-white/[0.1] bg-white/[0.04] py-2 text-[11.5px] font-semibold text-white hover:bg-white/[0.08] transition-all text-center"
+                className="flex-1 rounded-lg border border-border bg-secondary/60 py-2 text-[11.5px] font-semibold text-foreground hover:bg-secondary transition-all text-center"
               >
                 Mở trong Chỉnh sửa
               </button>
-              <button className="rounded-lg border border-white/[0.1] bg-white/[0.04] p-2 text-white hover:bg-white/[0.08]">
+              <button className="rounded-lg border border-border bg-secondary/60 p-2 text-foreground hover:bg-secondary">
                 <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>

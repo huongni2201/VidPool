@@ -27,7 +27,7 @@ export function AppLayout({ backendStatus: initialStatus }: AppLayoutProps) {
       : "pending")
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#07090e] text-[#f3f6fc]">
+    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
       {/* Left Sidebar */}
       <Sidebar backendStatus={backendStatus} />
 
@@ -37,7 +37,7 @@ export function AppLayout({ backendStatus: initialStatus }: AppLayoutProps) {
         <Topbar />
 
         {/* Dynamic Outlet Area */}
-        <main className="flex-1 overflow-y-auto bg-[#07090e]">
+        <main className="flex-1 overflow-y-auto bg-background">
           <Outlet />
         </main>
       </div>

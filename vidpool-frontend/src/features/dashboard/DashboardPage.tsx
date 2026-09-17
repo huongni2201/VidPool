@@ -114,13 +114,13 @@ export function DashboardPage() {
       <div className="flex items-start justify-between">
         <div>
           <span className="sr-only">Chào mừng bạn đến với VidPool</span>
-          <h2 className="text-2xl font-bold tracking-tight text-[#f3f6fc]">Tổng quan</h2>
-          <p className="text-xs text-[#9ca8bc] mt-1">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">Tổng quan</h2>
+          <p className="text-xs text-muted-foreground mt-1">
             Chào mừng bạn trở lại! Đây là tổng quan dự án và hoạt động studio của VidPool.
           </p>
         </div>
         <div className="text-right">
-          <div className="text-xs font-semibold text-[#9ca8bc]">Thứ 3, 15 thg 4, 2025</div>
+          <div className="text-xs font-semibold text-muted-foreground">Thứ 3, 15 thg 4, 2025</div>
           <div className="text-[11px] text-blue-400/90 mt-0.5">
             Sáng tạo hôm nay, nội dung lớn hơn ngày mai!
           </div>
@@ -191,9 +191,9 @@ export function DashboardPage() {
         {/* Column 1: Recent Projects & Account Pool (4 cols) */}
         <div className="lg:col-span-4 flex flex-col gap-5">
           {/* Recent Projects */}
-          <div className="rounded-xl border border-white/[0.08] bg-[#121824] p-4 flex flex-col gap-3">
+          <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-[#f3f6fc]">Dự Án Gần Đây</h3>
+              <h3 className="text-sm font-semibold text-foreground">Dự Án Gần Đây</h3>
               <button
                 onClick={() => handleNavigate(ROUTES.PROJECTS, "projects")}
                 className="text-[11.5px] font-medium text-blue-400 hover:text-blue-300 transition-colors"
@@ -213,18 +213,18 @@ export function DashboardPage() {
                     <img
                       src={p.cover}
                       alt={p.name}
-                      className="size-10 rounded-md object-cover border border-white/[0.08]"
+                      className="size-10 rounded-md object-cover border border-border"
                     />
                     <div className="flex flex-col min-w-0">
-                      <span className="truncate text-xs font-semibold text-[#f3f6fc] group-hover:text-blue-400 transition-colors">
+                      <span className="truncate text-xs font-semibold text-foreground group-hover:text-blue-400 transition-colors">
                         {p.name}
                       </span>
-                      <span className="truncate text-[11px] text-[#64748b]">{p.meta}</span>
+                      <span className="truncate text-[11px] text-studio-subtle">{p.meta}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <StatusBadge status={p.status} size="sm" />
-                    <button className="text-[#64748b] hover:text-[#f3f6fc] p-1">
+                    <button className="text-studio-subtle hover:text-foreground p-1">
                       <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
                       </svg>
@@ -236,9 +236,9 @@ export function DashboardPage() {
           </div>
 
           {/* Account Pool Mini Summary */}
-          <div className="rounded-xl border border-white/[0.08] bg-[#121824] p-4 flex flex-col gap-3">
+          <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-[#f3f6fc]">Account Pool</h3>
+              <h3 className="text-sm font-semibold text-foreground">Account Pool</h3>
               <button
                 onClick={() => setScreen("accounts")}
                 className="text-[11.5px] font-medium text-blue-400 hover:text-blue-300 transition-colors"
@@ -279,8 +279,8 @@ export function DashboardPage() {
                   />
                 </svg>
                 <div className="absolute flex flex-col items-center justify-center">
-                  <span className="text-xl font-bold text-[#f3f6fc]">5</span>
-                  <span className="text-[9px] text-[#64748b]">Tổng account</span>
+                  <span className="text-xl font-bold text-foreground">5</span>
+                  <span className="text-[9px] text-studio-subtle">Tổng account</span>
                 </div>
               </div>
 
@@ -289,30 +289,30 @@ export function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="size-2 rounded-full bg-emerald-400" />
-                    <span className="text-[#9ca8bc]">Đang hoạt động</span>
+                    <span className="text-muted-foreground">Đang hoạt động</span>
                   </div>
-                  <span className="font-semibold text-[#f3f6fc]">3</span>
+                  <span className="font-semibold text-foreground">3</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="size-2 rounded-full bg-blue-400" />
-                    <span className="text-[#9ca8bc]">Sẵn sàng</span>
+                    <span className="text-muted-foreground">Sẵn sàng</span>
                   </div>
-                  <span className="font-semibold text-[#f3f6fc]">1</span>
+                  <span className="font-semibold text-foreground">1</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="size-2 rounded-full bg-amber-400" />
-                    <span className="text-[#9ca8bc]">Cần chú ý</span>
+                    <span className="text-muted-foreground">Cần chú ý</span>
                   </div>
-                  <span className="font-semibold text-[#f3f6fc]">1</span>
+                  <span className="font-semibold text-foreground">1</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="size-2 rounded-full bg-rose-400" />
-                    <span className="text-[#9ca8bc]">Đã hết stamina</span>
+                    <span className="text-muted-foreground">Đã hết stamina</span>
                   </div>
-                  <span className="font-semibold text-[#f3f6fc]">0</span>
+                  <span className="font-semibold text-foreground">0</span>
                 </div>
               </div>
             </div>
@@ -322,9 +322,9 @@ export function DashboardPage() {
         {/* Column 2: Characters & Voice Library (4 cols) */}
         <div className="lg:col-span-4 flex flex-col gap-5">
           {/* Character Pack */}
-          <div className="rounded-xl border border-white/[0.08] bg-[#121824] p-4 flex flex-col gap-3">
+          <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-[#f3f6fc]">Nhân vật (Character Pack)</h3>
+              <h3 className="text-sm font-semibold text-foreground">Nhân vật (Character Pack)</h3>
               <button
                 onClick={() => setScreen("characters")}
                 className="text-[11.5px] font-medium text-blue-400 hover:text-blue-300 transition-colors"
@@ -344,13 +344,13 @@ export function DashboardPage() {
                   <img
                     src={c.avatar}
                     alt={c.name}
-                    className="size-16 rounded-lg object-cover border border-white/[0.08] shadow-sm"
+                    className="size-16 rounded-lg object-cover border border-border shadow-sm"
                   />
-                  <span className="mt-2 text-xs font-semibold text-[#f3f6fc] group-hover:text-blue-400 transition-colors">
+                  <span className="mt-2 text-xs font-semibold text-foreground group-hover:text-blue-400 transition-colors">
                     {c.name}
                   </span>
-                  <span className="text-[10px] text-[#9ca8bc]">{c.role}</span>
-                  <span className="mt-1 rounded bg-white/[0.06] px-1.5 py-0.5 text-[9.5px] text-[#64748b]">
+                  <span className="text-[10px] text-muted-foreground">{c.role}</span>
+                  <span className="mt-1 rounded bg-white/[0.06] px-1.5 py-0.5 text-[9.5px] text-studio-subtle">
                     {c.count}
                   </span>
                 </div>
@@ -363,27 +363,27 @@ export function DashboardPage() {
                 <div className="flex size-7 items-center justify-center rounded-md bg-indigo-500/15 text-indigo-400 text-xs font-bold">
                   8
                 </div>
-                <div className="text-[10.5px] leading-tight text-[#9ca8bc]">Nhân vật đã tạo</div>
+                <div className="text-[10.5px] leading-tight text-muted-foreground">Nhân vật đã tạo</div>
               </div>
               <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] p-2 border border-white/[0.05]">
                 <div className="flex size-7 items-center justify-center rounded-md bg-blue-500/15 text-blue-400 text-xs font-bold">
                   3
                 </div>
-                <div className="text-[10.5px] leading-tight text-[#9ca8bc]">Custom Clone</div>
+                <div className="text-[10.5px] leading-tight text-muted-foreground">Custom Clone</div>
               </div>
               <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] p-2 border border-white/[0.05]">
                 <div className="flex size-7 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-400 text-xs font-bold">
                   12
                 </div>
-                <div className="text-[10.5px] leading-tight text-[#9ca8bc]">Đang sử dụng</div>
+                <div className="text-[10.5px] leading-tight text-muted-foreground">Đang sử dụng</div>
               </div>
             </div>
           </div>
 
           {/* Voice Library Breakdown */}
-          <div className="rounded-xl border border-white/[0.08] bg-[#121824] p-4 flex flex-col gap-3">
+          <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-[#f3f6fc]">Thư viện Voice</h3>
+              <h3 className="text-sm font-semibold text-foreground">Thư viện Voice</h3>
               <button
                 onClick={() => setScreen("voice")}
                 className="text-[11.5px] font-medium text-blue-400 hover:text-blue-300 transition-colors"
@@ -397,44 +397,44 @@ export function DashboardPage() {
                 <svg className="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                 </svg>
-                <span className="mt-1 text-base font-bold text-white">12</span>
-                <span className="text-[9.5px] text-[#9ca8bc]">Giọng đọc</span>
+                <span className="mt-1 text-base font-bold text-foreground">12</span>
+                <span className="text-[9.5px] text-muted-foreground">Giọng đọc</span>
               </div>
 
               <div className="flex flex-1 flex-col gap-2 text-xs">
                 <div>
                   <div className="flex justify-between text-[11px] mb-1">
-                    <span className="text-[#9ca8bc]">Tiếng Việt</span>
-                    <span className="font-semibold text-white">6</span>
+                    <span className="text-muted-foreground">Tiếng Việt</span>
+                    <span className="font-semibold text-foreground">6</span>
                   </div>
-                  <div className="h-1.5 w-full rounded-full bg-white/[0.06] overflow-hidden">
+                  <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
                     <div className="h-full rounded-full bg-blue-500" style={{ width: "50%" }} />
                   </div>
                 </div>
                 <div>
                   <div className="flex justify-between text-[11px] mb-1">
-                    <span className="text-[#9ca8bc]">English</span>
-                    <span className="font-semibold text-white">3</span>
+                    <span className="text-muted-foreground">English</span>
+                    <span className="font-semibold text-foreground">3</span>
                   </div>
-                  <div className="h-1.5 w-full rounded-full bg-white/[0.06] overflow-hidden">
+                  <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
                     <div className="h-full rounded-full bg-indigo-500" style={{ width: "25%" }} />
                   </div>
                 </div>
                 <div>
                   <div className="flex justify-between text-[11px] mb-1">
-                    <span className="text-[#9ca8bc]">Nhật Bản</span>
-                    <span className="font-semibold text-white">2</span>
+                    <span className="text-muted-foreground">Nhật Bản</span>
+                    <span className="font-semibold text-foreground">2</span>
                   </div>
-                  <div className="h-1.5 w-full rounded-full bg-white/[0.06] overflow-hidden">
+                  <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
                     <div className="h-full rounded-full bg-purple-500" style={{ width: "16%" }} />
                   </div>
                 </div>
                 <div>
                   <div className="flex justify-between text-[11px] mb-1">
-                    <span className="text-[#9ca8bc]">Custom</span>
-                    <span className="font-semibold text-white">1</span>
+                    <span className="text-muted-foreground">Custom</span>
+                    <span className="font-semibold text-foreground">1</span>
                   </div>
-                  <div className="h-1.5 w-full rounded-full bg-white/[0.06] overflow-hidden">
+                  <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
                     <div className="h-full rounded-full bg-emerald-500" style={{ width: "9%" }} />
                   </div>
                 </div>
@@ -446,25 +446,25 @@ export function DashboardPage() {
         {/* Column 3: Creation Banner & Recent Jobs (4 cols) */}
         <div className="lg:col-span-4 flex flex-col gap-5">
           {/* Studio Creation Hero Banner */}
-          <div className="relative overflow-hidden rounded-xl border border-indigo-500/30 bg-gradient-to-br from-blue-900/40 via-indigo-950/50 to-[#121824] p-5 shadow-lg shadow-indigo-950/40">
+          <div className="relative overflow-hidden rounded-xl border border-blue-500/30 bg-card p-5 shadow-lg shadow-black/20">
             <div className="relative z-10 flex flex-col gap-3">
               <span className="text-xs font-bold uppercase tracking-wider text-blue-400">
-                Bắt đầu sáng tạo
+                Bắt đầu biên tập
               </span>
               <div className="flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-blue-600/25 border border-blue-500/30 text-blue-300">
-                  <svg className="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879a3 3 0 11-4.242-4.242L10.757 8.5m1.243 3.5l-2.879-2.879a3 3 0 10-4.242 4.242L7.757 16.5" />
+                <div className="flex size-10 items-center justify-center rounded-xl bg-blue-600/20 border border-blue-500/30 text-blue-400">
+                  <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 3h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z" />
                   </svg>
                 </div>
-                <h3 className="text-base font-bold text-[#f3f6fc]">Chỉnh sửa video ngay</h3>
+                <h3 className="text-base font-bold text-foreground">Chỉnh sửa video ngay</h3>
               </div>
-              <p className="text-xs text-[#9ca8bc] leading-relaxed">
-                Cắt ghép, thêm phụ đề, xử lý bằng AI để tạo video hoàn chỉnh nhanh chóng và nhất quán.
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Cắt ghép, đồng bộ timeline, render video hoàn chỉnh với hiệu suất cao và chuẩn xác.
               </p>
               <button
                 onClick={() => handleNavigate(ROUTES.EDITOR, "editor")}
-                className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-blue-500/25 hover:from-blue-500 hover:to-indigo-500 transition-all"
+                className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-blue-600 hover:bg-blue-500 px-4 py-2.5 text-xs font-semibold text-white shadow-md shadow-blue-600/20 transition-all"
               >
                 <span>Mở trình chỉnh sửa</span>
                 <span>→</span>
@@ -473,10 +473,10 @@ export function DashboardPage() {
           </div>
 
           {/* Recent Jobs */}
-          <div className="rounded-xl border border-white/[0.08] bg-[#121824] p-4 flex flex-col gap-3">
+          <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-[#f3f6fc]">Jobs gần đây</h3>
+                <h3 className="text-sm font-semibold text-foreground">Jobs gần đây</h3>
                 <span className="rounded bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-blue-400 border border-blue-500/20">
                   Generation Queue
                 </span>
@@ -494,25 +494,25 @@ export function DashboardPage() {
                 <div
                   key={j.id}
                   onClick={() => setScreen("jobs")}
-                  className="flex flex-col gap-1.5 rounded-lg border border-white/[0.05] bg-white/[0.02] p-2.5 hover:border-white/[0.12] hover:bg-white/[0.04] transition-all cursor-pointer"
+                  className="flex flex-col gap-1.5 rounded-lg border border-border/50 bg-secondary/30 p-2.5 hover:border-border hover:bg-secondary/60 transition-all cursor-pointer"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0">
                       <img
                         src={j.thumb}
                         alt={j.title}
-                        className="size-7 rounded object-cover border border-white/[0.08]"
+                        className="size-7 rounded object-cover border border-border"
                       />
                       <div className="flex flex-col min-w-0">
-                        <span className="truncate text-xs font-semibold text-[#f3f6fc]">{j.title}</span>
-                        <span className="truncate text-[10px] text-[#64748b]">{j.project}</span>
+                        <span className="truncate text-xs font-semibold text-foreground">{j.title}</span>
+                        <span className="truncate text-[10px] text-muted-foreground">{j.project}</span>
                       </div>
                     </div>
                     <StatusBadge status={j.status} size="sm" />
                   </div>
 
                   <div className="flex items-center gap-3 mt-1">
-                    <div className="h-1.5 flex-1 rounded-full bg-white/[0.06] overflow-hidden">
+                    <div className="h-1.5 flex-1 rounded-full bg-secondary overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${
                           j.percent === 100 ? "bg-emerald-500" : "bg-blue-500"
@@ -520,8 +520,8 @@ export function DashboardPage() {
                         style={{ width: `${j.percent}%` }}
                       />
                     </div>
-                    <span className="text-[10px] font-bold text-white">{j.percent}%</span>
-                    <span className="text-[9.5px] text-[#64748b]">{j.time}</span>
+                    <span className="text-[10px] font-bold text-foreground">{j.percent}%</span>
+                    <span className="text-[9.5px] text-muted-foreground">{j.time}</span>
                   </div>
                 </div>
               ))}

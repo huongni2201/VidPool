@@ -164,8 +164,8 @@ export function ProjectsPage() {
       {/* Header */}
       <div>
         <span className="sr-only">Quản Lý Dự Án</span>
-        <h2 className="text-2xl font-bold tracking-tight text-[#f3f6fc]">Dự án</h2>
-        <p className="text-xs text-[#9ca8bc] mt-1">
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">Dự án</h2>
+        <p className="text-xs text-muted-foreground mt-1">
           Quản lý tất cả dự án AI video của bạn. Tạo, chỉnh sửa và theo dõi tiến độ dự án một cách dễ dàng.
         </p>
       </div>
@@ -173,13 +173,13 @@ export function ProjectsPage() {
       {/* Filter and Search Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         {/* Status Filter Tabs */}
-        <div className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#121824] p-1">
+        <div className="flex items-center gap-1.5 rounded-xl border border-border bg-card p-1">
           <button
             onClick={() => setFilter("all")}
             className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
               filter === "all"
                 ? "bg-blue-600 text-white shadow-sm"
-                : "text-[#9ca8bc] hover:text-[#f3f6fc]"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <span>Tất cả</span>
@@ -190,7 +190,7 @@ export function ProjectsPage() {
             className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
               filter === "running"
                 ? "bg-blue-600 text-white shadow-sm"
-                : "text-[#9ca8bc] hover:text-[#f3f6fc]"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <span className="size-1.5 rounded-full bg-blue-400" />
@@ -202,7 +202,7 @@ export function ProjectsPage() {
             className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
               filter === "completed"
                 ? "bg-blue-600 text-white shadow-sm"
-                : "text-[#9ca8bc] hover:text-[#f3f6fc]"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <span className="size-1.5 rounded-full bg-emerald-400" />
@@ -214,7 +214,7 @@ export function ProjectsPage() {
             className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
               filter === "paused"
                 ? "bg-blue-600 text-white shadow-sm"
-                : "text-[#9ca8bc] hover:text-[#f3f6fc]"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <span className="size-1.5 rounded-full bg-amber-400" />
@@ -226,7 +226,7 @@ export function ProjectsPage() {
             className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
               filter === "error"
                 ? "bg-blue-600 text-white shadow-sm"
-                : "text-[#9ca8bc] hover:text-[#f3f6fc]"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <span className="size-1.5 rounded-full bg-rose-400" />
@@ -240,7 +240,7 @@ export function ProjectsPage() {
           {/* Search box */}
           <div className="relative flex items-center">
             <svg
-              className="absolute left-3 size-4 text-[#64748b]"
+              className="absolute left-3 size-4 text-muted-foreground"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -252,12 +252,12 @@ export function ProjectsPage() {
               placeholder="Tìm kiếm dự án..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-9 w-60 rounded-xl border border-white/[0.08] bg-[#121824] pl-9 pr-3 text-xs text-[#f3f6fc] placeholder-[#64748b] focus:border-blue-500 focus:outline-none"
+              className="h-9 w-60 rounded-xl border border-border bg-card pl-9 pr-3 text-xs text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
             />
           </div>
 
           {/* Sort dropdown */}
-          <select className="h-9 rounded-xl border border-white/[0.08] bg-[#121824] px-3 text-xs text-[#9ca8bc] focus:border-blue-500 focus:outline-none cursor-pointer">
+          <select className="h-9 rounded-xl border border-border bg-card px-3 text-xs text-muted-foreground focus:border-primary focus:outline-none cursor-pointer">
             <option>Mới nhất</option>
             <option>Cũ nhất</option>
             <option>Theo tên (A-Z)</option>
@@ -265,13 +265,13 @@ export function ProjectsPage() {
           </select>
 
           {/* View toggle */}
-          <div className="flex items-center rounded-xl border border-white/[0.08] bg-[#121824] p-1">
+          <div className="flex items-center rounded-xl border border-border bg-card p-1">
             <button className="flex size-7 items-center justify-center rounded-lg bg-blue-600 text-white" title="Lưới">
               <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
               </svg>
             </button>
-            <button className="flex size-7 items-center justify-center rounded-lg text-[#9ca8bc] hover:text-white" title="Danh sách">
+            <button className="flex size-7 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground" title="Danh sách">
               <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
@@ -279,7 +279,7 @@ export function ProjectsPage() {
           </div>
 
           {/* Filter button */}
-          <button className="flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-[#121824] px-3 py-2 text-xs font-semibold text-[#9ca8bc] hover:border-white/[0.16] hover:text-[#f3f6fc] transition-all">
+          <button className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground hover:border-border hover:text-foreground transition-all">
             <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
@@ -293,7 +293,7 @@ export function ProjectsPage() {
         {/* Create New Project Card */}
         <div
           onClick={() => setIsCreateOpen(true)}
-          className="group flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-white/[0.14] bg-[#121824]/40 p-6 text-center hover:border-blue-500/50 hover:bg-blue-600/[0.03] transition-all cursor-pointer min-h-[300px]"
+          className="group flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-card/40 p-6 text-center hover:border-blue-500/50 hover:bg-secondary/50 transition-all cursor-pointer min-h-[300px]"
         >
           <div className="flex size-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform">
             <svg className="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -301,10 +301,10 @@ export function ProjectsPage() {
             </svg>
           </div>
           <span className="sr-only">+ Tạo dự án mới</span>
-          <h3 className="mt-4 text-sm font-bold text-[#f3f6fc] group-hover:text-blue-400 transition-colors">
+          <h3 className="mt-4 text-sm font-bold text-foreground group-hover:text-blue-400 transition-colors">
             Tạo dự án mới
           </h3>
-          <p className="mt-1.5 text-xs text-[#9ca8bc] max-w-[200px] leading-relaxed">
+          <p className="mt-1.5 text-xs text-muted-foreground max-w-[200px] leading-relaxed">
             Bắt đầu một dự án AI video mới với sức mạnh của VidPool
           </p>
         </div>
@@ -313,7 +313,7 @@ export function ProjectsPage() {
         {filteredProjects.map((p) => (
           <div
             key={p.id}
-            className="group flex flex-col justify-between rounded-2xl border border-white/[0.08] bg-[#121824] overflow-hidden hover:border-white/[0.18] hover:shadow-xl transition-all"
+            className="group flex flex-col justify-between rounded-2xl border border-border bg-card overflow-hidden hover:border-border hover:shadow-xl transition-all"
           >
             {/* Thumbnail Header */}
             <div className="relative aspect-video w-full overflow-hidden bg-black/40">
@@ -360,23 +360,23 @@ export function ProjectsPage() {
             {/* Content Body */}
             <div className="flex flex-col gap-3 p-4">
               <div>
-                <h3 className="text-sm font-bold text-[#f3f6fc] group-hover:text-blue-400 transition-colors">
+                <h3 className="text-sm font-bold text-foreground group-hover:text-blue-400 transition-colors">
                   {p.title}
                 </h3>
                 {/* Metadata Row */}
-                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#9ca8bc]">
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    <svg className="size-3 text-[#64748b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="size-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     {p.duration}
                   </span>
-                  <span className="rounded bg-white/[0.06] px-1 py-0.2 font-semibold text-[#f3f6fc]">
+                  <span className="rounded bg-secondary px-1 py-0.2 font-semibold text-foreground">
                     {p.aspectRatio}
                   </span>
                   <span>{p.scenes} cảnh</span>
                 </div>
-                <div className="mt-1 flex items-center justify-between text-[11px] text-[#64748b]">
+                <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
                   <span>{p.characters} nhân vật</span>
                   <span>{p.updated}</span>
                 </div>
@@ -387,7 +387,7 @@ export function ProjectsPage() {
                 {p.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-md bg-white/[0.04] px-2 py-0.5 text-[10.5px] text-[#9ca8bc]"
+                    className="rounded-md bg-secondary px-2 py-0.5 text-[10.5px] text-muted-foreground"
                   >
                     {tag}
                   </span>
@@ -395,7 +395,7 @@ export function ProjectsPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="mt-1 flex items-center gap-2 pt-2 border-t border-white/[0.06]">
+              <div className="mt-1 flex items-center gap-2 pt-2 border-t border-border">
                 <button
                   onClick={() => openProject(p.title)}
                   className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-blue-600/15 py-1.5 text-xs font-semibold text-blue-400 hover:bg-blue-600 hover:text-white transition-all"
@@ -405,7 +405,7 @@ export function ProjectsPage() {
                   </svg>
                   <span>Mở Studio</span>
                 </button>
-                <button className="flex size-7 items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.02] text-[#9ca8bc] hover:border-white/[0.14] hover:text-[#f3f6fc] transition-all">
+                <button className="flex size-7 items-center justify-center rounded-lg border border-border bg-secondary/50 text-muted-foreground hover:border-border hover:text-foreground transition-all">
                   <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
                   </svg>
@@ -417,22 +417,22 @@ export function ProjectsPage() {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between border-t border-white/[0.06] pt-4 text-xs text-[#9ca8bc]">
+      <div className="flex items-center justify-between border-t border-border pt-4 text-xs text-muted-foreground">
         <span>Hiển thị 1–8 trong 12 dự án</span>
         <div className="flex items-center gap-2">
-          <button className="flex size-7 items-center justify-center rounded-lg border border-white/[0.08] bg-[#121824] hover:bg-white/[0.06]">
+          <button className="flex size-7 items-center justify-center rounded-lg border border-border bg-card hover:bg-secondary">
             &lt;
           </button>
           <button className="flex size-7 items-center justify-center rounded-lg bg-blue-600 text-white font-semibold">
             1
           </button>
-          <button className="flex size-7 items-center justify-center rounded-lg border border-white/[0.08] bg-[#121824] hover:bg-white/[0.06]">
+          <button className="flex size-7 items-center justify-center rounded-lg border border-border bg-card hover:bg-secondary">
             2
           </button>
-          <button className="flex size-7 items-center justify-center rounded-lg border border-white/[0.08] bg-[#121824] hover:bg-white/[0.06]">
+          <button className="flex size-7 items-center justify-center rounded-lg border border-border bg-card hover:bg-secondary">
             &gt;
           </button>
-          <select className="h-7 rounded-lg border border-white/[0.08] bg-[#121824] px-2 text-[11px] text-[#9ca8bc] ml-2">
+          <select className="h-7 rounded-lg border border-border bg-card px-2 text-[11px] text-muted-foreground ml-2">
             <option>8 / trang</option>
             <option>16 / trang</option>
             <option>24 / trang</option>
