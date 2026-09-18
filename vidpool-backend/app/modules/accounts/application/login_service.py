@@ -9,6 +9,7 @@ from app.modules.accounts.domain.errors import (
     AccountNotFound,
     BrowserProfileInUse,
     BrowserSessionNotOpen,
+    DuplicateProviderIdentity,
     InvalidAccountState,
     ProviderNotRegistered,
     SessionInvalid,
@@ -21,8 +22,6 @@ from .queries import AccountView, StartLoginResult
 from .uow import AccountUnitOfWorkPort
 
 logger = logging.getLogger(__name__)
-
-_to_view = account_to_view
 
 
 class AccountLoginService:
@@ -107,6 +106,7 @@ class AccountLoginService:
         if not self._browser.has_open_session(profile_key):
             raise BrowserSessionNotOpen(f"No active browser session for '{profile_key}'")
 
+        cleanup_provisional = False
         try:
             validation = auth_adapter.validate_active_session(profile_key)
 
@@ -127,25 +127,57 @@ class AccountLoginService:
 
             identity = auth_adapter.resolve_identity(profile_key)
             current_time = now or datetime.now(UTC)
-            with self._uow_factory() as uow:
-                acc = uow.accounts.get(account_id)
-                if acc is None:
-                    raise AccountNotFound(f"Account '{account_id}' not found")
-                acc.mark_authenticated(
-                    display_name=identity.display_name,
-                    external_identity=identity.external_identity,
-                    now=current_time,
-                )
-                uow.accounts.save(acc)
-                uow.commit()
-                logger.info(
-                    "account_login_completed account_id=%s provider_key=%s",
-                    account_id,
-                    provider_key,
-                )
-                return _to_view(acc)
+            try:
+                with self._uow_factory() as uow:
+                    acc = uow.accounts.get(account_id)
+                    if acc is None:
+                        raise AccountNotFound(f"Account '{account_id}' not found")
+
+                    if identity.external_identity:
+                        existing = uow.accounts.get_by_provider_identity(
+                            provider_key, identity.external_identity
+                        )
+                        if existing is not None and existing.id != account_id:
+                            if acc.last_validated_at is None:
+                                uow.accounts.delete(account_id)
+                                uow.commit()
+                                cleanup_provisional = True
+                            raise DuplicateProviderIdentity(
+                                f"Provider account '{identity.external_identity}' is already registered"
+                            )
+
+                    acc.mark_authenticated(
+                        display_name=identity.display_name,
+                        external_identity=identity.external_identity,
+                        now=current_time,
+                    )
+                    uow.accounts.save(acc)
+                    uow.commit()
+                    logger.info(
+                        "account_login_completed account_id=%s provider_key=%s",
+                        account_id,
+                        provider_key,
+                    )
+                    return account_to_view(acc)
+            except DuplicateProviderIdentity:
+                if not cleanup_provisional:
+                    try:
+                        with self._uow_factory() as uow:
+                            acc = uow.accounts.get(account_id)
+                            if acc is not None and acc.last_validated_at is None:
+                                uow.accounts.delete(account_id)
+                                uow.commit()
+                                cleanup_provisional = True
+                    except Exception:
+                        logger.exception("Failed to clean up provisional account on duplicate identity")
+                raise
         finally:
             self._browser.close_profile(profile_key)
+            if cleanup_provisional:
+                try:
+                    self._browser.delete_profile(profile_key)
+                except Exception:
+                    logger.exception("Failed to delete provisional profile on duplicate identity")
 
     def cancel_new_login(
         self,
@@ -187,7 +219,7 @@ class AccountLoginService:
             if account is None:
                 raise AccountNotFound(f"Account '{account_id}' not found")
             profile_key = account.profile_key
-            view = _to_view(account)
+            view = account_to_view(account)
 
         self._browser.close_profile(profile_key)
         return view

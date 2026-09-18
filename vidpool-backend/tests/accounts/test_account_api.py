@@ -286,3 +286,36 @@ def test_validate_account_returns_503_when_provider_unavailable() -> None:
     assert res.status_code == 503
     assert res.json()["detail"] == "Provider session check unavailable"
 
+
+def test_complete_login_returns_409_on_duplicate_provider_identity() -> None:
+    adapter = FakeProviderAuthAdapter(
+        provider_key="test-provider",
+        external_identity="user-shared-999",
+        display_name="First User",
+    )
+    client, _, _ = _build_test_client(auth_adapter=adapter)
+
+    # 1. First account registers and completes login
+    res1 = client.post(
+        "/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER
+    )
+    acc1_id = res1.json()["accountId"]
+    res1_complete = client.post(
+        f"/api/accounts/{acc1_id}/login/complete", headers=AUTH_HEADER
+    )
+    assert res1_complete.status_code == 200
+
+    # 2. Second account starts login
+    res2 = client.post(
+        "/api/providers/test-provider/accounts/login/start", headers=AUTH_HEADER
+    )
+    acc2_id = res2.json()["accountId"]
+
+    # 3. Second account completes login resolving to duplicate identity -> 409 Conflict
+    res2_complete = client.post(
+        f"/api/accounts/{acc2_id}/login/complete", headers=AUTH_HEADER
+    )
+    assert res2_complete.status_code == 409
+    assert "already registered" in res2_complete.json()["detail"]
+
+

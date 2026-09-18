@@ -8,7 +8,10 @@ from sqlalchemy.orm import Session
 
 from app.modules.accounts.application.ports import AccountRepositoryPort
 from app.modules.accounts.domain.account import ProviderAccount
-from app.modules.accounts.domain.errors import AccountNotFoundError
+from app.modules.accounts.domain.errors import (
+    AccountNotFoundError,
+    DuplicateProviderIdentity,
+)
 from app.modules.accounts.domain.lease import AccountLease
 from app.modules.accounts.domain.values import AccountId, AccountStatus
 
@@ -23,10 +26,27 @@ class SQLAlchemyAccountRepository(AccountRepositoryPort):
     def add(self, account: ProviderAccount) -> None:
         model = account_to_model(account)
         self._session.add(model)
-        self._session.flush()
+        try:
+            self._session.flush()
+        except IntegrityError as exc:
+            raise DuplicateProviderIdentity(
+                f"Provider account '{account.external_identity}' is already registered"
+            ) from exc
 
     def get(self, account_id: AccountId) -> ProviderAccount | None:
         model = self._session.get(ProviderAccountModel, str(account_id))
+        if model is None:
+            return None
+        return account_from_model(model)
+
+    def get_by_provider_identity(
+        self, provider_key: str, external_identity: str
+    ) -> ProviderAccount | None:
+        stmt = select(ProviderAccountModel).where(
+            ProviderAccountModel.provider_key == provider_key,
+            ProviderAccountModel.external_identity == external_identity,
+        )
+        model = self._session.scalars(stmt).first()
         if model is None:
             return None
         return account_from_model(model)
@@ -56,7 +76,12 @@ class SQLAlchemyAccountRepository(AccountRepositoryPort):
         model.consecutive_failures = account.consecutive_failures
         model.cooldown_until = account.cooldown_until
         model.updated_at = account.updated_at
-        self._session.flush()
+        try:
+            self._session.flush()
+        except IntegrityError as exc:
+            raise DuplicateProviderIdentity(
+                f"Provider account '{account.external_identity}' is already registered"
+            ) from exc
 
     def delete(self, account_id: AccountId) -> None:
         model = self._session.get(ProviderAccountModel, str(account_id))

@@ -10,6 +10,7 @@ from app.modules.accounts.domain.errors import (
     BrowserProfileInUse,
     BrowserSessionNotOpen,
     BrowserUnavailable,
+    DuplicateProviderIdentity,
     InvalidAccountState,
     InvalidProfileKey,
     ProviderNotRegistered,
@@ -54,6 +55,7 @@ def _handle_error(exc: Exception) -> None:
         exc,
         (
             AccountInUse,
+            DuplicateProviderIdentity,
             SessionInvalid,
             BrowserProfileInUse,
             BrowserSessionNotOpen,

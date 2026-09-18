@@ -28,6 +28,14 @@ class FakeAccountRepository(AccountRepositoryPort):
     def get(self, account_id: AccountId) -> ProviderAccount | None:
         return self.accounts.get(account_id)
 
+    def get_by_provider_identity(
+        self, provider_key: str, external_identity: str
+    ) -> ProviderAccount | None:
+        for acc in self.accounts.values():
+            if acc.provider_key == provider_key and acc.external_identity == external_identity:
+                return acc
+        return None
+
     def list(self, provider_key: str | None = None) -> list[ProviderAccount]:
         if provider_key is None:
             return list(self.accounts.values())

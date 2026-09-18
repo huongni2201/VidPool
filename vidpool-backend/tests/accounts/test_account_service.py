@@ -16,6 +16,7 @@ from app.modules.accounts.domain.errors import (
     AccountUnavailable,
     BrowserProfileInUse,
     BrowserSessionNotOpen,
+    DuplicateProviderIdentity,
     InvalidAccountState,
     LeaseNotFound,
     ProviderNotRegistered,
@@ -504,11 +505,14 @@ def test_delete_account_does_not_restore_record_when_profile_cleanup_fails() -> 
 
 
 def test_acquire_and_release_lru() -> None:
-    service, repo, _, _ = _build_service()
+    service, repo, _, registry = _build_service()
+    adapter = registry.get_auth("provider-x")
+    assert adapter is not None
 
     start1 = service.start_login("provider-x", now=NOW)
     service.complete_login(start1.account_id, now=NOW)
 
+    adapter.external_identity = "user-distinct-2"
     start2 = service.start_login("provider-x", now=NOW)
     service.complete_login(start2.account_id, now=NOW)
 
@@ -631,4 +635,78 @@ def test_validate_account_transitions_to_auth_required_when_invalid() -> None:
     account = repo.get(start.account_id)
     assert account is not None
     assert account.status is AccountStatus.AUTH_REQUIRED
+
+
+def test_complete_login_rejects_duplicate_provider_identity_and_cleans_up_provisional() -> None:
+    adapter = FakeProviderAuthAdapter(
+        provider_key="provider-x",
+        external_identity="user-common-123",
+        display_name="User Alpha",
+    )
+    service, repo, browser, _ = _build_service(adapter)
+
+    # 1. First account registers and completes login successfully
+    start1 = service.start_login("provider-x", now=NOW)
+    view1 = service.complete_login(start1.account_id, now=NOW)
+    assert view1.status is AccountStatus.ACTIVE
+    assert view1.external_identity == "user-common-123"
+
+    # 2. Second account begins login with a different profile
+    start2 = service.start_login("provider-x", now=LATER)
+    profile2_key = f"browser-profile/provider-x/{start2.account_id}"
+    assert repo.get(start2.account_id) is not None
+    assert browser.has_open_session(profile2_key) is True
+
+    # 3. Completing login resolves to the SAME external identity -> should raise DuplicateProviderIdentity
+    with pytest.raises(DuplicateProviderIdentity):
+        service.complete_login(start2.account_id, now=LATER)
+
+    # 4. Provisional account must be cleaned up from DB and browser profile deleted
+    assert repo.get(start2.account_id) is None
+    assert browser.has_open_session(profile2_key) is False
+    assert profile2_key in browser.deleted_profiles
+
+    # 5. The first account must be intact and ACTIVE
+    account1 = repo.get(start1.account_id)
+    assert account1 is not None
+    assert account1.status is AccountStatus.ACTIVE
+    assert account1.external_identity == "user-common-123"
+
+
+def test_relogin_with_duplicate_identity_rejects_without_deleting_existing_account() -> None:
+    adapter = FakeProviderAuthAdapter(
+        provider_key="provider-x",
+        external_identity="user-A",
+        display_name="User A",
+    )
+    service, repo, browser, _ = _build_service(adapter)
+
+    # Account 1 registered with user-A
+    start1 = service.start_login("provider-x", now=NOW)
+    service.complete_login(start1.account_id, now=NOW)
+
+    # Account 2 registered with user-B
+    adapter.external_identity = "user-B"
+    adapter.display_name = "User B"
+    start2 = service.start_login("provider-x", now=NOW)
+    service.complete_login(start2.account_id, now=NOW)
+
+    # Account 2 goes to AUTH_REQUIRED
+    service.report_auth_failure(start2.account_id, now=LATER)
+
+    # User starts relogin on Account 2
+    service.start_relogin(start2.account_id, now=LATER)
+
+    # But during relogin, user logs in as user-A instead of user-B
+    adapter.external_identity = "user-A"
+    adapter.display_name = "User A"
+
+    with pytest.raises(DuplicateProviderIdentity):
+        service.complete_login(start2.account_id, now=LATER)
+
+    # Account 2 was NOT provisional (had prior validation), so it should NOT be deleted
+    acc2 = repo.get(start2.account_id)
+    assert acc2 is not None
+    assert acc2.status is AccountStatus.AUTH_REQUIRED
+
 

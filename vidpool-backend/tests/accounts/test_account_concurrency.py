@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.infrastructure.persistence.base import Base
 from app.infrastructure.persistence.database import create_engine_for_path
+from app.modules.accounts.application.ports import ProviderIdentity
 from app.modules.accounts.application.service import AccountService
 from app.modules.accounts.domain.errors import (
     InvalidAccountState,
@@ -27,6 +28,16 @@ from tests.accounts.fakes import (
 )
 
 
+class _UniqueIdentityFakeAuthAdapter(FakeProviderAuthAdapter):
+    def resolve_identity(self, profile_key: str) -> ProviderIdentity:
+        import uuid
+
+        return ProviderIdentity(
+            display_name=self.display_name,
+            external_identity=f"{self.external_identity}-{uuid.uuid4().hex[:8]}",
+        )
+
+
 def _setup_service(db_path: Path, adapter: FakeProviderAuthAdapter | None = None):
     engine = create_engine_for_path(db_path)
     Base.metadata.create_all(engine)
@@ -37,7 +48,7 @@ def _setup_service(db_path: Path, adapter: FakeProviderAuthAdapter | None = None
 
     browser = FakeBrowserSessionManager()
     if adapter is None:
-        adapter = FakeProviderAuthAdapter(provider_key="test-provider")
+        adapter = _UniqueIdentityFakeAuthAdapter(provider_key="test-provider")
     registry = FakeProviderRegistry([adapter])
     service = AccountService(
         uow_factory=uow_factory,

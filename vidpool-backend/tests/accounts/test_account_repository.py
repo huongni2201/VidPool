@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.infrastructure.persistence.base import Base
 from app.modules.accounts.domain.account import ProviderAccount
+from app.modules.accounts.domain.errors import DuplicateProviderIdentity
 from app.modules.accounts.domain.values import AccountStatus, new_account_id
 from app.modules.accounts.infrastructure.persistence.repository import SQLAlchemyAccountRepository
 
@@ -309,3 +310,68 @@ def test_concurrent_acquire_never_leases_same_account_twice(tmp_path: Path) -> N
             select(func.count()).select_from(AccountLeaseModel)
         )
         assert persisted_lease_count == 1
+
+
+def test_get_by_provider_identity(db_session: Session) -> None:
+    repo = SQLAlchemyAccountRepository(session=db_session)
+    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=UTC)
+
+    account = ProviderAccount.create(
+        provider_key="dreamina",
+        profile_key="browser-profile/dreamina/acc-ident-1",
+        account_id=new_account_id(),
+        now=now,
+    )
+    account.mark_authenticated(
+        display_name="Dreamina User",
+        external_identity="user_xyz_789",
+        now=now,
+    )
+    repo.add(account)
+    db_session.commit()
+
+    found = repo.get_by_provider_identity("dreamina", "user_xyz_789")
+    assert found is not None
+    assert found.id == account.id
+    assert found.external_identity == "user_xyz_789"
+
+    not_found = repo.get_by_provider_identity("dreamina", "user_nonexistent")
+    assert not_found is None
+
+    wrong_provider = repo.get_by_provider_identity("seedance", "user_xyz_789")
+    assert wrong_provider is None
+
+
+def test_unique_provider_identity_constraint(db_session: Session) -> None:
+    repo = SQLAlchemyAccountRepository(session=db_session)
+    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=UTC)
+
+    account1 = ProviderAccount.create(
+        provider_key="dreamina",
+        profile_key="browser-profile/dreamina/acc-dup-1",
+        account_id=new_account_id(),
+        now=now,
+    )
+    account1.mark_authenticated(
+        display_name="First Account",
+        external_identity="unique_user_id_100",
+        now=now,
+    )
+    repo.add(account1)
+    db_session.commit()
+
+    account2 = ProviderAccount.create(
+        provider_key="dreamina",
+        profile_key="browser-profile/dreamina/acc-dup-2",
+        account_id=new_account_id(),
+        now=now,
+    )
+    account2.mark_authenticated(
+        display_name="Second Account",
+        external_identity="unique_user_id_100",
+        now=now,
+    )
+
+    with pytest.raises(DuplicateProviderIdentity):
+        repo.add(account2)
+
