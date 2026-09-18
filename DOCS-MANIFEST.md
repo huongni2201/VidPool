@@ -20,6 +20,8 @@
 - `docs/adr/0014-local-api-security-boundary.md`
 - `docs/adr/0015-package-fastapi-as-tauri-sidecar.md`
 - `docs/adr/0016-use-modular-monolith-clean-hexagonal-backend.md`
+- `docs/adr/0017-account-pool-browser-sessions.md`
+- `docs/adr/0018-single-owner-playwright-browser-runtime.md`
 - `docs/adr/README.md`
 - `docs/architecture/README.md`
 - `docs/architecture/containers.md`
@@ -27,10 +29,13 @@
 - `docs/architecture/data-model.md`
 - `docs/architecture/dependency-invalidation.md`
 - `docs/architecture/dependency-map.md`
+- `docs/architecture/frontend-architecture.md`
 - `docs/architecture/generation-flow.md`
 - `docs/architecture/module-boundaries.md`
 - `docs/architecture/python-backend-architecture.md`
 - `docs/architecture/state-machines.md`
+- `docs/design/2026-09-17-account-pool-browser-session-design.md`
+- `docs/design/UI-SOURCE-OF-TRUTH.md`
 - `docs/rules/00-project-principles.md`
 - `docs/rules/01-architecture-boundaries.md`
 - `docs/rules/02-domain-modeling.md`
@@ -58,3 +63,5 @@
 - `docs/rules/24-architecture-testing.md`
 - `docs/rules/25-refactoring-and-migration.md`
 - `docs/rules/26-architecture-review-gates.md`
+- `docs/verification/2026-09-17-dreamina-auth-signals.md`
+- `docs/verification/2026-09-18-post-scaffold-stabilization.md`

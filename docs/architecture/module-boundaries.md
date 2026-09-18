@@ -98,15 +98,29 @@ Owns:
 - media validation
 - artifact lineage metadata
 
-## credentials
+## accounts
 
 Owns:
 
-- ProviderCredential metadata
-- secret reference
-- eligibility
+- ProviderAccount
+- AccountStatus
+- AccountLease
+- provider identity
+- authentication/session state
+- persistent browser profile reference
+- account eligibility
 - cooldown
-- auth-expired / quota state
+- login/relogin lifecycle
+- provider auth registry
+
+## credentials
+
+Only introduce/retain this module for non-browser secrets such as:
+- API key references
+- OS-keyring secret references
+- secret rotation metadata
+
+Browser-authenticated provider accounts belong to `accounts`, not `credentials`.
 
 ## Cross-Module Rule
 
