@@ -186,7 +186,8 @@ class AccountLoginService:
         with self._uow_factory() as uow:
             account = uow.accounts.get(account_id)
             if account is None:
-                raise AccountNotFound(f"Account '{account_id}' not found")
+                # Idempotent: account is already deleted/cleaned up
+                return
             if (
                 account.status is not AccountStatus.AUTH_REQUIRED
                 or account.last_validated_at is not None

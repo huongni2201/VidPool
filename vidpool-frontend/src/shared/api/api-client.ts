@@ -5,13 +5,15 @@ export class ApiError extends Error {
   readonly status: number
   readonly detail: string
   readonly path: string
+  readonly code?: string
 
-  constructor(status: number, detail: string, path: string) {
+  constructor(status: number, detail: string, path: string, code?: string) {
     super(detail)
     this.name = "ApiError"
     this.status = status
     this.detail = detail
     this.path = path
+    this.code = code
   }
 }
 
@@ -60,15 +62,32 @@ export function createApiClient(config: RuntimeConfig): ApiClient {
 
     if (!response.ok) {
       let detail = `API request failed with status ${response.status}: ${path}`
+      let code: string | undefined
       try {
         const errData = await response.json()
-        if (errData && typeof errData === "object" && "detail" in errData && errData.detail) {
-          detail = typeof errData.detail === "string" ? errData.detail : JSON.stringify(errData.detail)
+        if (errData && typeof errData === "object") {
+          if ("code" in errData && typeof errData.code === "string") {
+            code = errData.code
+          }
+          if ("detail" in errData && errData.detail) {
+            if (typeof errData.detail === "object" && errData.detail !== null) {
+              if ("code" in errData.detail && typeof errData.detail.code === "string") {
+                code = errData.detail.code
+              }
+              if ("message" in errData.detail && typeof errData.detail.message === "string") {
+                detail = errData.detail.message
+              } else {
+                detail = JSON.stringify(errData.detail)
+              }
+            } else {
+              detail = String(errData.detail)
+            }
+          }
         }
       } catch {
         // ignore json parse error
       }
-      throw new ApiError(response.status, detail, path)
+      throw new ApiError(response.status, detail, path, code)
     }
 
     if (options?.schema) {

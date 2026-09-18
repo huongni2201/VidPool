@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { useApiClient } from "@/shared/api"
+import { ApiError, useApiClient, type ApiClient } from "@/shared/api"
 import { Button } from "@/shared/ui/button"
 import {
   cancelNewLogin,
@@ -30,6 +30,32 @@ export interface AddAccountDialogProps {
   onSuccess: () => void
 }
 
+async function safeCancelLogin(
+  client: ApiClient,
+  accountId: string,
+  isRelogin: boolean,
+): Promise<boolean> {
+  try {
+    if (isRelogin) {
+      await cancelRelogin(client, accountId)
+    } else {
+      await cancelNewLogin(client, accountId)
+    }
+    return true
+  } catch (err: unknown) {
+    if (err instanceof ApiError && err.status === 404) {
+      return true
+    }
+    if (
+      err instanceof Error &&
+      (err.message.includes("404") || err.message.toLowerCase().includes("not found"))
+    ) {
+      return true
+    }
+    return false
+  }
+}
+
 export function AddAccountDialog({
   open,
   target,
@@ -42,36 +68,74 @@ export function AddAccountDialog({
   const [selectedProvider, setSelectedProvider] = useState<string>("")
   const [accountId, setAccountId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string>("")
+  const [isTerminal, setIsTerminal] = useState<boolean>(false)
 
   const isRelogin = target?.kind === "relogin"
 
+  const mountedRef = useRef(true)
+  const generationRef = useRef(0)
+  const activeAccountIdRef = useRef<string | null>(null)
+  const completedRef = useRef(false)
+  const isReloginRef = useRef(isRelogin)
+
   useEffect(() => {
-    if (!open) return
+    isReloginRef.current = isRelogin
+  }, [isRelogin])
+
+  // Unmount & navigation cleanup guard
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      generationRef.current++
+      const pendingId = activeAccountIdRef.current
+      const wasRelogin = isReloginRef.current
+      if (pendingId && !completedRef.current) {
+        activeAccountIdRef.current = null
+        safeCancelLogin(client, pendingId, wasRelogin)
+      }
+    }
+  }, [client])
+
+  useEffect(() => {
+    if (!open) {
+      // If dialog was closed externally while login was pending
+      const pendingId = activeAccountIdRef.current
+      if (pendingId && !completedRef.current) {
+        activeAccountIdRef.current = null
+        safeCancelLogin(client, pendingId, isReloginRef.current)
+      }
+      return
+    }
+
+    completedRef.current = false
+    setIsTerminal(false)
 
     if (target?.kind === "relogin") {
-      setAccountId(target.accountId)
+      const reloginId = target.accountId
+      activeAccountIdRef.current = reloginId
+      setAccountId(reloginId)
       setState("starting")
       setErrorMessage("")
-      let isCancelled = false
-      startRelogin(client, target.accountId)
+      const generation = ++generationRef.current
+
+      startRelogin(client, reloginId)
         .then(() => {
-          if (!isCancelled) {
+          if (mountedRef.current && generation === generationRef.current) {
             setState("waiting_for_user")
           }
         })
         .catch((err: unknown) => {
-          if (!isCancelled) {
+          if (mountedRef.current && generation === generationRef.current) {
             setErrorMessage(err instanceof Error ? err.message : "Failed to start relogin")
             setState("error")
           }
         })
-      return () => {
-        isCancelled = true
-      }
     } else {
       setState("choose_provider")
       setSelectedProvider("")
       setAccountId(null)
+      activeAccountIdRef.current = null
       setErrorMessage("")
     }
   }, [open, target, client])
@@ -86,13 +150,21 @@ export function AddAccountDialog({
 
   const handleStart = async () => {
     if (!selectedProvider) return
+    const generation = ++generationRef.current
     setState("starting")
     setErrorMessage("")
+    setIsTerminal(false)
     try {
       const res = await startLogin(client, selectedProvider)
+      if (!mountedRef.current || generation !== generationRef.current) {
+        safeCancelLogin(client, res.accountId, false)
+        return
+      }
+      activeAccountIdRef.current = res.accountId
       setAccountId(res.accountId)
       setState("waiting_for_user")
     } catch (err: unknown) {
+      if (!mountedRef.current || generation !== generationRef.current) return
       setErrorMessage(err instanceof Error ? err.message : "Failed to start login")
       setState("error")
     }
@@ -102,22 +174,41 @@ export function AddAccountDialog({
     setState("choose_provider")
     setSelectedProvider("")
     setAccountId(null)
+    activeAccountIdRef.current = null
     setErrorMessage("")
+    setIsTerminal(false)
+    completedRef.current = false
   }
 
   const cleanupLoginSession = async (): Promise<boolean> => {
-    if (!accountId) {
+    const idToClean = accountId || activeAccountIdRef.current
+    if (!idToClean || isTerminal) {
       return true
     }
 
     try {
-      if (target?.kind === "relogin") {
-        await cancelRelogin(client, accountId)
+      if (isRelogin) {
+        await cancelRelogin(client, idToClean)
       } else {
-        await cancelNewLogin(client, accountId)
+        await cancelNewLogin(client, idToClean)
       }
+      activeAccountIdRef.current = null
+      setAccountId(null)
       return true
     } catch (err: unknown) {
+      if (err instanceof ApiError && err.status === 404) {
+        activeAccountIdRef.current = null
+        setAccountId(null)
+        return true
+      }
+      if (
+        err instanceof Error &&
+        (err.message.includes("404") || err.message.toLowerCase().includes("not found"))
+      ) {
+        activeAccountIdRef.current = null
+        setAccountId(null)
+        return true
+      }
       setErrorMessage(
         err instanceof Error ? err.message : "Không thể dọn phiên đăng nhập",
       )
@@ -127,6 +218,13 @@ export function AddAccountDialog({
   }
 
   const handleClose = async () => {
+    if (isTerminal || !accountId) {
+      activeAccountIdRef.current = null
+      resetDialogState()
+      onClose()
+      return
+    }
+
     const cleaned = await cleanupLoginSession()
     if (!cleaned) {
       return
@@ -138,31 +236,60 @@ export function AddAccountDialog({
 
   const handleComplete = async () => {
     if (!accountId) return
+    const currentId = accountId
+    const generation = ++generationRef.current
     setState("validating")
     setErrorMessage("")
     try {
-      await completeLogin(client, accountId)
+      await completeLogin(client, currentId)
+      if (!mountedRef.current || generation !== generationRef.current) return
+      completedRef.current = true
+      activeAccountIdRef.current = null
       onSuccess()
       resetDialogState()
       onClose()
     } catch (err: unknown) {
-      setErrorMessage(
-        err instanceof Error
-          ? err.message
-          : "Session validation failed. Make sure you logged in completely in the browser.",
-      )
+      if (!mountedRef.current || generation !== generationRef.current) return
+
+      const isDuplicate =
+        (err instanceof ApiError && (err.code === "ACCOUNT_ALREADY_EXISTS" || err.status === 409)) ||
+        (err instanceof Error &&
+          (err.message.toLowerCase().includes("already exists") ||
+            err.message.toLowerCase().includes("already registered")))
+
+      if (isDuplicate) {
+        // Duplicate identity: backend already cleaned up provisional account
+        activeAccountIdRef.current = null
+        setAccountId(null)
+        setIsTerminal(true)
+        setErrorMessage(
+          err instanceof ApiError && err.detail
+            ? err.detail
+            : "Tài khoản đã tồn tại trong hệ thống. Vui lòng đăng nhập tài khoản khác.",
+        )
+      } else {
+        setIsTerminal(false)
+        setErrorMessage(
+          err instanceof Error
+            ? err.message
+            : "Session validation failed. Make sure you logged in completely in the browser.",
+        )
+      }
       setState("error")
     }
   }
 
   const handleRestartLogin = async () => {
-    if (!accountId) return
+    if (!accountId || isTerminal) return
+    const generation = ++generationRef.current
     setState("starting")
     setErrorMessage("")
     try {
       await startRelogin(client, accountId)
+      if (!mountedRef.current || generation !== generationRef.current) return
       setState("waiting_for_user")
     } catch (err: unknown) {
+      if (!mountedRef.current || generation !== generationRef.current) return
       setErrorMessage(
         err instanceof Error ? err.message : "Failed to reopen browser session",
       )
@@ -306,12 +433,12 @@ export function AddAccountDialog({
               <Button variant="outline" size="sm" onClick={handleClose}>
                 Đóng
               </Button>
-              {accountId ? (
+              {accountId && !isTerminal ? (
                 <Button size="sm" onClick={handleRestartLogin}>
                   Mở lại trình duyệt
                 </Button>
               ) : (
-                <Button size="sm" onClick={() => setState("choose_provider")}>
+                <Button size="sm" onClick={resetDialogState}>
                   Thử lại
                 </Button>
               )}

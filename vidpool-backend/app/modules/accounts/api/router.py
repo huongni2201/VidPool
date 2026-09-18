@@ -51,11 +51,15 @@ def parse_account_id(account_id: str) -> AccountId:
 def _handle_error(exc: Exception) -> None:
     if isinstance(exc, (ProviderNotRegistered, AccountNotFound)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    if isinstance(exc, DuplicateProviderIdentity):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "ACCOUNT_ALREADY_EXISTS", "message": "Account already exists."},
+        )
     if isinstance(
         exc,
         (
             AccountInUse,
-            DuplicateProviderIdentity,
             SessionInvalid,
             BrowserProfileInUse,
             BrowserSessionNotOpen,

@@ -315,7 +315,12 @@ def test_complete_login_returns_409_on_duplicate_provider_identity() -> None:
     res2_complete = client.post(
         f"/api/accounts/{acc2_id}/login/complete", headers=AUTH_HEADER
     )
-    assert res2_complete.status_code == 409
-    assert "already registered" in res2_complete.json()["detail"]
+    detail = res2_complete.json()["detail"]
+    assert isinstance(detail, dict)
+    assert detail["code"] == "ACCOUNT_ALREADY_EXISTS"
+
+    # Cancelling the duplicate provisional account is idempotent and returns 204
+    res2_cancel = client.post(f"/api/accounts/{acc2_id}/login/cancel", headers=AUTH_HEADER)
+    assert res2_cancel.status_code == 204
 
 
