@@ -45,6 +45,14 @@ class BrowserUnavailable(AccountDomainError):
     """Raised when no supported browser (Edge, Chrome) is installed or runnable."""
 
 
+class BrowserCommandTimeout(BrowserUnavailable):
+    """Raised when a browser runtime command exceeds its deadline."""
+
+
+class BrowserShutdownTimeout(BrowserUnavailable):
+    """Raised when browser runtime fails to stop within its shutdown deadline."""
+
+
 class BrowserLaunchFailed(AccountDomainError):
     """Raised when launching a specific browser channel fails."""
 

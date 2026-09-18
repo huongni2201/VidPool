@@ -4,20 +4,23 @@ import contextlib
 import logging
 import threading
 import time
+import uuid
 from collections.abc import Callable
 from concurrent.futures import Future
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from queue import Queue
+from queue import Empty, Queue
 from threading import Thread
 from typing import Any, TypeVar
 
 from app.modules.accounts.application.ports import BrowserSessionPort
 from app.modules.accounts.domain.errors import (
+    BrowserCommandTimeout,
     BrowserLaunchFailed,
     BrowserProfileInUse,
     BrowserSessionNotOpen,
+    BrowserShutdownTimeout,
     BrowserUnavailable,
 )
 from app.modules.accounts.infrastructure.browser.profile_paths import (
@@ -31,15 +34,22 @@ LauncherType = Callable[[Path, str, bool], Any]
 
 
 class RuntimeState(Enum):
+    NEW = "NEW"
+    STARTING = "STARTING"
     RUNNING = "RUNNING"
     STOPPING = "STOPPING"
     STOPPED = "STOPPED"
+    FAILED = "FAILED"
 
 
 @dataclass
 class _BrowserCommand[T]:
+    command_id: str
     operation: Callable[[], T]
     future: Future[T]
+    operation_name: str = ""
+    submitted_at: float = 0.0
+    deadline: float | None = None
 
 
 _STOP = object()
@@ -55,6 +65,7 @@ class BrowserRuntime(BrowserSessionPort):
     DEFAULT_CHANNELS = ("msedge", "chrome")
     DEFAULT_LAUNCH_TIMEOUT_MS = 30_000
     DEFAULT_NAVIGATION_TIMEOUT_MS = 30_000
+    DEFAULT_COMMAND_TIMEOUT_SECONDS = 30.0
     DEFAULT_SHUTDOWN_TIMEOUT_SECONDS = 10.0
 
     def __init__(
@@ -65,6 +76,7 @@ class BrowserRuntime(BrowserSessionPort):
         channels: tuple[str, ...] = DEFAULT_CHANNELS,
         launch_timeout_ms: int = DEFAULT_LAUNCH_TIMEOUT_MS,
         navigation_timeout_ms: int = DEFAULT_NAVIGATION_TIMEOUT_MS,
+        command_timeout_s: float = DEFAULT_COMMAND_TIMEOUT_SECONDS,
         shutdown_timeout_s: float = DEFAULT_SHUTDOWN_TIMEOUT_SECONDS,
     ) -> None:
         self._resolver = resolver or BrowserProfilePathResolver()
@@ -73,11 +85,12 @@ class BrowserRuntime(BrowserSessionPort):
         self._channels = channels
         self._launch_timeout_ms = launch_timeout_ms
         self._navigation_timeout_ms = navigation_timeout_ms
+        self._command_timeout_s = command_timeout_s
         self._shutdown_timeout_s = shutdown_timeout_s
 
         self._queue: Queue[object] = Queue()
         self._state_lock = threading.Lock()
-        self._state = RuntimeState.RUNNING
+        self._state = RuntimeState.STARTING
         self._pw: Any = None
         self._sessions_by_profile: dict[str, _LiveSession] = {}
 
@@ -87,6 +100,8 @@ class BrowserRuntime(BrowserSessionPort):
             daemon=True,
         )
         self._thread.start()
+        with self._state_lock:
+            self._state = RuntimeState.RUNNING
 
     @property
     def state(self) -> RuntimeState:
@@ -96,36 +111,90 @@ class BrowserRuntime(BrowserSessionPort):
     @property
     def _stopped(self) -> bool:
         with self._state_lock:
-            return self._state != RuntimeState.RUNNING
+            return self._state in (RuntimeState.STOPPING, RuntimeState.STOPPED, RuntimeState.FAILED)
 
-    def _submit(self, operation: Callable[[], T]) -> T:
+    def _poison_queue(self, reason: str) -> None:
+        """Drain queued commands and fail them deterministically."""
+        while True:
+            try:
+                item = self._queue.get_nowait()
+            except Empty:
+                break
+            if item is _STOP:
+                self._queue.put(_STOP)
+                break
+            if isinstance(item, _BrowserCommand) and not item.future.done():
+                item.future.set_exception(
+                    BrowserUnavailable(f"Browser runtime failed: {reason}")
+                )
+
+    def _submit(
+        self,
+        operation: Callable[[], T],
+        *,
+        timeout: float | None = None,
+        operation_name: str = "",
+    ) -> T:
+        timeout_s = timeout if timeout is not None else self._command_timeout_s
+        command_id = str(uuid.uuid4())
+        submitted_at = time.perf_counter()
+        deadline = (submitted_at + timeout_s) if timeout_s > 0 else None
+
         with self._state_lock:
             if self._state != RuntimeState.RUNNING:
                 raise BrowserUnavailable(f"Browser runtime is {self._state.value.lower()}")
 
             future: Future[T] = Future()
-            self._queue.put(
-                _BrowserCommand(
-                    operation=operation,
-                    future=future,
-                )
+            command = _BrowserCommand(
+                command_id=command_id,
+                operation=operation,
+                future=future,
+                operation_name=operation_name,
+                submitted_at=submitted_at,
+                deadline=deadline,
             )
-        return future.result()
+            self._queue.put(command)
+
+        try:
+            return future.result(timeout=timeout_s if timeout_s > 0 else None)
+        except TimeoutError as exc:
+            elapsed = time.perf_counter() - submitted_at
+            logger.error(
+                "browser_command_timeout command_id=%s operation=%s elapsed=%.2fs",
+                command_id,
+                operation_name,
+                elapsed,
+            )
+            with self._state_lock:
+                self._state = RuntimeState.FAILED
+            self._poison_queue(f"Command '{operation_name}' timed out after {timeout_s}s")
+            raise BrowserCommandTimeout(
+                f"Browser operation '{operation_name}' timed out after {timeout_s}s"
+            ) from exc
 
     def _run(self) -> None:
         logger.info("browser_runtime_start thread_id=%s", threading.get_ident())
         while True:
-            item = self._queue.get()
+            try:
+                item = self._queue.get()
+            except Exception:
+                break
+
             if item is _STOP:
                 break
 
             command: _BrowserCommand[Any] = item  # type: ignore
+            if command.future.done():
+                continue
+
             try:
                 result = command.operation()
             except BaseException as exc:
-                command.future.set_exception(exc)
+                if not command.future.done():
+                    command.future.set_exception(exc)
             else:
-                command.future.set_result(result)
+                if not command.future.done():
+                    command.future.set_result(result)
 
     def _ensure_playwright(self) -> Any:
         if self._pw is None:
@@ -186,11 +255,14 @@ class BrowserRuntime(BrowserSessionPort):
         login_url: str,
     ) -> None:
         del provider_key
+        nav_timeout_s = (self._navigation_timeout_ms + self._launch_timeout_ms) / 1000.0 + 10.0
         self._submit(
             lambda: self._open_login(
                 profile_key=profile_key,
                 login_url=login_url,
-            )
+            ),
+            timeout=nav_timeout_s,
+            operation_name=f"open_login:{profile_key}",
         )
 
     def _on_context_closed(self, profile_key: str) -> None:
@@ -250,7 +322,11 @@ class BrowserRuntime(BrowserSessionPort):
         )
 
     def close_profile(self, profile_key: str) -> None:
-        self._submit(lambda: self._close_profile(profile_key))
+        self._submit(
+            lambda: self._close_profile(profile_key),
+            timeout=self._command_timeout_s,
+            operation_name=f"close_profile:{profile_key}",
+        )
 
     def _close_profile(self, profile_key: str) -> None:
         session = self._sessions_by_profile.pop(profile_key, None)
@@ -263,7 +339,11 @@ class BrowserRuntime(BrowserSessionPort):
             logger.warning("Error closing browser session context for '%s': %s", profile_key, exc)
 
     def has_open_session(self, profile_key: str) -> bool:
-        return self._submit(lambda: profile_key in self._sessions_by_profile)
+        return self._submit(
+            lambda: profile_key in self._sessions_by_profile,
+            timeout=self._command_timeout_s,
+            operation_name=f"has_open_session:{profile_key}",
+        )
 
     def run_active(
         self,
@@ -274,7 +354,9 @@ class BrowserRuntime(BrowserSessionPort):
             lambda: self._run_active(
                 profile_key=profile_key,
                 operation=operation,
-            )
+            ),
+            timeout=self._command_timeout_s,
+            operation_name=f"run_active:{profile_key}",
         )
 
     def _run_active(
@@ -292,11 +374,14 @@ class BrowserRuntime(BrowserSessionPort):
         profile_key: str,
         operation: Callable[[Any], T],
     ) -> T:
+        timeout_s = (self._launch_timeout_ms / 1000.0) + self._command_timeout_s
         return self._submit(
             lambda: self._run_persisted_profile(
                 profile_key=profile_key,
                 operation=operation,
-            )
+            ),
+            timeout=timeout_s,
+            operation_name=f"run_persisted_profile:{profile_key}",
         )
 
     def _run_persisted_profile(
@@ -319,10 +404,18 @@ class BrowserRuntime(BrowserSessionPort):
 
     def delete_profile(self, profile_key: str) -> None:
         with self._state_lock:
-            if self._state == RuntimeState.STOPPED:
+            if not self._thread.is_alive():
                 self._resolver.delete(profile_key)
                 return
-        self._submit(lambda: self._delete_profile(profile_key))
+            if self._state != RuntimeState.RUNNING:
+                raise BrowserUnavailable(
+                    f"Cannot delete profile: browser runtime is {self._state.value.lower()} and owner thread is still active"
+                )
+        self._submit(
+            lambda: self._delete_profile(profile_key),
+            timeout=self._command_timeout_s,
+            operation_name=f"delete_profile:{profile_key}",
+        )
 
     def _delete_profile(self, profile_key: str) -> None:
         if profile_key in self._sessions_by_profile:
@@ -334,9 +427,13 @@ class BrowserRuntime(BrowserSessionPort):
 
     def close_all(self) -> None:
         with self._state_lock:
-            if self._state != RuntimeState.RUNNING:
+            if self._state == RuntimeState.STOPPED and not self._thread.is_alive():
                 return
-            self._state = RuntimeState.STOPPING
+            if self._state not in (RuntimeState.RUNNING, RuntimeState.FAILED):
+                # If already stopping, do not re-initiate stopping logic
+                pass
+            else:
+                self._state = RuntimeState.STOPPING
         logger.info("browser_runtime_stopping")
 
         def shutdown() -> None:
@@ -355,15 +452,19 @@ class BrowserRuntime(BrowserSessionPort):
                 finally:
                     self._pw = None
 
+        shutdown_cmd_timeout = max(0.05, min(self._shutdown_timeout_s, 5.0))
         shutdown_future: Future[None] = Future()
-        self._queue.put(
-            _BrowserCommand(
-                operation=shutdown,
-                future=shutdown_future,
-            )
+        command = _BrowserCommand(
+            command_id=str(uuid.uuid4()),
+            operation=shutdown,
+            future=shutdown_future,
+            operation_name="shutdown",
+            submitted_at=time.perf_counter(),
+            deadline=time.perf_counter() + shutdown_cmd_timeout,
         )
+        self._queue.put(command)
         try:
-            shutdown_future.result(timeout=10)
+            shutdown_future.result(timeout=shutdown_cmd_timeout)
         except Exception:
             logger.exception("Failed executing browser shutdown command")
 
@@ -371,5 +472,10 @@ class BrowserRuntime(BrowserSessionPort):
         self._thread.join(timeout=self._shutdown_timeout_s)
 
         with self._state_lock:
+            if self._thread.is_alive():
+                self._state = RuntimeState.FAILED
+                raise BrowserShutdownTimeout(
+                    f"Browser runtime owner thread failed to stop within {self._shutdown_timeout_s}s"
+                )
             self._state = RuntimeState.STOPPED
         logger.info("browser_runtime_stopped")
