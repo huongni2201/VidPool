@@ -1,3 +1,4 @@
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
@@ -7,6 +8,7 @@ from app.modules.accounts.application.service import AccountService
 from app.modules.accounts.domain.errors import (
     AccountInUse,
     AccountNotFound,
+    BrowserLaunchFailed,
     BrowserProfileInUse,
     BrowserSessionNotOpen,
     BrowserUnavailable,
@@ -24,6 +26,8 @@ from .schemas import (
     ProviderResponse,
     StartLoginResponse,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -67,8 +71,18 @@ def _handle_error(exc: Exception) -> None:
         ),
     ):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
-    if isinstance(exc, (BrowserUnavailable, ProviderUnavailable)):
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
+    if isinstance(exc, (BrowserUnavailable, BrowserLaunchFailed)):
+        logger.error("Browser service error: %s", type(exc).__name__)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Browser service unavailable",
+        )
+    if isinstance(exc, ProviderUnavailable):
+        logger.error("Provider service error: %s", type(exc).__name__)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Provider service unavailable",
+        )
     if isinstance(exc, InvalidProfileKey):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal profile error"

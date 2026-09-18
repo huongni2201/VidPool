@@ -123,9 +123,44 @@ def test_internal_browser_exception_with_secret_does_not_leak(caplog) -> None:
 
     res = client.post("/api/providers/test-p/accounts/login/start", headers=AUTH_HEADER)
     assert res.status_code == 503
-    # Check that the secret token is not exposed in standard error details if sanitized
-    # In our router: BrowserUnavailable raises 503
-    assert "SECRET_TEST_VALUE" not in caplog.text or "password" not in caplog.text
+    assert "SECRET_TEST_VALUE" not in res.text
+    assert "SECRET_TEST_VALUE" not in caplog.text
+    assert res.json()["detail"] == "Browser service unavailable"
+
+
+def test_infrastructure_paths_do_not_leak_in_error_responses() -> None:
+    class LeakyPathBrowser(FakeBrowserSessionManager):
+        def open_login(self, *, provider_key: str, profile_key: str, login_url: str):
+            from app.modules.accounts.domain.errors import BrowserUnavailable
+
+            raise BrowserUnavailable(
+                "No supported browser channel could be launched for profile 'C:/Users/SecretUser/.vidpool/browser-profiles/acc-1'"
+            )
+
+    repo = FakeAccountRepository()
+    browser = LeakyPathBrowser()
+    adapter = FakeProviderAuthAdapter(provider_key="test-p")
+    registry = FakeProviderRegistry([adapter])
+    container = build_container(
+        uow_factory=lambda: FakeAccountUnitOfWork(repo),
+        browser_runtime=browser,
+        provider_registry=registry,
+    )
+
+    config = AppConfig(
+        host="127.0.0.1",
+        port=8000,
+        session_token="test-session-token",
+        allowed_origins=("http://localhost:5173",),
+    )
+    client = TestClient(create_app(config=config, container=container))
+
+    res = client.post("/api/providers/test-p/accounts/login/start", headers=AUTH_HEADER)
+    assert res.status_code == 503
+    assert "C:/Users" not in res.text
+    assert "SecretUser" not in res.text
+    assert "browser-profiles" not in res.text
+    assert res.json()["detail"] == "Browser service unavailable"
 
 
 def test_session_token_never_logged_or_exposed_in_error() -> None:

@@ -284,7 +284,8 @@ def test_validate_account_returns_503_when_provider_unavailable() -> None:
         headers=AUTH_HEADER,
     )
     assert res.status_code == 503
-    assert res.json()["detail"] == "Provider session check unavailable"
+    assert res.json()["detail"] == "Provider service unavailable"
+    assert "Provider session check unavailable" not in res.text
 
 
 def test_complete_login_returns_409_on_duplicate_provider_identity() -> None:
