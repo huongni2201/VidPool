@@ -252,8 +252,9 @@ export function AddAccountDialog({
       if (!mountedRef.current || generation !== generationRef.current) return
 
       const isDuplicate =
-        (err instanceof ApiError && (err.code === "ACCOUNT_ALREADY_EXISTS" || err.status === 409)) ||
+        (err instanceof ApiError && err.code === "ACCOUNT_ALREADY_EXISTS") ||
         (err instanceof Error &&
+          !(err instanceof ApiError) &&
           (err.message.toLowerCase().includes("already exists") ||
             err.message.toLowerCase().includes("already registered")))
 
@@ -269,10 +270,13 @@ export function AddAccountDialog({
         )
       } else {
         setIsTerminal(false)
+        const isSessionInvalid = err instanceof ApiError && err.code === "SESSION_INVALID"
         setErrorMessage(
-          err instanceof Error
-            ? err.message
-            : "Session validation failed. Make sure you logged in completely in the browser.",
+          isSessionInvalid
+            ? "Chưa phát hiện phiên đăng nhập. Hãy hoàn tất đăng nhập trong trình duyệt rồi thử lại."
+            : err instanceof Error
+              ? err.message
+              : "Session validation failed. Make sure you logged in completely in the browser.",
         )
       }
       setState("error")
@@ -434,9 +438,14 @@ export function AddAccountDialog({
                 Đóng
               </Button>
               {accountId && !isTerminal ? (
-                <Button size="sm" onClick={handleRestartLogin}>
-                  Mở lại trình duyệt
-                </Button>
+                <>
+                  <Button variant="outline" size="sm" onClick={handleRestartLogin}>
+                    Mở lại trình duyệt
+                  </Button>
+                  <Button size="sm" onClick={handleComplete}>
+                    Đã đăng nhập
+                  </Button>
+                </>
               ) : (
                 <Button size="sm" onClick={resetDialogState}>
                   Thử lại

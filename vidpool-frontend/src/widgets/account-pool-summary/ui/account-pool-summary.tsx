@@ -100,7 +100,7 @@ export function AccountPoolSummary({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="size-2 rounded-full bg-emerald-400" />
-                <span className="text-muted-foreground">Sẵn sàng (Active)</span>
+                <span className="text-muted-foreground">Hoạt động (Active)</span>
               </div>
               <span className="font-semibold text-foreground font-mono">{activeCount}</span>
             </div>
@@ -156,7 +156,7 @@ export function AccountPoolSummary({
       {/* Metric 2: Active */}
       <div className="group relative flex flex-col justify-between rounded-2xl border border-emerald-500/25 bg-gradient-to-b from-emerald-500/[0.06] via-card/80 to-card/80 p-4 shadow-sm hover:border-emerald-500/50 hover:shadow-emerald-500/10 transition-all duration-200">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-emerald-400">Sẵn sàng (Active)</span>
+          <span className="text-xs font-semibold text-emerald-400">Hoạt động (Active)</span>
           <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400">
             <svg className="size-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -169,7 +169,7 @@ export function AccountPoolSummary({
           </span>
           <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10.5px] font-semibold text-emerald-400 flex items-center gap-1">
             <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Ready
+            Active
           </span>
         </div>
       </div>

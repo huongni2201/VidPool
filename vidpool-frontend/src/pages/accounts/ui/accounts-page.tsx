@@ -34,8 +34,7 @@ export function AccountsPage() {
   const totalCount = accounts.length
   const availableCount = accounts.filter((a) => a.isAvailable).length
   const inUseCount = accounts.filter((a) => a.isLeased).length
-  const activeCount = accounts.filter((a) => a.status === "active").length
-  const readyCount = availableCount > 0 || totalCount === 0 ? availableCount : activeCount
+  const readyCount = availableCount
 
   const poolMessage =
     totalCount === 0

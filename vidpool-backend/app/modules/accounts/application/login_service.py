@@ -70,11 +70,7 @@ class AccountLoginService:
                 uow.accounts.add(candidate)
                 uow.commit()
         except Exception:
-            self._browser.close_profile(profile_key)
-            try:
-                self._browser.delete_profile(profile_key)
-            except Exception:
-                logger.exception("Failed to clean profile after login start failure")
+            self._cleanup_failed_login_start(profile_key)
             raise
 
         logger.info(
@@ -86,6 +82,24 @@ class AccountLoginService:
             account_id=candidate.id,
             status="waiting_for_user",
         )
+
+    def _cleanup_failed_login_start(self, profile_key: str) -> None:
+        try:
+            self._browser.close_profile(profile_key)
+        except Exception as exc:
+            logger.warning(
+                "Failed to close profile '%s' during login start cleanup: %s",
+                profile_key,
+                exc,
+            )
+        try:
+            self._browser.delete_profile(profile_key)
+        except Exception as exc:
+            logger.warning(
+                "Failed to delete profile '%s' during login start cleanup: %s",
+                profile_key,
+                exc,
+            )
 
     def _cleanup_provisional_account(
         self,
@@ -143,19 +157,35 @@ class AccountLoginService:
                 if acc is None:
                     raise AccountNotFound(f"Account '{account_id}' not found")
 
+                is_provisional = acc.last_validated_at is None
+
+                # Relogin identity integrity:
+                # If this is a relogin of an existing account, the identity must match the registered account.
+                if not is_provisional and acc.external_identity and identity.external_identity != acc.external_identity:
+                    self._browser.delete_profile(profile_key)
+                    acc.mark_auth_required(now=current_time)
+                    uow.accounts.save(acc)
+                    uow.commit()
+                    raise DuplicateProviderIdentity(
+                        f"Relogin identity mismatch: expected '{acc.external_identity}', got '{identity.external_identity}'"
+                    )
+
                 is_duplicate = False
-                is_provisional = False
                 if identity.external_identity:
                     existing = uow.accounts.get_by_provider_identity(
                         provider_key, identity.external_identity
                     )
                     if existing is not None and existing.id != account_id:
                         is_duplicate = True
-                        is_provisional = acc.last_validated_at is None
 
                 if is_duplicate:
                     if is_provisional:
                         self._cleanup_provisional_account(account_id, profile_key)
+                    else:
+                        self._browser.delete_profile(profile_key)
+                        acc.mark_auth_required(now=current_time)
+                        uow.accounts.save(acc)
+                        uow.commit()
                     raise DuplicateProviderIdentity(
                         f"Provider account '{identity.external_identity}' is already registered"
                     )

@@ -228,18 +228,30 @@ class BrowserRuntime(BrowserSessionPort):
         context = None
         last_error = None
         for channel in self._channels:
+            logger.info("browser_launch_attempt channel=%s", channel)
             try:
                 if self._launcher is not None:
                     context = self._launcher(profile_path, channel, is_headless)
                 else:
                     context = self._default_launch(profile_path, channel, is_headless)
+                logger.info("browser_launch_success channel=%s", channel)
                 break
             except BrowserLaunchFailed as exc:
                 last_error = exc
-                logger.warning("Failed launching browser channel '%s': %s", channel, exc)
+                logger.warning(
+                    "browser_launch_failed channel=%s error_type=%s error=%s",
+                    channel,
+                    exc.__class__.__name__,
+                    exc,
+                )
             except Exception as exc:
                 last_error = exc
-                logger.warning("Unexpected error launching browser channel '%s': %s", channel, exc)
+                logger.warning(
+                    "browser_launch_failed channel=%s error_type=%s error=%s",
+                    channel,
+                    exc.__class__.__name__,
+                    exc,
+                )
 
         if context is None:
             raise BrowserUnavailable(
@@ -266,7 +278,9 @@ class BrowserRuntime(BrowserSessionPort):
         )
 
     def _on_context_closed(self, profile_key: str) -> None:
-        self._sessions_by_profile.pop(profile_key, None)
+        popped = self._sessions_by_profile.pop(profile_key, None)
+        if popped is not None:
+            logger.info("browser_session_closed profile_key=%s", profile_key)
 
     def _open_login(
         self,
@@ -283,20 +297,8 @@ class BrowserRuntime(BrowserSessionPort):
         profile_path = self._resolver.resolve(profile_key)
         profile_path.mkdir(parents=True, exist_ok=True)
 
-        context = None
         try:
             context = self._launch_persistent_context(profile_path)
-
-            if hasattr(context, "on"):
-                with contextlib.suppress(Exception):
-                    context.on("close", lambda: self._on_context_closed(profile_key))
-
-            pages = context.pages
-            page = pages[0] if pages else context.new_page()
-            try:
-                page.goto(login_url, timeout=self._navigation_timeout_ms)
-            except TypeError:
-                page.goto(login_url)
         except Exception as exc:
             elapsed_ms = int((time.perf_counter() - start_time) * 1000)
             logger.warning(
@@ -305,15 +307,50 @@ class BrowserRuntime(BrowserSessionPort):
                 elapsed_ms,
                 exc.__class__.__name__,
             )
-            if context is not None:
-                with contextlib.suppress(Exception):
-                    context.close()
             raise
+
+        if hasattr(context, "on"):
+            with contextlib.suppress(Exception):
+                context.on("close", lambda *_: self._on_context_closed(profile_key))
 
         self._sessions_by_profile[profile_key] = _LiveSession(
             profile_key=profile_key,
             context=context,
         )
+        logger.info("browser_session_registered profile_key=%s", profile_key)
+
+        # Provider navigation: isolated from browser launch lifecycle
+        logger.info("browser_navigation_start profile_key=%s", profile_key)
+        nav_start_time = time.perf_counter()
+        try:
+            pages = context.pages
+            page = pages[0] if pages else context.new_page()
+            try:
+                page.goto(
+                    login_url,
+                    wait_until="commit",
+                    timeout=self._navigation_timeout_ms,
+                )
+            except TypeError:
+                page.goto(login_url)
+            nav_elapsed_ms = int((time.perf_counter() - nav_start_time) * 1000)
+            logger.info(
+                "browser_navigation_success profile_key=%s elapsed_ms=%d",
+                profile_key,
+                nav_elapsed_ms,
+            )
+        except Exception as exc:
+            nav_elapsed_ms = int((time.perf_counter() - nav_start_time) * 1000)
+            logger.warning(
+                "browser_navigation_failed profile_key=%s elapsed_ms=%d error_type=%s error=%s",
+                profile_key,
+                nav_elapsed_ms,
+                exc.__class__.__name__,
+                exc,
+            )
+            # Invariant: navigation failure MUST NOT close the browser context
+            # or poison the runtime if the context was successfully launched.
+
         elapsed_ms = int((time.perf_counter() - start_time) * 1000)
         logger.info(
             "browser_open_success profile_key=%s elapsed_ms=%d",

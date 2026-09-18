@@ -60,28 +60,42 @@ def _handle_error(exc: Exception) -> None:
             status_code=status.HTTP_409_CONFLICT,
             detail={"code": "ACCOUNT_ALREADY_EXISTS", "message": "Account already exists."},
         )
-    if isinstance(
-        exc,
-        (
-            AccountInUse,
-            SessionInvalid,
-            BrowserProfileInUse,
-            BrowserSessionNotOpen,
-            InvalidAccountState,
-        ),
-    ):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    if isinstance(exc, SessionInvalid):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "SESSION_INVALID", "message": str(exc)},
+        )
+    if isinstance(exc, BrowserProfileInUse):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "BROWSER_PROFILE_IN_USE", "message": str(exc)},
+        )
+    if isinstance(exc, BrowserSessionNotOpen):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "BROWSER_SESSION_NOT_OPEN", "message": str(exc)},
+        )
+    if isinstance(exc, InvalidAccountState):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "INVALID_ACCOUNT_STATE", "message": str(exc)},
+        )
+    if isinstance(exc, AccountInUse):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"code": "ACCOUNT_IN_USE", "message": str(exc)},
+        )
     if isinstance(exc, (BrowserUnavailable, BrowserLaunchFailed)):
         logger.error("Browser service error: %s", type(exc).__name__)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Browser service unavailable",
+            detail={"code": "BROWSER_UNAVAILABLE", "message": "Browser service unavailable"},
         )
     if isinstance(exc, ProviderUnavailable):
         logger.error("Provider service error: %s", type(exc).__name__)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Provider service unavailable",
+            detail={"code": "PROVIDER_UNAVAILABLE", "message": "Provider service unavailable"},
         )
     if isinstance(exc, InvalidProfileKey):
         raise HTTPException(

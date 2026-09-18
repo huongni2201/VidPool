@@ -2,7 +2,8 @@
 
 **Status:** ACCOUNT POOL FOUNDATION & PERSISTENT BROWSER SESSIONS  
 **Last reviewed:** 2026-09-18  
-**Last verified commit:** `799f1097330bf1a31554cccdba9fe66bf3d3e81c` (and working tree descendant)
+**Last verified commit:** `2153e7ae5c9dbded4676fb53ad07d526d70564e2` (and working tree descendant implementing Account Pool browser login fix plan)
+
 
 ## Purpose
 
@@ -49,6 +50,14 @@ This file distinguishes target architecture from implemented reality.
 - Durable browser profile cleanup on deletion: profile deletion precedes database record deletion in `delete_account`, `cancel_new_login`, and duplicate identity handling in `complete_login` to prevent orphaned persisted sessions on disk.
 - Infrastructure API error sanitization: infrastructure exceptions (`BrowserUnavailable`, `BrowserLaunchFailed`, `BrowserCommandTimeout`, `ProviderUnavailable`) map to sanitized public responses (`Browser service unavailable`, `Provider service unavailable`) preventing leaks of internal filesystem paths, tokens, or URLs.
 - Account login lifecycle robustness: idempotent cancellation, duplicate terminal conflict (`ACCOUNT_ALREADY_EXISTS`) with immediate close and retry support, unmount cleanup with generation tracking.
+- BrowserRuntime decoupled launch and navigation: browser context is created and registered into `_LiveSession` immediately upon launch; provider navigation uses `wait_until="commit"`; navigation timeout or network failure does not close the browser or poison the runtime into `RuntimeState.FAILED`.
+- Playwright context close listener: listener uses `lambda *_: self._on_context_closed(profile_key)` accepting context arguments, ensuring live session map and lock cleanup when user closes the browser window.
+- Relogin identity integrity: `complete_login` and `validate_account` enforce matching `external_identity` for existing accounts; mismatched identities trigger contaminated profile deletion, transition account to `AUTH_REQUIRED`, and raise `DuplicateProviderIdentity`.
+- Standardized backend error code contract: structured error payload `{"detail": {"code": "...", "message": "..."}}` across account endpoints (`ACCOUNT_ALREADY_EXISTS`, `SESSION_INVALID`, `BROWSER_PROFILE_IN_USE`, `BROWSER_SESSION_NOT_OPEN`, `INVALID_ACCOUNT_STATE`, `ACCOUNT_IN_USE`, `BROWSER_UNAVAILABLE`, `PROVIDER_UNAVAILABLE`).
+- Frontend login error recovery: `AddAccountDialog` differentiates `ACCOUNT_ALREADY_EXISTS` (terminal conflict) from `SESSION_INVALID` (retryable session probe failure); users can retry validation or re-open the browser without state corruption.
+- Account pool summary truthful availability: `readyCount` strictly equals `availableCount` (no fallback to active); summary and table accurately distinguish active accounts from lease-ready accounts.
+- Tauri sidecar diagnostics & graceful shutdown: Tauri shell captures and sanitizes backend stdout/stderr; shutdown performs authenticated `POST /api/session/shutdown` to allow clean SQLite and Playwright shutdown before SIGKILL fallback.
+- Restored repo verification scripts: `build-sidecar.py`, `check-docs.py`, `check-source-duplicates.py`, `check-version-sync.mjs`, `smoke-browser-profile.py`.
 - Chapter route and analysis ownership: React Router URL (`/chapters/:chapterId`) is the sole source of truth for chapter navigation; creating a chapter navigates to its URL; analysis state (result, progress, isAnalyzing) is strictly isolated and keyed by `chapterId`; async analysis completion preserves concurrently edited chapter text and word count.
 - Chapter -> Scene -> Visual Beat studio hierarchy: `VisualBeatPage` adheres to story breakdown architecture (Chapter -> Scenes -> Visual Beats) with Chapter selector, Scene tab navigation (`all` vs specific scene), Storyboard Grid view (16:9 aspect ratio cards with camera badges and quick generation CTA), studio Table view, granular status filters, URL parameter synchronization (`?chapterId=...&sceneId=...`), and deep-link integration from `ChapterPage` (`AnalyzedSceneList`).
 - persistent isolated browser profile path resolver (`BrowserProfilePathResolver`).

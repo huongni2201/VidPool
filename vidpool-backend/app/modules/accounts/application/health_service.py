@@ -55,7 +55,23 @@ class AccountHealthService:
             acc = uow.accounts.get(account_id)
             if acc is None:
                 raise AccountNotFound(f"Account '{account_id}' not found")
-            acc.record_validation(valid=validation.valid, now=current_time)
+
+            is_valid = validation.valid
+            if (
+                is_valid
+                and validation.external_identity is not None
+                and acc.external_identity is not None
+                and validation.external_identity != acc.external_identity
+            ):
+                logger.warning(
+                    "persisted_identity_mismatch account_id=%s expected=%s got=%s",
+                    account_id,
+                    acc.external_identity,
+                    validation.external_identity,
+                )
+                is_valid = False
+
+            acc.record_validation(valid=is_valid, now=current_time)
             uow.accounts.save(acc)
             uow.commit()
             return _to_view(acc)

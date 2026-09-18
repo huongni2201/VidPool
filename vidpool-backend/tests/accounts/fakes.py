@@ -223,7 +223,11 @@ class FakeProviderAuthAdapter(ProviderAuthPort):
     def validate_persisted_session(self, profile_key: str) -> SessionValidation:
         if self.persisted_validation_error is not None:
             raise self.persisted_validation_error
-        return SessionValidation(valid=self.valid_session)
+        return SessionValidation(
+            valid=self.valid_session,
+            external_identity=self.external_identity if self.valid_session else None,
+            display_name=self.display_name if self.valid_session else None,
+        )
 
 
 class FakeProviderRegistry(ProviderRegistryPort):

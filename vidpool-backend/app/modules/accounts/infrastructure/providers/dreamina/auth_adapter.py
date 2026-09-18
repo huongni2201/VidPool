@@ -50,7 +50,11 @@ class DreaminaAuthAdapter(BrowserBackedAuthAdapter):
                 "Dreamina session validation is temporarily unavailable"
             ) from exc
 
-        return SessionValidation(valid=state.authenticated)
+        return SessionValidation(
+            valid=state.authenticated,
+            external_identity=state.external_identity if state.authenticated else None,
+            display_name=state.display_name if state.authenticated else None,
+        )
 
     def resolve_identity(
         self,
@@ -93,5 +97,9 @@ class DreaminaAuthAdapter(BrowserBackedAuthAdapter):
                 "Dreamina session validation is temporarily unavailable"
             ) from exc
 
-        return SessionValidation(valid=state.authenticated)
+        return SessionValidation(
+            valid=state.authenticated,
+            external_identity=state.external_identity if state.authenticated else None,
+            display_name=state.display_name if state.authenticated else None,
+        )
 

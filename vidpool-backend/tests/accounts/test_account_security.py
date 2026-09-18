@@ -125,7 +125,8 @@ def test_internal_browser_exception_with_secret_does_not_leak(caplog) -> None:
     assert res.status_code == 503
     assert "SECRET_TEST_VALUE" not in res.text
     assert "SECRET_TEST_VALUE" not in caplog.text
-    assert res.json()["detail"] == "Browser service unavailable"
+    assert res.json()["detail"]["code"] == "BROWSER_UNAVAILABLE"
+    assert res.json()["detail"]["message"] == "Browser service unavailable"
 
 
 def test_infrastructure_paths_do_not_leak_in_error_responses() -> None:
@@ -160,7 +161,8 @@ def test_infrastructure_paths_do_not_leak_in_error_responses() -> None:
     assert "C:/Users" not in res.text
     assert "SecretUser" not in res.text
     assert "browser-profiles" not in res.text
-    assert res.json()["detail"] == "Browser service unavailable"
+    assert res.json()["detail"]["code"] == "BROWSER_UNAVAILABLE"
+    assert res.json()["detail"]["message"] == "Browser service unavailable"
 
 
 def test_session_token_never_logged_or_exposed_in_error() -> None:

@@ -63,6 +63,23 @@ pub fn get_trusted_origins() -> Vec<String> {
     ]
 }
 
+pub fn sanitize_log_line(line: &str) -> String {
+    let mut sanitized = line.to_string();
+    if let Some(idx) = sanitized.find("Bearer ") {
+        let after = &sanitized[idx + 7..];
+        let end_idx = after.find(|c: char| c.is_whitespace() || c == '"' || c == '\'').unwrap_or(after.len());
+        sanitized.replace_range(idx + 7..idx + 7 + end_idx, "[REDACTED]");
+    }
+    if let Some(idx) = sanitized.find("--session-token") {
+        let after = &sanitized[idx + 15..];
+        let start_offset = after.find(|c: char| !c.is_whitespace() && c != '=').unwrap_or(after.len());
+        let val_slice = &after[start_offset..];
+        let end_idx = val_slice.find(|c: char| c.is_whitespace() || c == '"' || c == '\'').unwrap_or(val_slice.len());
+        sanitized.replace_range(idx + 15 + start_offset..idx + 15 + start_offset + end_idx, "[REDACTED]");
+    }
+    sanitized
+}
+
 pub fn spawn_sidecar(
     app: &tauri::AppHandle,
     port: u16,
@@ -82,13 +99,50 @@ pub fn spawn_sidecar(
         args.push(origin);
     }
 
-    let (_rx, child) = app
+    let (mut rx, child) = app
         .shell()
         .sidecar("vidpool-backend")
         .map_err(|e| format!("Failed to configure sidecar: {e}"))?
         .args(args)
         .spawn()
         .map_err(|e| format!("Failed to spawn backend sidecar process: {e}"))?;
+
+    tauri::async_runtime::spawn(async move {
+        while let Some(event) = rx.recv().await {
+            match event {
+                tauri_plugin_shell::process::CommandEvent::Stdout(bytes) => {
+                    let line = String::from_utf8_lossy(&bytes);
+                    for l in line.lines() {
+                        let trimmed = l.trim();
+                        if !trimmed.is_empty() {
+                            let clean = sanitize_log_line(trimmed);
+                            println!("[backend:stdout] {clean}");
+                        }
+                    }
+                }
+                tauri_plugin_shell::process::CommandEvent::Stderr(bytes) => {
+                    let line = String::from_utf8_lossy(&bytes);
+                    for l in line.lines() {
+                        let trimmed = l.trim();
+                        if !trimmed.is_empty() {
+                            let clean = sanitize_log_line(trimmed);
+                            eprintln!("[backend:stderr] {clean}");
+                        }
+                    }
+                }
+                tauri_plugin_shell::process::CommandEvent::Error(err) => {
+                    eprintln!("[backend:error] {err}");
+                }
+                tauri_plugin_shell::process::CommandEvent::Terminated(payload) => {
+                    println!(
+                        "[backend:terminated] code={:?} signal={:?}",
+                        payload.code, payload.signal
+                    );
+                }
+                _ => {}
+            }
+        }
+    });
 
     Ok(child)
 }
@@ -252,6 +306,24 @@ mod tests {
         assert!(ok_res.is_ok());
 
         running.store(false, Ordering::Relaxed);
+    }
+
+    #[test]
+    fn test_sanitize_log_line() {
+        let raw1 = "Request with Bearer secret-12345 in header";
+        assert_eq!(
+            sanitize_log_line(raw1),
+            "Request with Bearer [REDACTED] in header"
+        );
+
+        let raw2 = "vidpool-backend --session-token my-secret-token-value --port 8000";
+        assert_eq!(
+            sanitize_log_line(raw2),
+            "vidpool-backend --session-token [REDACTED] --port 8000"
+        );
+
+        let clean = "[backend:stdout] browser_launch_attempt channel=msedge";
+        assert_eq!(sanitize_log_line(clean), clean);
     }
 }
 

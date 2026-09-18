@@ -412,3 +412,97 @@ def test_runtime_lifecycle_states_and_deterministic_shutdown(tmp_path: Path) -> 
             profile_key=profile_key,
             login_url="https://example.com",
         )
+
+
+def test_navigation_failure_keeps_browser_session_open(tmp_path: Path) -> None:
+    class FailingPage(FakePage):
+        def goto(self, url: str, **kwargs: Any) -> None:
+            raise TimeoutError("Navigation timed out after 30000ms")
+
+    fake_context = FakeContext(pages=[FailingPage()])
+    runtime = _make_runtime(tmp_path, launcher=lambda p, c, h: fake_context)
+    profile_key = "browser-profile/test-provider/acc-nav-fail"
+
+    try:
+        # Navigation failure must NOT raise and must NOT close the context
+        runtime.open_login(
+            provider_key="test-provider",
+            profile_key=profile_key,
+            login_url="https://dreamina.capcut.com/slow-page",
+        )
+        assert runtime.has_open_session(profile_key) is True
+        assert fake_context.closed is False
+        assert runtime.state == RuntimeState.RUNNING
+    finally:
+        runtime.close_all()
+
+
+def test_launch_failure_does_not_register_session(tmp_path: Path) -> None:
+    from app.modules.accounts.domain.errors import BrowserLaunchFailed
+
+    def failing_launcher(p: Path, c: str, h: bool) -> Any:
+        raise BrowserLaunchFailed(f"Channel {c} failed to start")
+
+    runtime = _make_runtime(tmp_path, launcher=failing_launcher)
+    profile_key = "browser-profile/test-provider/acc-launch-fail"
+
+    try:
+        with pytest.raises(BrowserUnavailable):
+            runtime.open_login(
+                provider_key="test-provider",
+                profile_key=profile_key,
+                login_url="https://example.com",
+            )
+        assert runtime.has_open_session(profile_key) is False
+        assert runtime.state == RuntimeState.RUNNING
+    finally:
+        runtime.close_all()
+
+
+def test_edge_failure_falls_back_to_chrome(tmp_path: Path) -> None:
+    from app.modules.accounts.domain.errors import BrowserLaunchFailed
+
+    attempted_channels: list[str] = []
+    fake_context = FakeContext()
+
+    def fallback_launcher(p: Path, channel: str, h: bool) -> Any:
+        attempted_channels.append(channel)
+        if channel == "msedge":
+            raise BrowserLaunchFailed("msedge executable not found")
+        return fake_context
+
+    runtime = _make_runtime(tmp_path, launcher=fallback_launcher)
+    profile_key = "browser-profile/test-provider/acc-fallback"
+
+    try:
+        runtime.open_login(
+            provider_key="test-provider",
+            profile_key=profile_key,
+            login_url="https://example.com",
+        )
+        assert attempted_channels == ["msedge", "chrome"]
+        assert runtime.has_open_session(profile_key) is True
+    finally:
+        runtime.close_all()
+
+
+def test_close_callback_accepts_event_argument(tmp_path: Path) -> None:
+    fake_context = FakeContext()
+    runtime = _make_runtime(tmp_path, launcher=lambda p, c, h: fake_context)
+    profile_key = "browser-profile/test-provider/acc-close-args"
+
+    try:
+        runtime.open_login(
+            provider_key="test-provider",
+            profile_key=profile_key,
+            login_url="https://example.com",
+        )
+        assert runtime.has_open_session(profile_key) is True
+
+        # Simulate user closing browser directly from OS window: Playwright passes (context) as argument
+        for cb in fake_context._callbacks.get("close", []):
+            cb(fake_context)
+
+        assert runtime.has_open_session(profile_key) is False
+    finally:
+        runtime.close_all()

@@ -263,4 +263,95 @@ describe("AddAccountDialog cleanup lifecycle", () => {
       )
     })
   })
+
+  it("treats SESSION_INVALID (409) as non-terminal, preserves accountId, and allows retry", async () => {
+    const PROVISIONAL_ID = "66666666-6666-4666-8666-666666666666"
+    vi.mocked(accountLoginApi.listProviders).mockResolvedValue([
+      { key: "seedance", displayName: "Seedance", authKind: "browser_session" },
+    ])
+    vi.mocked(accountLoginApi.startLogin).mockResolvedValue({
+      accountId: PROVISIONAL_ID,
+      status: "waiting_for_user",
+    })
+    // First completeLogin fails with SESSION_INVALID 409
+    vi.mocked(accountLoginApi.completeLogin).mockRejectedValueOnce(
+      new ApiError(409, "Browser session validation failed", "/api/accounts/...", "SESSION_INVALID"),
+    )
+
+    renderDialog({ target: { kind: "add" } })
+
+    await screen.findByText("Seedance")
+    fireEvent.click(screen.getByText("Seedance"))
+    fireEvent.click(screen.getByRole("button", { name: /Tiếp tục đăng nhập/i }))
+
+    await screen.findByText(/Hoàn tất đăng nhập trong cửa sổ trình duyệt/i)
+    fireEvent.click(screen.getByRole("button", { name: /Đã đăng nhập/i }))
+
+    // Expect session invalid message, NOT duplicate message
+    await screen.findByText("Đăng nhập chưa thành công")
+    expect(
+      screen.getByText("Chưa phát hiện phiên đăng nhập. Hãy hoàn tất đăng nhập trong trình duyệt rồi thử lại."),
+    ).toBeInTheDocument()
+
+    // Both "Mở lại trình duyệt" and "Đã đăng nhập" retry buttons must be available
+    expect(screen.getByRole("button", { name: /Mở lại trình duyệt/i })).toBeInTheDocument()
+    const retryCompleteBtn = screen.getByRole("button", { name: /Đã đăng nhập/i })
+    expect(retryCompleteBtn).toBeInTheDocument()
+
+    // Clicking "Đã đăng nhập" again triggers completeLogin retry
+    vi.mocked(accountLoginApi.completeLogin).mockResolvedValueOnce({
+      id: PROVISIONAL_ID,
+      providerKey: "seedance",
+      displayName: "Creator",
+      externalIdentity: "id-123",
+      status: "active",
+      lastUsedAt: null,
+      lastValidatedAt: null,
+      cooldownUntil: null,
+      isLeased: false,
+      leaseExpiresAt: null,
+      isAvailable: true,
+    })
+
+    fireEvent.click(retryCompleteBtn)
+
+    await waitFor(() => {
+      expect(accountLoginApi.completeLogin).toHaveBeenCalledTimes(2)
+      expect(accountLoginApi.completeLogin).toHaveBeenLastCalledWith(expect.anything(), PROVISIONAL_ID)
+    })
+  })
+
+  it("does not treat generic 409 as duplicate terminal conflict", async () => {
+    const PROVISIONAL_ID = "77777777-7777-4777-8777-777777777777"
+    vi.mocked(accountLoginApi.listProviders).mockResolvedValue([
+      { key: "seedance", displayName: "Seedance", authKind: "browser_session" },
+    ])
+    vi.mocked(accountLoginApi.startLogin).mockResolvedValue({
+      accountId: PROVISIONAL_ID,
+      status: "waiting_for_user",
+    })
+    // 409 conflict with generic code or message
+    vi.mocked(accountLoginApi.completeLogin).mockRejectedValue(
+      new ApiError(409, "Account is currently in use", "/api/accounts/...", "ACCOUNT_IN_USE"),
+    )
+
+    renderDialog({ target: { kind: "add" } })
+
+    await screen.findByText("Seedance")
+    fireEvent.click(screen.getByText("Seedance"))
+    fireEvent.click(screen.getByRole("button", { name: /Tiếp tục đăng nhập/i }))
+
+    await screen.findByText(/Hoàn tất đăng nhập trong cửa sổ trình duyệt/i)
+    fireEvent.click(screen.getByRole("button", { name: /Đã đăng nhập/i }))
+
+    await screen.findByText("Đăng nhập chưa thành công")
+    // Should NOT show duplicate message
+    expect(
+      screen.queryByText(/Tài khoản đã tồn tại trong hệ thống/i),
+    ).not.toBeInTheDocument()
+
+    // Retry actions should still be active because it was not terminal duplicate
+    expect(screen.getByRole("button", { name: /Mở lại trình duyệt/i })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /Đã đăng nhập/i })).toBeInTheDocument()
+  })
 })

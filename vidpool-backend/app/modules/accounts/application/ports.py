@@ -32,6 +32,8 @@ class BrowserSessionPort(Protocol):
 @dataclass(frozen=True)
 class SessionValidation:
     valid: bool
+    external_identity: str | None = None
+    display_name: str | None = None
 
 
 @dataclass(frozen=True)

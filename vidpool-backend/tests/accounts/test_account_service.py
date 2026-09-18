@@ -796,3 +796,161 @@ def test_successful_login_closes_profile_and_preserves_persisted_profile_and_act
     assert db_account.status is AccountStatus.ACTIVE
 
 
+def test_start_login_preserves_original_browser_error_when_cleanup_fails() -> None:
+    from app.modules.accounts.domain.errors import BrowserCommandTimeout, BrowserUnavailable
+
+    class TimeoutFailingBrowser(FakeBrowserSessionManager):
+        def open_login(self, *, provider_key: str, profile_key: str, login_url: str) -> None:
+            raise BrowserCommandTimeout("Browser operation timed out after 30.0s")
+
+        def close_profile(self, profile_key: str) -> None:
+            raise BrowserUnavailable("Browser runtime is failed")
+
+        def delete_profile(self, profile_key: str) -> None:
+            raise BrowserUnavailable("Browser runtime is failed")
+
+    repo = FakeAccountRepository()
+    browser = TimeoutFailingBrowser()
+    adapter = FakeProviderAuthAdapter(provider_key="provider-x")
+    registry = FakeProviderRegistry([adapter])
+    service = AccountService(
+        uow_factory=lambda: FakeAccountUnitOfWork(repo),
+        browser=browser,
+        providers=registry,
+    )
+
+    with pytest.raises(BrowserCommandTimeout, match="timed out after 30.0s"):
+        service.start_login("provider-x")
+
+
+def test_start_login_db_failure_closes_open_profile_and_cleans_up() -> None:
+    class FailingUOW(FakeAccountUnitOfWork):
+        def commit(self) -> None:
+            raise RuntimeError("Database connection lost")
+
+    repo = FakeAccountRepository()
+    browser = FakeBrowserSessionManager()
+    adapter = FakeProviderAuthAdapter(provider_key="provider-x")
+    registry = FakeProviderRegistry([adapter])
+    service = AccountService(
+        uow_factory=lambda: FailingUOW(repo),
+        browser=browser,
+        providers=registry,
+    )
+
+    with pytest.raises(RuntimeError, match="Database connection lost"):
+        service.start_login("provider-x")
+
+    # Profile must be closed and deleted after failed start_login
+    assert len(browser.open_profiles) == 0
+    assert len(browser.deleted_profiles) == 1
+
+
+def test_relogin_with_mismatched_identity_purges_profile_and_sets_auth_required() -> None:
+    adapter = FakeProviderAuthAdapter(
+        provider_key="provider-x",
+        external_identity="user-account-1",
+        display_name="User One",
+    )
+    service, repo, browser, _ = _build_service(adapter)
+
+    # 1. Create and authenticate account 1
+    start = service.start_login("provider-x", now=NOW)
+    acc = service.complete_login(start.account_id, now=NOW)
+    assert acc.status is AccountStatus.ACTIVE
+    assert acc.external_identity == "user-account-1"
+
+    # 2. Mark account as requiring auth
+    service.report_auth_failure(start.account_id, now=NOW)
+    acc_auth_req = service.get_account(start.account_id)
+    assert acc_auth_req.status is AccountStatus.AUTH_REQUIRED
+
+    # 3. Start relogin
+    relogin_res = service.start_relogin(start.account_id, now=LATER)
+    profile_key = f"browser-profile/provider-x/{relogin_res.account_id}"
+    assert browser.has_open_session(profile_key)
+
+    # 4. User logs into a DIFFERENT identity in the browser
+    adapter.external_identity = "user-wrong-account"
+    adapter.display_name = "Wrong User"
+
+    # 5. complete_login should reject, delete profile from disk, keep DB record in AUTH_REQUIRED
+    with pytest.raises(DuplicateProviderIdentity, match="Relogin identity mismatch"):
+        service.complete_login(start.account_id, now=LATER)
+
+    # Corrupted profile session must be closed and purged
+    assert profile_key in browser.deleted_profiles
+    assert not browser.has_open_session(profile_key)
+
+    # DB record preserved with status AUTH_REQUIRED
+    db_acc = repo.get(start.account_id)
+    assert db_acc is not None
+    assert db_acc.status is AccountStatus.AUTH_REQUIRED
+    assert db_acc.external_identity == "user-account-1"
+
+
+def test_relogin_with_duplicate_registered_identity_purges_profile_and_preserves_account() -> None:
+    adapter = FakeProviderAuthAdapter(
+        provider_key="provider-x",
+        external_identity="user-alpha",
+        display_name="User Alpha",
+    )
+    service, repo, browser, _ = _build_service(adapter)
+
+    # 1. Register Account A
+    start_a = service.start_login("provider-x", now=NOW)
+    service.complete_login(start_a.account_id, now=NOW)
+
+    # 2. Register Account B
+    adapter.external_identity = "user-beta"
+    adapter.display_name = "User Beta"
+    start_b = service.start_login("provider-x", now=NOW)
+    service.complete_login(start_b.account_id, now=NOW)
+
+    # 3. Account B needs auth
+    service.report_auth_failure(start_b.account_id, now=NOW)
+
+    # 4. Relogin Account B
+    service.start_relogin(start_b.account_id, now=LATER)
+    profile_b_key = f"browser-profile/provider-x/{start_b.account_id}"
+
+    # 5. User accidentally logs into Account A's credentials during Account B relogin
+    adapter.external_identity = "user-alpha"
+    adapter.display_name = "User Alpha"
+
+    with pytest.raises(DuplicateProviderIdentity):
+        service.complete_login(start_b.account_id, now=LATER)
+
+    # Profile B must be purged from disk
+    assert profile_b_key in browser.deleted_profiles
+
+    # Account B must remain in DB with status AUTH_REQUIRED
+    acc_b = repo.get(start_b.account_id)
+    assert acc_b is not None
+    assert acc_b.status is AccountStatus.AUTH_REQUIRED
+    assert acc_b.external_identity == "user-beta"
+
+
+def test_validate_account_detects_persisted_identity_mismatch() -> None:
+    adapter = FakeProviderAuthAdapter(
+        provider_key="provider-x",
+        external_identity="user-original",
+        display_name="Original User",
+    )
+    service, repo, browser, _ = _build_service(adapter)
+
+    start = service.start_login("provider-x", now=NOW)
+    service.complete_login(start.account_id, now=NOW)
+
+    # Persisted validation sees valid session BUT with different external identity
+    adapter.external_identity = "user-hijacked-identity"
+
+    view = service.validate_account(start.account_id, now=LATER)
+    # Session must be marked AUTH_REQUIRED because identities do not match
+    assert view.status is AccountStatus.AUTH_REQUIRED
+    db_acc = repo.get(start.account_id)
+    assert db_acc is not None
+    assert db_acc.status is AccountStatus.AUTH_REQUIRED
+
+
+
