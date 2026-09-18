@@ -12,17 +12,29 @@ import {
   DEMO_ANALYSIS_STEPS,
 } from "../api/chapter-api"
 
-export function useChapterAnalyzer() {
+export const INITIAL_ANALYSIS_STEPS: AnalysisProgressStep[] = [
+  { id: "s1", label: "Phân tích cú pháp cốt truyện", duration: "-", status: "pending" },
+  { id: "s2", label: "Trích xuất nhân vật & thực thể", duration: "-", status: "pending" },
+  { id: "s3", label: "Phân đoạn cảnh theo mạch truyện", duration: "-", status: "pending" },
+  { id: "s4", label: "Tạo visual beats chi tiết", duration: "-", status: "pending" },
+]
+
+export function useChapterAnalyzer(activeChapterId?: string) {
   const [settings, setSettings] = useState<AnalysisSettings>(DEFAULT_ANALYSIS_SETTINGS)
   const [scenesMap, setScenesMap] = useState<Record<string, AnalyzedScene[]>>(DEMO_ANALYZED_SCENES)
-  const [result, setResult] = useState<AnalysisResult | null>(DEMO_ANALYSIS_RESULT)
-  const [steps, setSteps] = useState<AnalysisProgressStep[]>(DEMO_ANALYSIS_STEPS)
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const timeoutsRef = useRef<number[]>([])
+  const [resultsMap, setResultsMap] = useState<Record<string, AnalysisResult | null>>({
+    "chap-03": DEMO_ANALYSIS_RESULT,
+  })
+  const [stepsMap, setStepsMap] = useState<Record<string, AnalysisProgressStep[]>>({
+    "chap-03": DEMO_ANALYSIS_STEPS,
+  })
+  const [analyzingMap, setAnalyzingMap] = useState<Record<string, boolean>>({})
+  const timeoutsMap = useRef<Record<string, number[]>>({})
 
   useEffect(() => {
+    const timeouts = timeoutsMap.current
     return () => {
-      timeoutsRef.current.forEach(clearTimeout)
+      Object.values(timeouts).forEach((list) => list.forEach(clearTimeout))
     }
   }, [])
 
@@ -33,58 +45,106 @@ export function useChapterAnalyzer() {
     setSettings((prev) => ({ ...prev, [key]: value }))
   }, [])
 
+  const getChapterResult = useCallback(
+    (chapterId: string): AnalysisResult | null => {
+      return resultsMap[chapterId] ?? null
+    },
+    [resultsMap]
+  )
+
+  const getChapterSteps = useCallback(
+    (chapterId: string): AnalysisProgressStep[] => {
+      return stepsMap[chapterId] ?? INITIAL_ANALYSIS_STEPS
+    },
+    [stepsMap]
+  )
+
+  const isChapterAnalyzing = useCallback(
+    (chapterId: string): boolean => {
+      return Boolean(analyzingMap[chapterId])
+    },
+    [analyzingMap]
+  )
+
   const startAnalysis = useCallback(
     (chapterId: string, onComplete?: (sceneCount: number, beatCount: number) => void) => {
-      if (isAnalyzing) return
+      if (analyzingMap[chapterId]) return
 
-      setIsAnalyzing(true)
-      timeoutsRef.current.forEach(clearTimeout)
-      timeoutsRef.current = []
+      setAnalyzingMap((prev) => ({ ...prev, [chapterId]: true }))
 
-      // Reset step status
+      if (timeoutsMap.current[chapterId]) {
+        timeoutsMap.current[chapterId].forEach(clearTimeout)
+      }
+      timeoutsMap.current[chapterId] = []
+
+      // Reset step status for this chapter
       const initialSteps: AnalysisProgressStep[] = [
         { id: "s1", label: "Phân tích cú pháp cốt truyện", duration: "...", status: "running" },
         { id: "s2", label: "Trích xuất nhân vật & thực thể", duration: "...", status: "pending" },
         { id: "s3", label: "Phân đoạn cảnh theo mạch truyện", duration: "...", status: "pending" },
         { id: "s4", label: "Tạo visual beats chi tiết", duration: "...", status: "pending" },
       ]
-      setSteps(initialSteps)
+      setStepsMap((prev) => ({ ...prev, [chapterId]: initialSteps }))
 
       // Timeline of steps
       const t1 = window.setTimeout(() => {
-        setSteps((prev) => [
-          { ...prev[0], duration: "0.8s", status: "completed" },
-          { ...prev[1], status: "running" },
-          prev[2],
-          prev[3],
-        ])
+        setStepsMap((prev) => {
+          const current = prev[chapterId] ?? initialSteps
+          return {
+            ...prev,
+            [chapterId]: [
+              { ...current[0], duration: "0.8s", status: "completed" },
+              { ...current[1], status: "running" },
+              current[2],
+              current[3],
+            ],
+          }
+        })
       }, 700)
 
       const t2 = window.setTimeout(() => {
-        setSteps((prev) => [
-          prev[0],
-          { ...prev[1], duration: "1.2s", status: "completed" },
-          { ...prev[2], status: "running" },
-          prev[3],
-        ])
+        setStepsMap((prev) => {
+          const current = prev[chapterId] ?? initialSteps
+          return {
+            ...prev,
+            [chapterId]: [
+              current[0],
+              { ...current[1], duration: "1.2s", status: "completed" },
+              { ...current[2], status: "running" },
+              current[3],
+            ],
+          }
+        })
       }, 1500)
 
       const t3 = window.setTimeout(() => {
-        setSteps((prev) => [
-          prev[0],
-          prev[1],
-          { ...prev[2], duration: "1.9s", status: "completed" },
-          { ...prev[3], status: "running" },
-        ])
+        setStepsMap((prev) => {
+          const current = prev[chapterId] ?? initialSteps
+          return {
+            ...prev,
+            [chapterId]: [
+              current[0],
+              current[1],
+              { ...current[2], duration: "1.9s", status: "completed" },
+              { ...current[3], status: "running" },
+            ],
+          }
+        })
       }, 2300)
 
       const t4 = window.setTimeout(() => {
-        setSteps((prev) => [
-          prev[0],
-          prev[1],
-          prev[2],
-          { ...prev[3], duration: "3.2s", status: "completed" },
-        ])
+        setStepsMap((prev) => {
+          const current = prev[chapterId] ?? initialSteps
+          return {
+            ...prev,
+            [chapterId]: [
+              current[0],
+              current[1],
+              current[2],
+              { ...current[3], duration: "3.2s", status: "completed" },
+            ],
+          }
+        })
 
         const generatedScenes: AnalyzedScene[] = [
           {
@@ -141,29 +201,32 @@ export function useChapterAnalyzer() {
         const now = new Date()
         const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`
 
-        setResult({
-          characterCount: 2,
-          locationCount: 2,
-          sceneCount: 4,
-          visualBeatCount: 12,
-          characters: [
-            { id: "c1", name: "Tiêu Viêm", role: "Nhân vật chính" },
-            { id: "c2", name: "Dược Lão", role: "Sư phụ / Hỗ trợ" },
-          ],
-          locations: [
-            { id: "l1", name: "Cửa cổ mộ", description: "Rừng u ám" },
-            { id: "l2", name: "Điện thờ chính", description: "Cổ mộ ngàn năm" },
-          ],
-          completedAt: timeStr,
-        })
+        setResultsMap((prev) => ({
+          ...prev,
+          [chapterId]: {
+            characterCount: 2,
+            locationCount: 2,
+            sceneCount: 4,
+            visualBeatCount: 12,
+            characters: [
+              { id: "c1", name: "Tiêu Viêm", role: "Nhân vật chính" },
+              { id: "c2", name: "Dược Lão", role: "Sư phụ / Hỗ trợ" },
+            ],
+            locations: [
+              { id: "l1", name: "Cửa cổ mộ", description: "Rừng u ám" },
+              { id: "l2", name: "Điện thờ chính", description: "Cổ mộ ngàn năm" },
+            ],
+            completedAt: timeStr,
+          },
+        }))
 
-        setIsAnalyzing(false)
+        setAnalyzingMap((prev) => ({ ...prev, [chapterId]: false }))
         onComplete?.(4, 12)
       }, 3200)
 
-      timeoutsRef.current.push(t1, t2, t3, t4)
+      timeoutsMap.current[chapterId].push(t1, t2, t3, t4)
     },
-    [isAnalyzing]
+    [analyzingMap]
   )
 
   const getChapterScenes = useCallback(
@@ -173,14 +236,21 @@ export function useChapterAnalyzer() {
     [scenesMap]
   )
 
+  const currentResult = activeChapterId ? (resultsMap[activeChapterId] ?? null) : null
+  const currentSteps = activeChapterId ? (stepsMap[activeChapterId] ?? INITIAL_ANALYSIS_STEPS) : INITIAL_ANALYSIS_STEPS
+  const currentIsAnalyzing = activeChapterId ? Boolean(analyzingMap[activeChapterId]) : false
+
   return {
     settings,
     updateSetting,
     scenesMap,
     getChapterScenes,
-    result,
-    steps,
-    isAnalyzing,
+    getChapterResult,
+    getChapterSteps,
+    isChapterAnalyzing,
+    result: currentResult,
+    steps: currentSteps,
+    isAnalyzing: currentIsAnalyzing,
     startAnalysis,
   }
 }

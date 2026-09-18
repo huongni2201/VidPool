@@ -31,7 +31,7 @@ export function ChapterPage() {
     addChapter,
     saveChapter,
     isSaved,
-  } = useChapters(chapterId || "chap-03")
+  } = useChapters(chapterId)
 
   const {
     settings,
@@ -41,13 +41,18 @@ export function ChapterPage() {
     steps,
     isAnalyzing,
     startAnalysis,
-  } = useChapterAnalyzer()
+  } = useChapterAnalyzer(selectedChapter.id)
 
   const currentScenes = getChapterScenes(selectedChapter.id)
 
   const handleSelectChapter = (id: string) => {
     setSelectedId(id)
-    navigate(`/chapters/${id}`, { replace: true })
+    navigate(`/chapters/${id}`)
+  }
+
+  const handleAddChapter = () => {
+    const newChapter = addChapter()
+    navigate(`/chapters/${newChapter.id}`)
   }
 
   const handleStartAnalysis = () => {
@@ -72,7 +77,7 @@ export function ChapterPage() {
         totalCount={totalCount}
         selectedId={selectedId}
         onSelect={handleSelectChapter}
-        onAdd={addChapter}
+        onAdd={handleAddChapter}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />

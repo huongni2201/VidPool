@@ -1,7 +1,24 @@
 import { cleanup, render, screen, fireEvent } from "@testing-library/react"
-import { MemoryRouter } from "react-router-dom"
+import { MemoryRouter, Routes, Route, useLocation } from "react-router-dom"
 import { afterEach, describe, expect, it } from "vitest"
 import { ChapterPage } from "./chapter-page"
+
+function LocationDisplay() {
+  const location = useLocation()
+  return <div data-testid="location-display">{location.pathname}</div>
+}
+
+function renderChapterPage(initialEntry = "/chapters/chap-03") {
+  return render(
+    <MemoryRouter initialEntries={[initialEntry]}>
+      <LocationDisplay />
+      <Routes>
+        <Route path="/chapters/:chapterId" element={<ChapterPage />} />
+        <Route path="/chapters" element={<ChapterPage />} />
+      </Routes>
+    </MemoryRouter>
+  )
+}
 
 describe("ChapterPage", () => {
   afterEach(() => {
@@ -9,11 +26,7 @@ describe("ChapterPage", () => {
   })
 
   it("renders chapter header, chapter list, and editor form", () => {
-    render(
-      <MemoryRouter initialEntries={["/chapters/chap-03"]}>
-        <ChapterPage />
-      </MemoryRouter>
-    )
+    renderChapterPage("/chapters/chap-03")
 
     // Check chapter title in header
     expect(
@@ -35,16 +48,15 @@ describe("ChapterPage", () => {
     expect(screen.getByRole("button", { name: /Phân tích chapter/i })).toBeInTheDocument()
   })
 
-  it("switches chapters when clicking another chapter in list", () => {
-    render(
-      <MemoryRouter initialEntries={["/chapters/chap-03"]}>
-        <ChapterPage />
-      </MemoryRouter>
-    )
+  it("switches chapters and updates URL when clicking another chapter in list", () => {
+    renderChapterPage("/chapters/chap-03")
 
     // Click Chapter 01
     const chapter1 = screen.getByText("Khởi đầu hành trình")
     fireEvent.click(chapter1)
+
+    // F4 Invariant: URL navigates to /chapters/chap-01
+    expect(screen.getByTestId("location-display").textContent).toBe("/chapters/chap-01")
 
     // Expect Chapter 01 to become active in header and form
     expect(
@@ -54,11 +66,7 @@ describe("ChapterPage", () => {
   })
 
   it("updates word count dynamically when editing story text", () => {
-    render(
-      <MemoryRouter initialEntries={["/chapters/chap-03"]}>
-        <ChapterPage />
-      </MemoryRouter>
-    )
+    renderChapterPage("/chapters/chap-03")
 
     const textarea = screen.getByPlaceholderText(
       /Nhập hoặc dán toàn bộ nội dung cốt truyện của chapter vào đây.../i
@@ -73,11 +81,7 @@ describe("ChapterPage", () => {
   })
 
   it("renders analyzed scenes list with scene cards", () => {
-    render(
-      <MemoryRouter initialEntries={["/chapters/chap-03"]}>
-        <ChapterPage />
-      </MemoryRouter>
-    )
+    renderChapterPage("/chapters/chap-03")
 
     expect(screen.getByRole("heading", { level: 3, name: /Cảnh đã phân tích/i })).toBeInTheDocument()
     expect(screen.getByText(/Cảnh 1: Lối vào cổ mộ/i)).toBeInTheDocument()
@@ -86,18 +90,63 @@ describe("ChapterPage", () => {
     expect(screen.getByText(/Cảnh 4: Màn chắn ngọc bích/i)).toBeInTheDocument()
   })
 
-  it("adds a new chapter when clicking Thêm button", () => {
-    render(
-      <MemoryRouter initialEntries={["/chapters/chap-03"]}>
-        <ChapterPage />
-      </MemoryRouter>
-    )
+  it("adds a new chapter and navigates to new chapter URL when clicking Thêm button", () => {
+    renderChapterPage("/chapters/chap-03")
 
     const addButton = screen.getByRole("button", { name: /Thêm/i })
     fireEvent.click(addButton)
 
+    // F4 Invariant: Clicking Thêm MUST navigate to the new chapter URL
+    expect(screen.getByTestId("location-display").textContent).toBe("/chapters/chap-05")
+
     expect(
       screen.getByRole("heading", { level: 2, name: /Chapter 05: Phân đoạn mới/i })
     ).toBeInTheDocument()
+  })
+
+  it("isolates analysis results and does not leak results to unanalyzed chapters", () => {
+    renderChapterPage("/chapters/chap-03")
+
+    // Chapter 03 analysis result is present (visible in analysis result panel)
+    expect(screen.getAllByText("Tiêu Viêm").length).toBeGreaterThan(0)
+
+    // Switch to Chapter 01 (which has no analysis result yet)
+    const chapter1 = screen.getByText("Khởi đầu hành trình")
+    fireEvent.click(chapter1)
+
+    // F5 Invariant: Chapter 01 must NOT show Chapter 03's analysis result!
+    expect(screen.getByTestId("location-display").textContent).toBe("/chapters/chap-01")
+    expect(screen.getAllByText(/Chưa có dữ liệu phân tích/i).length).toBeGreaterThan(0)
+    expect(screen.queryAllByText("Tiêu Viêm").length).toBe(0)
+  })
+
+  it("isolates analyzing state when switching chapters during active analysis", () => {
+    renderChapterPage("/chapters/chap-01")
+
+    // Initially chapter 01 is not analyzing
+    expect(screen.queryByText(/Đang xử lý/i)).not.toBeInTheDocument()
+
+    // Click Phân tích chapter on Chapter 01
+    const analyzeButton = screen.getByRole("button", { name: /Phân tích chapter/i })
+    fireEvent.click(analyzeButton)
+
+    // Now Chapter 01 shows analyzing state
+    expect(screen.getAllByText(/Đang xử lý/i).length).toBeGreaterThan(0)
+
+    // Switch to Chapter 02
+    const chapter2 = screen.getByText("Rừng sương mù")
+    fireEvent.click(chapter2)
+
+    // Chapter 02 must NOT show analyzing state!
+    expect(screen.getByTestId("location-display").textContent).toBe("/chapters/chap-02")
+    expect(screen.queryByText(/Đang xử lý/i)).not.toBeInTheDocument()
+
+    // Switch back to Chapter 01
+    const chapter1 = screen.getByText("Khởi đầu hành trình")
+    fireEvent.click(chapter1)
+
+    // Chapter 01 continues showing analyzing state
+    expect(screen.getByTestId("location-display").textContent).toBe("/chapters/chap-01")
+    expect(screen.getAllByText(/Đang xử lý/i).length).toBeGreaterThan(0)
   })
 })

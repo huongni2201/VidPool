@@ -2,15 +2,23 @@ import { useState, useCallback, useMemo } from "react"
 import type { Chapter } from "../model/types"
 import { INITIAL_CHAPTERS } from "../api/chapter-api"
 
-export function useChapters(initialChapterId: string = "chap-03") {
+export function useChapters(activeChapterId?: string) {
   const [chapters, setChapters] = useState<Chapter[]>(INITIAL_CHAPTERS)
-  const [selectedId, setSelectedId] = useState<string>(initialChapterId)
+  const [internalSelectedId, setInternalSelectedId] = useState<string>("chap-03")
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [isSaved, setIsSaved] = useState<boolean>(true)
 
+  const effectiveId = activeChapterId || internalSelectedId
+
   const selectedChapter = useMemo(() => {
-    return chapters.find((c) => c.id === selectedId) || chapters[0]
-  }, [chapters, selectedId])
+    return chapters.find((c) => c.id === effectiveId) || chapters[0]
+  }, [chapters, effectiveId])
+
+  const selectedId = selectedChapter?.id ?? effectiveId
+
+  const setSelectedId = useCallback((id: string) => {
+    setInternalSelectedId(id)
+  }, [])
 
   const filteredChapters = useMemo(() => {
     if (!searchQuery.trim()) return chapters
@@ -45,7 +53,7 @@ export function useChapters(initialChapterId: string = "chap-03") {
     [selectedId]
   )
 
-  const addChapter = useCallback(() => {
+  const addChapter = useCallback((): Chapter => {
     const nextOrder = chapters.length + 1
     const newChapter: Chapter = {
       id: `chap-${String(nextOrder).padStart(2, "0")}`,
@@ -63,8 +71,9 @@ export function useChapters(initialChapterId: string = "chap-03") {
       updatedAt: "Vừa xong",
     }
     setChapters((prev) => [...prev, newChapter])
-    setSelectedId(newChapter.id)
+    setInternalSelectedId(newChapter.id)
     setIsSaved(true)
+    return newChapter
   }, [chapters.length])
 
   const saveChapter = useCallback(() => {
