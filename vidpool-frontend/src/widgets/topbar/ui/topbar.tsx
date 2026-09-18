@@ -15,13 +15,19 @@ export function Topbar({
 }: TopbarProps) {
   const location = useLocation()
   const navigate = useNavigate()
-  const { projectName: storeProjectName, savedTime: storeSavedTime, closeProject } = useProjectStore()
+  const {
+    projectName: storeProjectName,
+    savedTime: storeSavedTime,
+    closeProject,
+    setIsCreateOpen,
+  } = useProjectStore()
 
   const activeProjectName = propProjectName || storeProjectName || "Thanh Xuân Trở Lại"
   const activeSavedTime = propSavedTime || storeSavedTime || "15:24"
 
   const isWorkspace =
     location.pathname.startsWith(ROUTES.EDITOR) ||
+    location.pathname.startsWith(ROUTES.CHAPTERS) ||
     location.pathname.startsWith(ROUTES.VISUAL_BEAT) ||
     location.pathname.startsWith(ROUTES.CHARACTERS) ||
     location.pathname.startsWith(ROUTES.VOICE) ||
@@ -32,16 +38,19 @@ export function Topbar({
     const path = location.pathname
     if (path.startsWith(ROUTES.ACCOUNTS)) {
       return {
-        title: "Account Pool",
-        primaryLabel: "+ Thêm account",
-        action: () => onPrimaryAction?.(),
+        title: "Tài khoản AI",
+        primaryLabel: undefined,
+        action: undefined,
       }
     }
-    if (path.startsWith(ROUTES.PROJECTS)) {
+    if (path === "/" || path === "/projects" || path.startsWith("/projects")) {
       return {
         title: "Dự án",
         primaryLabel: "+ Dự án mới",
-        action: () => onPrimaryAction?.(),
+        action: () => {
+          setIsCreateOpen(true)
+          onPrimaryAction?.()
+        },
       }
     }
     if (path.startsWith(ROUTES.EDITOR)) {
@@ -108,9 +117,12 @@ export function Topbar({
       }
     }
     return {
-      title: "Tổng quan",
+      title: "Dự án",
       primaryLabel: "+ Dự án mới",
-      action: () => navigate(ROUTES.PROJECTS),
+      action: () => {
+        setIsCreateOpen(true)
+        onPrimaryAction?.()
+      },
     }
   }
 
@@ -124,7 +136,7 @@ export function Topbar({
           <button
             onClick={() => {
               closeProject()
-              navigate(ROUTES.DASHBOARD)
+              navigate(ROUTES.PROJECTS)
             }}
             className="group flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:border-primary/50 hover:bg-studio-hover hover:text-foreground transition-all cursor-pointer shadow-sm"
             title="Đóng dự án và quay về danh sách"
@@ -167,6 +179,18 @@ export function Topbar({
             </svg>
             <span className="text-[11.5px] text-studio-subtle">Đã lưu lúc {activeSavedTime}</span>
           </div>
+        </div>
+      ) : location.pathname.startsWith(ROUTES.ACCOUNTS) ? (
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-7 items-center justify-center rounded-lg bg-blue-600/15 text-blue-400 border border-blue-500/20">
+            <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </div>
+          <span className="text-sm font-bold text-foreground">Tài Khoản AI</span>
+          <span className="text-[11px] text-muted-foreground hidden sm:inline">
+            • Quản lý kết nối & quota provider
+          </span>
         </div>
       ) : (
         <div className="flex items-center gap-2.5">

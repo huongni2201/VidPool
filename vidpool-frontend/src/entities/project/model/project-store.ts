@@ -16,22 +16,20 @@ export interface ProjectStoreState {
   projectName: string
   savedTime: string
   isProjectOpen: boolean
+  isCreateOpen: boolean
   openProject: (project: ActiveProjectInfo | string) => void
   closeProject: () => void
   setProjectName: (name: string) => void
+  setIsCreateOpen: (open: boolean) => void
 }
 
 export const useProjectStore = create<ProjectStoreState>((set) => ({
-  activeProject: {
-    id: "p1",
-    name: "Thanh Xuân Trở Lại",
-    title: "Thanh Xuân Trở Lại",
-    aspectRatio: "16:9",
-    duration: "00:02:28",
-  },
-  projectName: "Thanh Xuân Trở Lại",
-  savedTime: "15:24",
+  activeProject: null,
+  projectName: "",
+  savedTime: "",
   isProjectOpen: false,
+  isCreateOpen: false,
+  setIsCreateOpen: (open) => set({ isCreateOpen: open }),
   openProject: (project) => {
     const proj: ActiveProjectInfo =
       typeof project === "string"

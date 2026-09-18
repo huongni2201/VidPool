@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.infrastructure.persistence.base import Base
@@ -37,6 +37,11 @@ class ProviderAccountModel(Base):
         Index("ix_provider_accounts_provider_status", "provider_key", "status"),
         Index("ix_provider_accounts_last_used_at", "last_used_at"),
         Index("ix_provider_accounts_cooldown_until", "cooldown_until"),
+        UniqueConstraint(
+            "provider_key",
+            "external_identity",
+            name="uq_provider_account_identity",
+        ),
     )
 
 

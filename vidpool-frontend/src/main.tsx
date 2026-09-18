@@ -1,18 +1,16 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { QueryClientProvider } from '@tanstack/react-query'
+import { StrictMode } from "react"
+import { createRoot } from "react-dom/client"
+import { QueryProvider } from "./app/providers"
+import { Bootstrap } from "./app/bootstrap"
+import { App } from "./app/App"
+import "./index.css"
 
-import { queryClient } from './lib/query-client'
-import { Bootstrap } from './app/bootstrap'
-import App from './App'
-import './index.css'
-
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
+    <QueryProvider>
       <Bootstrap>
         <App />
       </Bootstrap>
-    </QueryClientProvider>
+    </QueryProvider>
   </StrictMode>,
 )

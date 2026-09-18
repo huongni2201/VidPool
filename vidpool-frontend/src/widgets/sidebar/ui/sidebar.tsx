@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { ROUTES } from "@/shared/constants"
 import { useProjectStore } from "@/entities/project"
-import { avatar1 } from "@/assets/demo"
+import { getVersion } from "@tauri-apps/api/app"
+import { isTauri } from "@tauri-apps/api/core"
 
 export interface SidebarProps {
   backendStatus?: "ok" | "pending" | "error"
@@ -22,10 +24,20 @@ export function Sidebar({
   const location = useLocation()
   const navigate = useNavigate()
   const { projectName: storeProjectName, closeProject } = useProjectStore()
-  const projectName = propProjectName || storeProjectName || "Thanh Xuân Trở Lại"
+  const projectName = propProjectName || storeProjectName || "Dự án mẫu"
+  const [appVersion, setAppVersion] = useState("0.1.0")
+
+  useEffect(() => {
+    if (isTauri()) {
+      getVersion()
+        .then((v) => setAppVersion(v))
+        .catch(() => {})
+    }
+  }, [])
 
   const isWorkspace =
     location.pathname.startsWith(ROUTES.EDITOR) ||
+    location.pathname.startsWith(ROUTES.CHAPTERS) ||
     location.pathname.startsWith(ROUTES.VISUAL_BEAT) ||
     location.pathname.startsWith(ROUTES.CHARACTERS) ||
     location.pathname.startsWith(ROUTES.VOICE) ||
@@ -48,6 +60,25 @@ export function Sidebar({
             strokeLinejoin="round"
             strokeWidth={1.8}
             d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 3h16a1 1 0 011 1v16a1 1 0 01-1 1H4a1 1 0 01-1-1V4a1 1 0 011-1z"
+          />
+        </svg>
+      ),
+    },
+    {
+      to: ROUTES.CHAPTERS,
+      label: "Chapter",
+      icon: (active) => (
+        <svg
+          className={`size-4.5 ${active ? "text-primary-foreground" : "text-muted-foreground"}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.8}
+            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
           />
         </svg>
       ),
@@ -112,7 +143,6 @@ export function Sidebar({
     {
       to: ROUTES.JOBS,
       label: "Hàng đợi & Render",
-      badge: "3",
       icon: (active) => (
         <svg
           className={`size-4.5 ${active ? "text-primary-foreground" : "text-muted-foreground"}`}
@@ -133,7 +163,7 @@ export function Sidebar({
 
   const launcherNavItems: NavItem[] = [
     {
-      to: ROUTES.DASHBOARD,
+      to: ROUTES.PROJECTS,
       label: "Dự án của tôi",
       icon: (active) => (
         <svg
@@ -154,7 +184,6 @@ export function Sidebar({
     {
       to: ROUTES.ACCOUNTS,
       label: "Tài khoản AI",
-      badge: "8",
       icon: (active) => (
         <svg
           className={`size-4.5 ${active ? "text-primary-foreground" : "text-muted-foreground"}`}
@@ -198,7 +227,7 @@ export function Sidebar({
             <button
               onClick={() => {
                 closeProject()
-                navigate(ROUTES.DASHBOARD)
+                navigate(ROUTES.PROJECTS)
               }}
               className="group mb-2 flex items-center gap-2.5 rounded-xl border border-border bg-card/60 px-3 py-2 text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:bg-card hover:text-foreground transition-all cursor-pointer w-full text-left"
             >
@@ -272,8 +301,10 @@ export function Sidebar({
             {/* Launcher Mode Navigation */}
             {launcherNavItems.map((item) => {
               const isActive =
-                item.to === "/"
-                  ? location.pathname === "/" || location.pathname.startsWith(ROUTES.PROJECTS)
+                item.to === "/" || item.to === ROUTES.PROJECTS
+                  ? location.pathname === "/" ||
+                    location.pathname === "/projects" ||
+                    location.pathname.startsWith("/projects")
                   : location.pathname.startsWith(item.to)
               return (
                 <Link
@@ -375,33 +406,7 @@ export function Sidebar({
               </>
             )}
           </div>
-          <span className="font-mono text-[10px] text-studio-subtle">v0.2.0</span>
-        </div>
-
-        {/* User profile card */}
-        <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 transition-all hover:bg-studio-hover">
-          <div className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 ring-2 ring-indigo-500/30">
-            <img
-              src={avatar1}
-              alt="Avatar"
-              className="size-full object-cover"
-              onError={(e) => {
-                ;(e.currentTarget as HTMLElement).style.display = "none"
-              }}
-            />
-            <span className="text-xs font-bold text-white uppercase absolute">TX</span>
-          </div>
-          <div className="flex flex-col overflow-hidden leading-tight min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <span className="truncate text-xs font-semibold text-foreground">
-                Thanh Xuân Trở Lại
-              </span>
-              <span className="rounded bg-blue-600 px-1 py-0.2 text-[9px] font-bold text-white">
-                Pro
-              </span>
-            </div>
-            <span className="truncate text-[10.5px] text-studio-subtle">user@vidpool.ai</span>
-          </div>
+          <span className="font-mono text-[10px] text-studio-subtle">{`v${appVersion}`}</span>
         </div>
       </div>
     </aside>

@@ -37,6 +37,8 @@ describe("runtime-config", () => {
   describe("loadRuntimeConfig", () => {
     it("returns dev config when not running inside Tauri", async () => {
       vi.mocked(isTauri).mockReturnValue(false)
+      vi.stubEnv("VITE_API_BASE_URL", "")
+      vi.stubEnv("VITE_SESSION_TOKEN", "")
 
       const config = await loadRuntimeConfig()
       expect(config.apiBaseUrl).toBe("http://127.0.0.1:8000")

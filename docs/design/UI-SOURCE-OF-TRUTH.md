@@ -88,14 +88,13 @@ Tài liệu này và file prototype HTML đi kèm là **Source of Truth** cho to
 
 ### 3.1 Khung Vỏ Tổng Thể (App Shell)
 - **Left Sidebar**: 
-  - Logo studio với nhãn phiên bản `v0.2.0-alpha`.
-  - Điều hướng chính 5 màn hình: Dashboard, Projects, Studio Workspace, Account Pool, Durable Jobs.
-  - Nhóm cấu hình: System & Settings.
-  - Widget trạng thái Runtime góc dưới: Trạng thái kết nối FastAPI Sidecar (runtime-selected loopback port; browser development defaults to 8000), Playwright Browser Runtime (số profiles active), trạng thái SQLite WAL và FFmpeg NVENC acceleration.
+  - Logo studio với nhãn phiên bản động `v0.1.0` (đồng bộ từ Tauri `getVersion()`).
+  - Điều hướng chính trong Launcher mode: Dự án của tôi (`/`), Tài khoản AI (`/accounts`), Cài đặt (`/settings`).
+  - Điều hướng trong Workspace mode: Nút quay lại Màn hình dự án, Chỉnh sửa (`/editor`), Chapter (`/chapters`), Visual Beat (`/visual-beat`), Nhân vật (`/characters`), Voice (`/voice`), Hàng đợi & Render (`/jobs`).
+  - Widget trạng thái Runtime góc dưới: Trạng thái kết nối FastAPI Sidecar (runtime-selected loopback port; browser development defaults to 8000), nhãn phiên bản app `v0.1.0`.
 - **Top Studio Bar**:
-  - Breadcrumb thông minh và bộ chuyển nhanh dự án (Project Switcher Dropdown).
-  - Background Tasks Ticker: Hiển thị task đang chạy dài hạn kèm % tiến độ theo thời gian thực (nhấp vào chuyển ngay tới màn hình Jobs).
-  - Nút kiểm tra sức khỏe hệ thống (System Health Pill) mở dialog chẩn đoán chi tiết.
+  - Breadcrumb và bộ hiển thị thông tin dự án hiện hành.
+  - Runtime indicators.
 
 ---
 
@@ -203,16 +202,21 @@ These elements are mock UI until provider execution/quota contracts are implemen
 
 ## 4. Ánh Xạ Prototype Tới Mã Nguồn Frontend React (`vidpool-frontend`)
 
-Khi chuyển thể từ file prototype HTML sang React components:
+Toàn bộ frontend tuân thủ chuẩn Feature-Sliced Design (FSD):
 
-| Màn hình trong Prototype | React Module trong `vidpool-frontend/src/` |
-|---|---|
-| App Shell (Sidebar, Topbar, Runtime) | `src/app/shell/` (Sidebar, Topbar, RuntimeStatus) |
-| Screen 1: Dashboard | `src/features/dashboard/DashboardPage.tsx` |
-| Screen 2: Account Pool | `src/features/accounts/` (`accounts-page.tsx`, `account-table.tsx`, `account-dialog.tsx`) |
-| Screen 3: Projects Library | `src/features/projects/ProjectsPage.tsx` |
-| Screen 4: Workspace Studio | `src/features/workspace/` (`WorkspaceLayout.tsx`, `WorkspaceOverview.tsx`) |
-| Workspace Sub-stages (Story, Characters, Storyboard, Visuals, Audio, Timeline, Render) | `src/features/story/`, `src/features/characters/`, `src/features/storyboard/`, `src/features/generation/`, `src/features/audio/`, `src/features/timeline/`, `src/features/render/` |
-| Screen 5: Durable Jobs | `src/features/jobs/JobsPage.tsx` |
-| Screen 6: System & Settings | `src/features/settings/SettingsPage.tsx` |
-| Native Modals & Drawers | Tận dụng Base UI / shadcn `<Dialog>` và `<Sheet>` components |
+| Màn hình / Tính năng | Canonical FSD Slice trong `vidpool-frontend/src/` | Trạng thái |
+|---|---|---|
+| App Shell & Layout | `src/widgets/sidebar/`, `src/app/layouts/app-layout.tsx` | IMPLEMENTED |
+| Dashboard (Tổng quan) | `src/pages/dashboard/ui/dashboard-page.tsx` (sử dụng `AccountPoolSummary`) | DEMO / PROTOTYPE |
+| Account Pool | `src/pages/accounts/ui/accounts-page.tsx`, `src/widgets/account-table/`, `src/widgets/account-pool-summary/`, `src/features/account-login/`, `src/features/account-pool/`, `src/entities/account/` | IMPLEMENTED |
+| Projects Library | `src/pages/projects/ui/projects-page.tsx`, `src/entities/project/` | DEMO / PROTOTYPE |
+| Chapters Studio | `src/pages/chapters/ui/chapter-page.tsx`, `src/features/chapters/` | DEMO / PROTOTYPE |
+| Visual Beat Studio | `src/pages/visual-beat/ui/visual-beat-page.tsx` | DEMO / PROTOTYPE |
+| Characters Studio | `src/pages/characters/ui/characters-page.tsx` | DEMO / PROTOTYPE |
+| Voice & TTS Studio | `src/pages/voice/ui/voice-page.tsx` | DEMO / PROTOTYPE |
+| Timeline Editor | `src/pages/editor/ui/editor-page.tsx` | DEMO / PROTOTYPE |
+| Jobs & Queue Monitor | `src/pages/jobs/ui/jobs-page.tsx` | DEMO / PROTOTYPE |
+| Settings | `src/pages/settings/ui/settings-page.tsx` | DEMO / PROTOTYPE |
+| Design System Primitives | `src/shared/ui/` (`StatCard`, `StatusBadge`, `WaveformVisualizer`, `Button`, `Card`, `Input`, `Badge`) | IMPLEMENTED |
+| API Client & Runtime Config | `src/shared/api/`, `src/shared/config/` | IMPLEMENTED |
+| Isolated Demo Fixtures | `src/shared/demo/` (`projects.ts`, `jobs.ts`, `characters.ts`, `assets.ts`) | IMPLEMENTED |

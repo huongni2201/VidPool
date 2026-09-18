@@ -1,10 +1,12 @@
 from collections.abc import Callable
 from typing import Self
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.modules.accounts.application.ports import AccountRepositoryPort
 from app.modules.accounts.application.uow import AccountUnitOfWorkPort
+from app.modules.accounts.domain.errors import DuplicateProviderIdentity
 from app.modules.accounts.infrastructure.persistence.repository import (
     SQLAlchemyAccountRepository,
 )
@@ -43,7 +45,12 @@ class SQLAlchemyAccountUnitOfWork(AccountUnitOfWorkPort):
 
     def commit(self) -> None:
         if self.session is not None:
-            self.session.commit()
+            try:
+                self.session.commit()
+            except IntegrityError as exc:
+                raise DuplicateProviderIdentity(
+                    "Account identity violates uniqueness constraint"
+                ) from exc
 
     def rollback(self) -> None:
         if self.session is not None:

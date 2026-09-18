@@ -67,3 +67,7 @@ class AccountUnavailable(AccountDomainError):
 
 class LeaseNotFound(AccountDomainError):
     """Raised when releasing an unknown or missing lease."""
+
+
+class DuplicateProviderIdentity(AccountDomainError):
+    """Raised when a provider account with the same external identity is already registered."""

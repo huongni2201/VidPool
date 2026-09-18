@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { ApiClientProvider } from "@/shared/api"
 import type { ApiClient } from "@/shared/api"
-import { AccountsPage } from "./accounts-page"
+import { AccountsPage } from "./ui/accounts-page"
 import type { AccountSummary } from "@/entities/account"
 
 function renderPage(mockClient: ApiClient) {

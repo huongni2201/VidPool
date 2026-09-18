@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 import { renderWithProviders } from "@/test/utils"
-import { GenerationsPage } from "./generations-page"
+import { GenerationsPage } from "./ui/generations-page"
 
 describe("GenerationsPage", () => {
   it("renders queue, status cards, and create generation action", () => {
