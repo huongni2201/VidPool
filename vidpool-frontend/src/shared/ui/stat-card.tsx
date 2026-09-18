@@ -1,11 +1,14 @@
 import type { ReactNode } from "react"
 
-interface StatCardProps {
+export interface StatCardProps {
   title: string
   value: string | number
   subtext?: string
   trend?: {
-    direction: "up" | "down"
+    direction?: "up" | "down"
+    icon?: "up" | "down"
+    tone?: "success" | "danger" | "neutral"
+    sentiment?: "positive" | "negative" | "neutral"
     text: string
   }
   progress?: {
@@ -28,6 +31,33 @@ export function StatCard({
   iconBg = "bg-blue-600/15 text-blue-400 border border-blue-500/20",
   badge,
 }: StatCardProps) {
+  const trendTone = trend
+    ? trend.tone ||
+      (trend.sentiment === "positive"
+        ? "success"
+        : trend.sentiment === "negative"
+          ? "danger"
+          : trend.sentiment === "neutral"
+            ? "neutral"
+            : (trend.direction || trend.icon) === "up"
+              ? "success"
+              : "danger")
+    : undefined
+
+  const trendColor =
+    trendTone === "success"
+      ? "text-emerald-400"
+      : trendTone === "danger"
+        ? "text-rose-400"
+        : "text-muted-foreground"
+
+  const trendIcon =
+    (trend?.icon || trend?.direction) === "up"
+      ? "↑"
+      : (trend?.icon || trend?.direction) === "down"
+        ? "↓"
+        : ""
+
   return (
     <div className="relative flex flex-col justify-between rounded-xl border border-border bg-card p-4 transition-all hover:border-studio-border-hover hover:bg-studio-hover">
       <div className="flex items-start justify-between gap-3">
@@ -36,12 +66,8 @@ export function StatCard({
           <div className="mt-1.5 flex items-baseline gap-2">
             <span className="text-2xl font-bold tracking-tight text-foreground">{value}</span>
             {trend && (
-              <span
-                className={`inline-flex items-center gap-0.5 text-xs font-semibold ${
-                  trend.direction === "up" ? "text-emerald-400" : "text-emerald-400"
-                }`}
-              >
-                {trend.direction === "up" ? "↑" : "↓"} {trend.text}
+              <span className={`inline-flex items-center gap-0.5 text-xs font-semibold ${trendColor}`}>
+                {trendIcon && <span>{trendIcon}</span>} {trend.text}
               </span>
             )}
             {badge && (

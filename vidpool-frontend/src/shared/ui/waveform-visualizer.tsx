@@ -1,4 +1,4 @@
-interface WaveformVisualizerProps {
+﻿interface WaveformVisualizerProps {
   isPlaying?: boolean
   progress?: number // 0 to 1
   height?: number

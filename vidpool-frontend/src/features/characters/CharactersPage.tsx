@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { WaveformVisualizer } from "@/components/shared/WaveformVisualizer"
+import { WaveformVisualizer } from "@/shared/ui"
 import { demoAvatars } from "@/assets/demo"
 
 export function CharactersPage() {

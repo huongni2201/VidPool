@@ -1,8 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { ROUTES, type AppRoute } from "@/shared/constants"
-import { StatCard } from "@/components/shared/StatCard"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+import { StatCard, StatusBadge } from "@/shared/ui"
 import { CreateProjectDialog } from "@/features/project-create"
 import { demoProjects, demoAvatars } from "@/assets/demo"
 

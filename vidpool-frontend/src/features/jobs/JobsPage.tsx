@@ -1,6 +1,5 @@
 import { useState } from "react"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { WaveformVisualizer } from "@/components/shared/WaveformVisualizer"
+import { StatusBadge, WaveformVisualizer } from "@/shared/ui"
 import { demoProjects, demoAvatars } from "@/assets/demo"
 
 export type JobType = "video" | "voice" | "subtitle" | "render" | "analysis"

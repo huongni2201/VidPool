@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { ROUTES } from "@/shared/constants"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+import { StatusBadge } from "@/shared/ui"
 import { demoProjects, demoAvatars } from "@/assets/demo"
 
 interface BeatScene {

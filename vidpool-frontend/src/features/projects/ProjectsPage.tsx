@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { ROUTES } from "@/shared/constants"
 import { useProjectStore } from "@/entities/project"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+import { StatusBadge } from "@/shared/ui"
 import { CreateProjectDialog } from "@/features/project-create"
 import { demoProjects } from "@/assets/demo"
 
