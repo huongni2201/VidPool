@@ -53,6 +53,9 @@ class _LiveSession:
 
 class BrowserRuntime(BrowserSessionPort):
     DEFAULT_CHANNELS = ("msedge", "chrome")
+    DEFAULT_LAUNCH_TIMEOUT_MS = 30_000
+    DEFAULT_NAVIGATION_TIMEOUT_MS = 30_000
+    DEFAULT_SHUTDOWN_TIMEOUT_SECONDS = 10.0
 
     def __init__(
         self,
@@ -60,11 +63,17 @@ class BrowserRuntime(BrowserSessionPort):
         launcher: LauncherType | None = None,
         headless: bool = False,
         channels: tuple[str, ...] = DEFAULT_CHANNELS,
+        launch_timeout_ms: int = DEFAULT_LAUNCH_TIMEOUT_MS,
+        navigation_timeout_ms: int = DEFAULT_NAVIGATION_TIMEOUT_MS,
+        shutdown_timeout_s: float = DEFAULT_SHUTDOWN_TIMEOUT_SECONDS,
     ) -> None:
         self._resolver = resolver or BrowserProfilePathResolver()
         self._launcher = launcher
         self._headless = headless
         self._channels = channels
+        self._launch_timeout_ms = launch_timeout_ms
+        self._navigation_timeout_ms = navigation_timeout_ms
+        self._shutdown_timeout_s = shutdown_timeout_s
 
         self._queue: Queue[object] = Queue()
         self._state_lock = threading.Lock()
@@ -134,6 +143,7 @@ class BrowserRuntime(BrowserSessionPort):
                 user_data_dir=str(profile_path),
                 channel=channel,
                 headless=headless,
+                timeout=self._launch_timeout_ms,
             )
         except (PlaywrightError, Exception) as exc:
             raise BrowserLaunchFailed(
@@ -211,7 +221,10 @@ class BrowserRuntime(BrowserSessionPort):
 
             pages = context.pages
             page = pages[0] if pages else context.new_page()
-            page.goto(login_url)
+            try:
+                page.goto(login_url, timeout=self._navigation_timeout_ms)
+            except TypeError:
+                page.goto(login_url)
         except Exception as exc:
             elapsed_ms = int((time.perf_counter() - start_time) * 1000)
             logger.warning(
@@ -355,7 +368,7 @@ class BrowserRuntime(BrowserSessionPort):
             logger.exception("Failed executing browser shutdown command")
 
         self._queue.put(_STOP)
-        self._thread.join(timeout=5)
+        self._thread.join(timeout=self._shutdown_timeout_s)
 
         with self._state_lock:
             self._state = RuntimeState.STOPPED
