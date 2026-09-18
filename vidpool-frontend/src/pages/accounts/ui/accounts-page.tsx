@@ -58,25 +58,32 @@ export function AccountsPage() {
           </p>
         </div>
 
+        {/* The ONLY primary action button on the page */}
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => setLoginTarget({ kind: "add" })}
-            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-3.5 py-2 text-xs font-semibold text-white shadow-md shadow-blue-500/20 hover:from-blue-500 hover:to-indigo-500 active:scale-95 transition-all cursor-pointer"
+            className="group flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-lg shadow-blue-500/25 hover:from-blue-500 hover:to-indigo-500 hover:shadow-blue-500/35 active:scale-95 transition-all cursor-pointer"
           >
-            + Add account
+            <svg className="size-4 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>+ Thêm tài khoản mới</span>
           </button>
         </div>
       </div>
 
       {/* Pool Health Banner */}
-      <div className="flex items-center justify-between rounded-xl border border-border bg-card/70 px-4 py-3 text-xs">
-        <div className="flex items-center gap-2">
-          <span className={`size-2 rounded-full ${activeCount > 0 ? "bg-emerald-400 ring-2 ring-emerald-500/20" : "bg-amber-400"}`} />
+      <div className="flex items-center justify-between rounded-2xl border border-border/70 bg-card/70 px-4 py-3 text-xs shadow-sm backdrop-blur-md">
+        <div className="flex items-center gap-2.5">
+          <span className={`size-2 rounded-full ${activeCount > 0 ? "bg-emerald-400 ring-4 ring-emerald-500/20 animate-pulse" : "bg-amber-400"}`} />
           <span className="text-foreground font-medium">{poolMessage}</span>
         </div>
-        <span className="text-muted-foreground font-mono text-[11px]">
-          Session Token: Authenticated
-        </span>
+        <div className="hidden sm:flex items-center gap-1.5 text-muted-foreground font-mono text-[11px]">
+          <svg className="size-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          <span>OS Secure Credential Storage</span>
+        </div>
       </div>
 
       {/* Action Error Banner */}
