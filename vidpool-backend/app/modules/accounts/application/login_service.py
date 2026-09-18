@@ -198,18 +198,11 @@ class AccountLoginService:
             profile_key = account.profile_key
 
         self._browser.close_profile(profile_key)
+        self._browser.delete_profile(profile_key)
 
         with self._uow_factory() as uow:
             uow.accounts.delete(account_id)
             uow.commit()
-
-        try:
-            self._browser.delete_profile(profile_key)
-        except Exception:
-            logger.exception(
-                "Provisional account %s deleted from DB but profile cleanup failed",
-                account_id,
-            )
 
     def cancel_relogin(
         self,

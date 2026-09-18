@@ -136,14 +136,12 @@ class AccountService:
                         f"Cannot delete account '{account_id}' while a browser session is active"
                     )
 
+            self._browser.delete_profile(profile_key)
+
+            with self._uow_factory() as uow:
                 uow.accounts.delete(account_id)
                 uow.commit()
                 logger.info("account_deleted account_id=%s", account_id)
-
-            try:
-                self._browser.delete_profile(profile_key)
-            except Exception:
-                logger.exception("Account deleted but browser profile cleanup failed")
 
     # --- Delegations to Login Service ---
 

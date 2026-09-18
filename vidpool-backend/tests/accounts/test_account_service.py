@@ -478,7 +478,7 @@ def test_delete_account_keeps_record_when_repository_delete_fails() -> None:
     assert repo.get(start.account_id) is not None
 
 
-def test_delete_account_does_not_restore_record_when_profile_cleanup_fails() -> None:
+def test_delete_account_preserves_record_when_profile_cleanup_fails() -> None:
     class FailingDeleteBrowser(FakeBrowserSessionManager):
         def delete_profile(self, profile_key: str) -> None:
             raise RuntimeError("Disk deletion failed")
@@ -496,9 +496,33 @@ def test_delete_account_does_not_restore_record_when_profile_cleanup_fails() -> 
     start = service.start_login("provider-x", now=NOW)
     service.complete_login(start.account_id, now=NOW)
 
-    # DB deletion succeeds, disk cleanup failure is caught and logged
-    service.delete_account(start.account_id, now=NOW)
-    assert repo.get(start.account_id) is None
+    # Disk cleanup failure must prevent deleting the account from DB
+    with pytest.raises(RuntimeError, match="Disk deletion failed"):
+        service.delete_account(start.account_id, now=NOW)
+
+    assert repo.get(start.account_id) is not None
+
+
+def test_cancel_new_login_preserves_record_when_profile_cleanup_fails() -> None:
+    class FailingDeleteBrowser(FakeBrowserSessionManager):
+        def delete_profile(self, profile_key: str) -> None:
+            raise RuntimeError("Disk deletion failed")
+
+    repo = FakeAccountRepository()
+    browser = FailingDeleteBrowser()
+    adapter = FakeProviderAuthAdapter(provider_key="provider-x")
+    registry = FakeProviderRegistry([adapter])
+    service = AccountService(
+        uow_factory=lambda: FakeAccountUnitOfWork(repo),
+        browser=browser,
+        providers=registry,
+    )
+
+    start = service.start_login("provider-x", now=NOW)
+    with pytest.raises(RuntimeError, match="Disk deletion failed"):
+        service.cancel_new_login(start.account_id)
+
+    assert repo.get(start.account_id) is not None
 
 
 # --- Leasing Tests (Task C3) ---
