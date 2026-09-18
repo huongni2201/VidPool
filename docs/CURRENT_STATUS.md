@@ -1,7 +1,7 @@
 # Current Implementation Status
 
 **Status:** ACCOUNT POOL FOUNDATION & PERSISTENT BROWSER SESSIONS  
-**Last reviewed:** 2026-09-17
+**Last reviewed:** 2026-09-18
 
 ## Purpose
 
@@ -38,10 +38,17 @@ This file distinguishes target architecture from implemented reality.
 - desktop CI compile/package gate (verified for Windows x64 / NSIS installer via `pnpm tauri build`).
 - Account Pool domain model and application ports.
 - Account Pool SQLAlchemy persistence models and repository with DB-backed account leases.
+- Packaged startup database migrations (`migrate_database` in `app/infrastructure/persistence/migrations.py`) executed on container build before application readiness for fresh installs and legacy DB upgrades; migration assets bundled into Tauri sidecar binary.
 - Unique provider account identity `(provider_key, external_identity)` enforced at database level (migration `c5d1758e92ea`), repository, and domain with provisional profile cleanup on duplicate conflict.
 - Serialized account lifecycle mutations via coordination lock preventing race conditions between `complete_login`, `disable`, `delete`, `relogin`, and health updates.
-- Browser runtime execution safety: hard timeouts on browser launch, contexts, page navigation, and action evaluation (`BrowserExecutionTimeout`) preventing hung processes.
-- durable LRU account leasing with explicit lease state transitions.
+- Browser runtime execution safety: hard timeouts on browser launch, contexts, page navigation, command execution (`BrowserCommandTimeout`), and shutdown (`BrowserShutdownTimeout`) with `RuntimeState.FAILED` poison queue to prevent hanging processes.
+- Truthful browser shutdown lifecycle: `RuntimeState.STOPPED` is strictly enforced only when owner thread has terminated; `delete_profile` guards against direct execution while owner thread is alive.
+- Durable LRU account leasing with explicit lease state transitions.
+- Cooldown preservation and recovery: `record_validation(valid=True)` preserves active cooldowns until expired; `AccountLeaseService.acquire` recovers elapsed cooldown accounts via `AccountRepositoryPort.list_elapsed_cooldowns` and domain `clear_elapsed_cooldown` in the same transaction.
+- Durable browser profile cleanup on deletion: profile deletion precedes database record deletion in `delete_account` and `cancel_new_login` to prevent orphaned persisted sessions on disk.
+- Infrastructure API error sanitization: infrastructure exceptions (`BrowserUnavailable`, `BrowserLaunchFailed`, `BrowserCommandTimeout`, `ProviderUnavailable`) map to sanitized public responses (`Browser service unavailable`, `Provider service unavailable`) preventing leaks of internal filesystem paths, tokens, or URLs.
+- Account login lifecycle robustness: idempotent cancellation, duplicate terminal conflict (`ACCOUNT_ALREADY_EXISTS`) with immediate close and retry support, unmount cleanup with generation tracking.
+- Chapter route and analysis ownership: React Router URL (`/chapters/:chapterId`) is the sole source of truth for chapter navigation; creating a chapter navigates to its URL; analysis state (result, progress, isAnalyzing) is strictly isolated and keyed by `chapterId`.
 - persistent isolated browser profile path resolver (`BrowserProfilePathResolver`).
 - dedicated single-owner Playwright browser runtime (`BrowserRuntime`).
 - backend-owned account/profile browser session mapping with browser session ID removed from public API and frontend.
