@@ -94,6 +94,20 @@ describe("Architecture Import Boundaries", () => {
     expect(exists, "src/components should not exist").toBe(false)
   })
 
+  it("ensures legacy src/lib and root src/App.tsx do not exist", async () => {
+    for (const subPath of ["lib", "App.tsx"]) {
+      const fullPath = path.join(srcRoot, subPath)
+      let exists = false
+      try {
+        await fs.access(fullPath)
+        exists = true
+      } catch {
+        exists = false
+      }
+      expect(exists, `src/${subPath} should not exist`).toBe(false)
+    }
+  })
+
   it("ensures legacy src/app/shell and src/app/store directories do not exist", async () => {
     for (const subDir of [path.join("app", "shell"), path.join("app", "store")]) {
       const fullDir = path.join(srcRoot, subDir)
@@ -106,6 +120,86 @@ describe("Architecture Import Boundaries", () => {
       }
       expect(exists, `${subDir} should not exist`).toBe(false)
     }
+  })
+
+  it("enforces FSD layer dependency directions", async () => {
+    const allFiles = await getSourceFiles(srcRoot)
+    const violations: { file: string; importTarget: string; rule: string }[] = []
+
+    const importRegex = /(?:import|from)\s+['"]([^'"]+)['"]/g
+
+    for (const file of allFiles) {
+      if (file.endsWith(".test.ts") || file.endsWith(".test.tsx") || file.includes(path.join("test", "fixtures"))) {
+        continue
+      }
+
+      const relPath = path.relative(srcRoot, file).replace(/\\/g, "/")
+      const content = await fs.readFile(file, "utf-8")
+
+      const matches = [...content.matchAll(importRegex)]
+      for (const match of matches) {
+        const target = match[1]
+
+        // Rule 1: shared cannot import entities, features, widgets, pages, app
+        if (relPath.startsWith("shared/")) {
+          if (
+            target.startsWith("@/entities") ||
+            target.startsWith("@/features") ||
+            target.startsWith("@/widgets") ||
+            target.startsWith("@/pages") ||
+            target.startsWith("@/app")
+          ) {
+            violations.push({ file: relPath, importTarget: target, rule: "shared cannot import higher layers" })
+          }
+        }
+
+        // Rule 2: entities cannot import features, widgets, pages, app
+        if (relPath.startsWith("entities/")) {
+          if (
+            target.startsWith("@/features") ||
+            target.startsWith("@/widgets") ||
+            target.startsWith("@/pages") ||
+            target.startsWith("@/app")
+          ) {
+            violations.push({ file: relPath, importTarget: target, rule: "entities cannot import higher layers" })
+          }
+        }
+
+        // Rule 3: features cannot import sibling features, widgets, pages, app
+        if (relPath.startsWith("features/")) {
+          const currentFeature = relPath.split("/")[1]
+          if (target.startsWith("@/features/")) {
+            const importedFeature = target.replace("@/features/", "").split("/")[0]
+            if (importedFeature !== currentFeature) {
+              violations.push({ file: relPath, importTarget: target, rule: "features cannot import sibling features" })
+            }
+          }
+          if (
+            target.startsWith("@/widgets") ||
+            target.startsWith("@/pages") ||
+            target.startsWith("@/app")
+          ) {
+            violations.push({ file: relPath, importTarget: target, rule: "features cannot import higher layers" })
+          }
+        }
+
+        // Rule 4: widgets cannot import pages or app
+        if (relPath.startsWith("widgets/")) {
+          if (target.startsWith("@/pages") || target.startsWith("@/app")) {
+            violations.push({ file: relPath, importTarget: target, rule: "widgets cannot import pages or app" })
+          }
+        }
+
+        // Rule 5: pages cannot import app
+        if (relPath.startsWith("pages/")) {
+          if (target.startsWith("@/app")) {
+            violations.push({ file: relPath, importTarget: target, rule: "pages cannot import app" })
+          }
+        }
+      }
+    }
+
+    expect(violations).toEqual([])
   })
 
   it("forbids remote image URLs like Unsplash to ensure Tauri CSP safety", async () => {

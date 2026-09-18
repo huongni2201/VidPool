@@ -77,6 +77,20 @@ export const demoCharacterList: DemoCharacter[] = [
     avatar: demoAvatars[0],
     count: "20 video",
   },
+  {
+    id: "c7",
+    name: "Hoàng Phong",
+    role: "Nhân vật chính",
+    avatar: demoAvatars[2],
+    count: "9 video",
+  },
+  {
+    id: "c8",
+    name: "Tiểu Đào",
+    role: "Phụ",
+    avatar: demoAvatars[0],
+    count: "3 video",
+  },
 ]
 
 export const demoVoicesList: DemoVoice[] = [
