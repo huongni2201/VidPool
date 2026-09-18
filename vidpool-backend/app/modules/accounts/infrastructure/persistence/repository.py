@@ -180,10 +180,29 @@ class SQLAlchemyAccountRepository(AccountRepositoryPort):
             return None
         return lease_from_model(lease)
 
-    def has_active_lease(self, account_id: AccountId, now: datetime) -> bool:
+    def get_active_lease_for_account(
+        self, account_id: AccountId, now: datetime
+    ) -> AccountLease | None:
         stmt = select(AccountLeaseModel).where(
             AccountLeaseModel.account_id == str(account_id),
             AccountLeaseModel.expires_at > now,
         )
-        lease = self._session.scalars(stmt).first()
-        return lease is not None
+        model = self._session.scalars(stmt).first()
+        if model is None:
+            return None
+        return lease_from_model(model)
+
+    def get_active_leases(
+        self, now: datetime
+    ) -> dict[AccountId, AccountLease]:
+        stmt = select(AccountLeaseModel).where(
+            AccountLeaseModel.expires_at > now,
+        )
+        models = self._session.scalars(stmt).all()
+        return {
+            AccountId(uuid.UUID(m.account_id)): lease_from_model(m)
+            for m in models
+        }
+
+    def has_active_lease(self, account_id: AccountId, now: datetime) -> bool:
+        return self.get_active_lease_for_account(account_id, now) is not None

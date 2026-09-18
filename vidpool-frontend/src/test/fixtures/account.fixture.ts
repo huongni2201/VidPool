@@ -10,6 +10,9 @@ export function createMockAccount(overrides: Partial<AccountSummary> = {}): Acco
     lastUsedAt: null,
     lastValidatedAt: "2026-09-17T12:00:00Z",
     cooldownUntil: null,
+    isLeased: false,
+    leaseExpiresAt: null,
+    isAvailable: true,
     ...overrides,
   }
 }

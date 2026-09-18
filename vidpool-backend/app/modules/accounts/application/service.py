@@ -60,17 +60,36 @@ class AccountService:
     def list_providers(self) -> list[ProviderDefinition]:
         return self._providers.list()
 
-    def list_accounts(self, provider_key: str | None = None) -> list[AccountView]:
+    def list_accounts(
+        self,
+        provider_key: str | None = None,
+        now: datetime | None = None,
+    ) -> list[AccountView]:
+        current_time = now or datetime.now(UTC)
         with self._uow_factory() as uow:
             accounts = uow.accounts.list(provider_key)
-            return [account_to_view(acc) for acc in accounts]
+            active_leases = uow.accounts.get_active_leases(current_time)
+            return [
+                account_to_view(
+                    acc,
+                    active_lease=active_leases.get(acc.id),
+                    now=current_time,
+                )
+                for acc in accounts
+            ]
 
-    def get_account(self, account_id: AccountId) -> AccountView:
+    def get_account(
+        self,
+        account_id: AccountId,
+        now: datetime | None = None,
+    ) -> AccountView:
+        current_time = now or datetime.now(UTC)
         with self._uow_factory() as uow:
             account = uow.accounts.get(account_id)
             if account is None:
                 raise AccountNotFound(f"Account '{account_id}' not found")
-            return account_to_view(account)
+            lease = uow.accounts.get_active_lease_for_account(account_id, current_time)
+            return account_to_view(account, active_lease=lease, now=current_time)
 
     # --- Lifecycle Actions ---
 

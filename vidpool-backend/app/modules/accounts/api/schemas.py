@@ -22,6 +22,9 @@ class AccountResponse(BaseModel):
     last_used_at: datetime | None = Field(default=None, alias="lastUsedAt")
     last_validated_at: datetime | None = Field(default=None, alias="lastValidatedAt")
     cooldown_until: datetime | None = Field(default=None, alias="cooldownUntil")
+    is_leased: bool = Field(default=False, alias="isLeased")
+    lease_expires_at: datetime | None = Field(default=None, alias="leaseExpiresAt")
+    is_available: bool = Field(default=False, alias="isAvailable")
 
 
 class StartLoginResponse(BaseModel):

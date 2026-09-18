@@ -734,3 +734,65 @@ def test_relogin_with_duplicate_identity_rejects_without_deleting_existing_accou
     assert acc2.status is AccountStatus.AUTH_REQUIRED
 
 
+def test_complete_login_duplicate_identity_profile_delete_failure_preserves_db_record() -> None:
+    adapter = FakeProviderAuthAdapter(
+        provider_key="provider-x",
+        external_identity="user-common-123",
+        display_name="First User",
+    )
+    service, repo, browser, _ = _build_service(adapter)
+
+    # 1. Register Account 1
+    start1 = service.start_login("provider-x", now=NOW)
+    service.complete_login(start1.account_id, now=NOW)
+
+    # 2. Start provisional Account 2
+    adapter.display_name = "Second User"
+    start2 = service.start_login("provider-x", now=LATER)
+    profile2_key = f"browser-profile/provider-x/{start2.account_id}"
+
+    # Inject failure into browser.delete_profile
+    browser.delete_profile_error = RuntimeError("Disk locked or profile in use")
+
+    # 3. Complete login detects duplicate, attempts profile delete first and fails
+    with pytest.raises(RuntimeError, match="Disk locked or profile in use"):
+        service.complete_login(start2.account_id, now=LATER)
+
+    # Invariant: DB record must NOT be deleted if profile delete failed!
+    account2 = repo.get(start2.account_id)
+    assert account2 is not None
+    assert account2.status is AccountStatus.AUTH_REQUIRED
+    assert profile2_key not in browser.deleted_profiles
+
+    # 4. Clear error and retry cleanup via cancel_new_login
+    browser.delete_profile_error = None
+    service.cancel_new_login(start2.account_id)
+    assert repo.get(start2.account_id) is None
+    assert profile2_key in browser.deleted_profiles
+
+
+def test_successful_login_closes_profile_and_preserves_persisted_profile_and_active_account() -> None:
+    adapter = FakeProviderAuthAdapter(
+        provider_key="provider-x",
+        external_identity="user-success-123",
+        display_name="Success User",
+    )
+    service, repo, browser, _ = _build_service(adapter)
+
+    start = service.start_login("provider-x", now=NOW)
+    account = repo.get(start.account_id)
+    assert account is not None
+    profile_key = account.profile_key
+    assert browser.has_open_session(profile_key)
+
+    view = service.complete_login(start.account_id, now=LATER)
+
+    assert view.status is AccountStatus.ACTIVE
+    assert not browser.has_open_session(profile_key)
+    # Persisted profile must NOT be deleted
+    assert profile_key not in browser.deleted_profiles
+    db_account = repo.get(start.account_id)
+    assert db_account is not None
+    assert db_account.status is AccountStatus.ACTIVE
+
+

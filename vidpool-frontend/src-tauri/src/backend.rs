@@ -38,6 +38,9 @@ pub fn generate_session_token() -> String {
 }
 
 pub fn select_available_port() -> Result<u16, String> {
+    // Note: Ephemeral loopback port selection drops the listener before sidecar spawn,
+    // which has a brief TOCTOU window. Authenticated session probe protects readiness
+    // identity even if the selected port is raced.
     let listener = std::net::TcpListener::bind(("127.0.0.1", 0))
         .map_err(|e| format!("Failed to bind ephemeral loopback port: {e}"))?;
     let port = listener
@@ -90,13 +93,18 @@ pub fn spawn_sidecar(
     Ok(child)
 }
 
-pub fn wait_for_backend_ready(api_base_url: &str, deadline: Duration) -> Result<(), String> {
-    let health_url = format!("{api_base_url}/api/health");
+pub fn wait_for_backend_ready(
+    api_base_url: &str,
+    session_token: &str,
+    deadline: Duration,
+) -> Result<(), String> {
+    let probe_url = format!("{api_base_url}/api/session/probe");
     let start = std::time::Instant::now();
     let step = Duration::from_millis(100);
 
     while start.elapsed() < deadline {
-        if let Ok(resp) = ureq::get(&health_url)
+        if let Ok(resp) = ureq::get(&probe_url)
+            .set("Authorization", &format!("Bearer {session_token}"))
             .timeout(Duration::from_millis(500))
             .call()
         {
@@ -107,7 +115,7 @@ pub fn wait_for_backend_ready(api_base_url: &str, deadline: Duration) -> Result<
         std::thread::sleep(step);
     }
 
-    Err(format!("Timed out waiting for backend sidecar at {health_url}"))
+    Err(format!("Timed out waiting for backend sidecar at {probe_url}"))
 }
 
 pub fn start_backend_with_retry(
@@ -126,7 +134,7 @@ pub fn start_backend_with_retry(
             format!("Attempt {attempt}: failed to spawn backend sidecar on port {port}: {e}")
         })?;
 
-        match wait_for_backend_ready(&api_base_url, readiness_timeout) {
+        match wait_for_backend_ready(&api_base_url, session_token, readiness_timeout) {
             Ok(()) => Ok(StartedBackend {
                 api_base_url,
                 child,
@@ -198,6 +206,52 @@ mod tests {
         assert_eq!(token2.len(), 64);
         assert_ne!(token1, token2);
         assert!(token1.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn test_wait_for_backend_ready_authenticated_probe() {
+        use std::io::{Read, Write};
+        use std::sync::atomic::{AtomicBool, Ordering};
+        use std::sync::Arc;
+
+        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let base_url = format_api_base_url(port);
+        let correct_token = "secret-token-123";
+
+        let running = Arc::new(AtomicBool::new(true));
+        let running_clone = running.clone();
+
+        std::thread::spawn(move || {
+            while running_clone.load(Ordering::Relaxed) {
+                if let Ok((mut s, _)) = listener.accept() {
+                    let mut buf = [0u8; 1024];
+                    let n = s.read(&mut buf).unwrap_or(0);
+                    let req = String::from_utf8_lossy(&buf[..n]);
+                    if req.contains("Bearer secret-token-123") {
+                        let resp = "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok";
+                        let _ = s.write_all(resp.as_bytes());
+                    } else {
+                        let resp = "HTTP/1.1 401 Unauthorized\r\nContent-Length: 0\r\n\r\n";
+                        let _ = s.write_all(resp.as_bytes());
+                    }
+                    let _ = s.flush();
+                } else {
+                    std::thread::sleep(Duration::from_millis(10));
+                }
+            }
+        });
+
+        // 1. Wrong token fails (times out)
+        let err_res = wait_for_backend_ready(&base_url, "wrong-token", Duration::from_millis(250));
+        assert!(err_res.is_err());
+
+        // 2. Correct token succeeds
+        let ok_res = wait_for_backend_ready(&base_url, correct_token, Duration::from_millis(500));
+        assert!(ok_res.is_ok());
+
+        running.store(false, Ordering::Relaxed);
     }
 }
 

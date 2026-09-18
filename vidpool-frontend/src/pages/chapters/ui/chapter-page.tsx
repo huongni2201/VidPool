@@ -28,6 +28,7 @@ export function ChapterPage() {
     searchQuery,
     setSearchQuery,
     updateSelectedChapter,
+    updateChapter,
     addChapter,
     saveChapter,
     isSaved,
@@ -56,16 +57,23 @@ export function ChapterPage() {
   }
 
   const handleStartAnalysis = () => {
-    updateSelectedChapter({ status: "analyzing" })
-    startAnalysis(selectedChapter.id, (sceneCount, beatCount) => {
-      updateSelectedChapter({
+    const targetChapterId = selectedChapter.id
+    updateChapter(targetChapterId, (c) => ({
+      ...c,
+      status: "analyzing",
+      updatedAt: "Vừa xong",
+    }))
+    startAnalysis(targetChapterId, (sceneCount, beatCount) => {
+      updateChapter(targetChapterId, (c) => ({
+        ...c,
         status: "analyzed",
         stats: {
-          ...selectedChapter.stats,
+          ...c.stats,
           sceneCount,
           visualBeatCount: beatCount,
         },
-      })
+        updatedAt: "Vừa xong",
+      }))
     })
   }
 

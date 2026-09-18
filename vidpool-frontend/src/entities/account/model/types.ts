@@ -23,6 +23,9 @@ export const accountSummarySchema = z
     lastUsedAt: z.string().datetime().nullable(),
     lastValidatedAt: z.string().datetime().nullable(),
     cooldownUntil: z.string().datetime().nullable(),
+    isLeased: z.boolean().default(false),
+    leaseExpiresAt: z.string().datetime().nullable().default(null),
+    isAvailable: z.boolean().default(false),
   })
   .strict()
 

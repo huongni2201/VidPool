@@ -188,3 +188,46 @@ def test_lease_expiration() -> None:
     assert not lease.is_expired(NOW + timedelta(minutes=2))
     assert lease.is_expired(NOW + timedelta(minutes=5))
     assert lease.is_expired(NOW + timedelta(minutes=6))
+
+
+def test_mark_authenticated_preserves_active_cooldown() -> None:
+    account = ProviderAccount.create(
+        provider_key="fake-provider",
+        profile_key="browser-profile/fake-provider/account-1",
+        now=NOW,
+    )
+    account.mark_authenticated("User One", "user-1", now=NOW)
+    cooldown_until = NOW + timedelta(minutes=30)
+    account.mark_cooldown(cooldown_until=cooldown_until, now=NOW)
+    assert account.status is AccountStatus.COOLDOWN
+
+    # Need relogin at t+10
+    account.mark_auth_required(now=NOW + timedelta(minutes=10))
+    assert account.status is AccountStatus.AUTH_REQUIRED
+    assert account.cooldown_until == cooldown_until
+
+    # User re-authenticates at t+15 (cooldown still active for 15 mins)
+    account.mark_authenticated("User One", "user-1", now=NOW + timedelta(minutes=15))
+    assert account.status is AccountStatus.COOLDOWN
+    assert account.cooldown_until == cooldown_until
+    assert account.last_validated_at == NOW + timedelta(minutes=15)
+
+
+def test_mark_authenticated_clears_elapsed_cooldown() -> None:
+    account = ProviderAccount.create(
+        provider_key="fake-provider",
+        profile_key="browser-profile/fake-provider/account-1",
+        now=NOW,
+    )
+    account.mark_authenticated("User One", "user-1", now=NOW)
+    cooldown_until = NOW + timedelta(minutes=30)
+    account.mark_cooldown(cooldown_until=cooldown_until, now=NOW)
+
+    # Need relogin at t+10
+    account.mark_auth_required(now=NOW + timedelta(minutes=10))
+
+    # User re-authenticates at t+35 (cooldown has elapsed)
+    account.mark_authenticated("User One", "user-1", now=NOW + timedelta(minutes=35))
+    assert account.status is AccountStatus.ACTIVE
+    assert account.cooldown_until is None
+    assert account.last_validated_at == NOW + timedelta(minutes=35)

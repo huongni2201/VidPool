@@ -1,4 +1,4 @@
-﻿import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { AccountTable } from "./account-table"
 import type { AccountSummary } from "@/entities/account"
@@ -13,6 +13,9 @@ const sampleAccounts: AccountSummary[] = [
     lastUsedAt: null,
     lastValidatedAt: null,
     cooldownUntil: null,
+    isLeased: false,
+    leaseExpiresAt: null,
+    isAvailable: true,
   },
   {
     id: "acc-2",
@@ -23,6 +26,9 @@ const sampleAccounts: AccountSummary[] = [
     lastUsedAt: null,
     lastValidatedAt: null,
     cooldownUntil: null,
+    isLeased: false,
+    leaseExpiresAt: null,
+    isAvailable: false,
   },
 ]
 

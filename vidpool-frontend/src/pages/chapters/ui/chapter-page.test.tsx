@@ -1,6 +1,6 @@
 import { cleanup, render, screen, fireEvent } from "@testing-library/react"
 import { MemoryRouter, Routes, Route, useLocation } from "react-router-dom"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { ChapterPage } from "./chapter-page"
 
 function LocationDisplay() {
@@ -148,5 +148,35 @@ describe("ChapterPage", () => {
     // Chapter 01 continues showing analyzing state
     expect(screen.getByTestId("location-display").textContent).toBe("/chapters/chap-01")
     expect(screen.getAllByText(/Đang xử lý/i).length).toBeGreaterThan(0)
+  })
+
+  it("preserves updated word count when analysis completes asynchronously", () => {
+    vi.useFakeTimers()
+    try {
+      renderChapterPage("/chapters/chap-01")
+
+      // 1. Click Phân tích chapter on Chapter 01
+      const analyzeButton = screen.getByRole("button", { name: /Phân tích chapter/i })
+      fireEvent.click(analyzeButton)
+
+      // 2. While analysis is running, edit the story text
+      const textarea = screen.getByPlaceholderText(
+        /Nhập hoặc dán toàn bộ nội dung cốt truyện của chapter vào đây.../i
+      )
+      fireEvent.change(textarea, {
+        target: { value: "Một hai ba bốn năm sáu bảy." },
+      })
+
+      // Word count is now 7 words
+      expect(screen.getByText("7 / 5.000 từ")).toBeInTheDocument()
+
+      // 3. Fast-forward timers for analysis completion
+      vi.advanceTimersByTime(3500)
+
+      // Invariant: Analysis completion must NOT overwrite word count with stale 0 count
+      expect(screen.getByText("7 / 5.000 từ")).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

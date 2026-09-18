@@ -1,5 +1,8 @@
 # VidPool — Review toàn bộ source
 
+> Historical review. Several findings below were fixed after this commit.
+> See CURRENT_STATUS.md and the latest fix plan for current state.
+
 Ngày: 2026-09-18. Skill: `code-review`, hai trục Standards và Spec.
 HEAD cuối cùng kiểm tra: `d7af2061ede35641a712fc71023444568fd09a75`.
 

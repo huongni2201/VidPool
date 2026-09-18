@@ -75,6 +75,9 @@ describe("AccountsPage truthful operational data", () => {
         lastUsedAt: null,
         lastValidatedAt: null,
         cooldownUntil: null,
+        isLeased: false,
+        leaseExpiresAt: null,
+        isAvailable: true,
       },
       {
         id: "22222222-2222-4222-8222-222222222222",
@@ -85,6 +88,9 @@ describe("AccountsPage truthful operational data", () => {
         lastUsedAt: null,
         lastValidatedAt: null,
         cooldownUntil: null,
+        isLeased: false,
+        leaseExpiresAt: null,
+        isAvailable: true,
       },
       {
         id: "33333333-3333-4333-8333-333333333333",
@@ -95,6 +101,9 @@ describe("AccountsPage truthful operational data", () => {
         lastUsedAt: null,
         lastValidatedAt: null,
         cooldownUntil: null,
+        isLeased: false,
+        leaseExpiresAt: null,
+        isAvailable: false,
       },
       {
         id: "44444444-4444-4444-8444-444444444444",
@@ -105,6 +114,9 @@ describe("AccountsPage truthful operational data", () => {
         lastUsedAt: null,
         lastValidatedAt: null,
         cooldownUntil: "2026-09-18T12:00:00Z",
+        isLeased: false,
+        leaseExpiresAt: null,
+        isAvailable: false,
       },
     ]
 

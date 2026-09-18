@@ -30,3 +30,11 @@ Playwright synchronous objects must not be shared arbitrarily across threads.
 - Session IDs no longer need to cross API boundaries.
 - Provider adapters remain replaceable.
 - BrowserRuntime becomes shared infrastructure for browser-backed providers.
+
+## Failure Recovery Policy
+
+- When a command times out or encounters an unrecoverable failure, `BrowserRuntime` transitions to `RuntimeState.FAILED` and poisons its command queue.
+- In this desktop-first, single-user environment, `FAILED` is terminal for the in-memory runtime instance.
+- Subsequent calls to the runtime immediately fail with sanitized `BrowserUnavailable` (mapped to HTTP 503 `Browser service unavailable` at the API boundary).
+- The recovery policy is an application/backend process restart rather than complex and error-prone in-process thread reconstruction.
+- When VidPool restarts, a clean runtime is initialized while persisted profile directories on disk remain preserved and reusable.

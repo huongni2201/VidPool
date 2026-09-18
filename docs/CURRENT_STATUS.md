@@ -1,7 +1,8 @@
 # Current Implementation Status
 
 **Status:** ACCOUNT POOL FOUNDATION & PERSISTENT BROWSER SESSIONS  
-**Last reviewed:** 2026-09-18
+**Last reviewed:** 2026-09-18  
+**Last verified commit:** `799f1097330bf1a31554cccdba9fe66bf3d3e81c` (and working tree descendant)
 
 ## Purpose
 
@@ -34,7 +35,7 @@ This file distinguishes target architecture from implemented reality.
 - GitHub Actions CI workflow for frontend, backend, and desktop verification (including full `pnpm tauri build`).
 - Tauri v2 desktop shell scaffold with packaged FastAPI sidecar bootstrap.
 - Tauri-owned backend lifecycle with runtime API endpoint injection via minimal Tauri IPC.
-- restricted localhost CORS and per-session local API token validation (`/api/session/probe`).
+- restricted localhost CORS and per-session local API token validation (`/api/session/probe` with Bearer token authentication verified on Tauri startup readiness probe).
 - desktop CI compile/package gate (verified for Windows x64 / NSIS installer via `pnpm tauri build`).
 - Account Pool domain model and application ports.
 - Account Pool SQLAlchemy persistence models and repository with DB-backed account leases.
@@ -44,11 +45,11 @@ This file distinguishes target architecture from implemented reality.
 - Browser runtime execution safety: hard timeouts on browser launch, contexts, page navigation, command execution (`BrowserCommandTimeout`), and shutdown (`BrowserShutdownTimeout`) with `RuntimeState.FAILED` poison queue to prevent hanging processes.
 - Truthful browser shutdown lifecycle: `RuntimeState.STOPPED` is strictly enforced only when owner thread has terminated; `delete_profile` guards against direct execution while owner thread is alive.
 - Durable LRU account leasing with explicit lease state transitions.
-- Cooldown preservation and recovery: `record_validation(valid=True)` preserves active cooldowns until expired; `AccountLeaseService.acquire` recovers elapsed cooldown accounts via `AccountRepositoryPort.list_elapsed_cooldowns` and domain `clear_elapsed_cooldown` in the same transaction.
-- Durable browser profile cleanup on deletion: profile deletion precedes database record deletion in `delete_account` and `cancel_new_login` to prevent orphaned persisted sessions on disk.
+- Cooldown preservation and recovery: `record_validation(valid=True)` and `mark_authenticated` preserve active cooldowns until expired; `AccountLeaseService.acquire` recovers elapsed cooldown accounts via `AccountRepositoryPort.list_elapsed_cooldowns` and domain `clear_elapsed_cooldown` in the same transaction.
+- Durable browser profile cleanup on deletion: profile deletion precedes database record deletion in `delete_account`, `cancel_new_login`, and duplicate identity handling in `complete_login` to prevent orphaned persisted sessions on disk.
 - Infrastructure API error sanitization: infrastructure exceptions (`BrowserUnavailable`, `BrowserLaunchFailed`, `BrowserCommandTimeout`, `ProviderUnavailable`) map to sanitized public responses (`Browser service unavailable`, `Provider service unavailable`) preventing leaks of internal filesystem paths, tokens, or URLs.
 - Account login lifecycle robustness: idempotent cancellation, duplicate terminal conflict (`ACCOUNT_ALREADY_EXISTS`) with immediate close and retry support, unmount cleanup with generation tracking.
-- Chapter route and analysis ownership: React Router URL (`/chapters/:chapterId`) is the sole source of truth for chapter navigation; creating a chapter navigates to its URL; analysis state (result, progress, isAnalyzing) is strictly isolated and keyed by `chapterId`.
+- Chapter route and analysis ownership: React Router URL (`/chapters/:chapterId`) is the sole source of truth for chapter navigation; creating a chapter navigates to its URL; analysis state (result, progress, isAnalyzing) is strictly isolated and keyed by `chapterId`; async analysis completion preserves concurrently edited chapter text and word count.
 - persistent isolated browser profile path resolver (`BrowserProfilePathResolver`).
 - dedicated single-owner Playwright browser runtime (`BrowserRuntime`).
 - backend-owned account/profile browser session mapping with browser session ID removed from public API and frontend.
@@ -58,7 +59,7 @@ This file distinguishes target architecture from implemented reality.
 - SQLAlchemy Unit of Work (`SQLAlchemyAccountUnitOfWork` / `AccountUnitOfWorkPort`).
 - provider auth registry (`ProviderRegistry`).
 - protected account management FastAPI API.
-- account management frontend feature derived solely from real backend data: exposes provider identity, authentication/session state, lease-ready status, enable/disable toggle, session re-validation, account deletion, and interactive browser login/relogin dialog (zero fake operational metrics/credits/stamina).
+- account management frontend feature derived solely from real backend data: exposes provider identity, authentication/session state, truthful scheduling availability (`isAvailable`, `isLeased`, `leaseExpiresAt`), enable/disable toggle, session re-validation, account deletion, and interactive browser login/relogin dialog (zero fake operational metrics/credits/stamina).
 - browser-session restart persistence verification and security regression tests.
 - single-container / single-BrowserRuntime application factory (`app/factory.py`, `app/asgi.py`).
 - strict Unit of Work database transaction ownership (zero commit/rollback in repositories).

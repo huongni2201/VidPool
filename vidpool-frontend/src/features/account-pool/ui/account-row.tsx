@@ -36,6 +36,11 @@ export function AccountRow({
             {account.displayName || "Unnamed Account"}
           </span>
           <AccountStatusBadge status={account.status} />
+          {account.isLeased && (
+            <span className="rounded-md border border-blue-500/30 bg-blue-500/15 px-2 py-0.5 text-[10.5px] font-semibold text-blue-400">
+              Đang sử dụng
+            </span>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-x-3 text-xs text-zinc-400">

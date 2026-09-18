@@ -15,6 +15,9 @@ class AccountView:
     last_used_at: datetime | None
     last_validated_at: datetime | None
     cooldown_until: datetime | None
+    is_leased: bool = False
+    lease_expires_at: datetime | None = None
+    is_available: bool = False
 
 
 @dataclass(frozen=True)

@@ -188,9 +188,18 @@ export function AccountTable({
               )}
               <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-[11px] text-muted-foreground pt-4 border-t border-border/40 w-full max-w-sm">
                 <span>Hỗ trợ:</span>
-                <span className="rounded-md bg-secondary/80 px-2 py-0.5 font-medium text-foreground">Dreamina</span>
-                <span className="rounded-md bg-secondary/80 px-2 py-0.5 font-medium text-foreground">Seedance</span>
-                <span className="rounded-md bg-secondary/80 px-2 py-0.5 font-medium text-foreground">Kling AI</span>
+                {availableProviders.length > 0 ? (
+                  availableProviders.map((provider) => (
+                    <span
+                      key={provider.key}
+                      className="rounded-md bg-secondary/80 px-2 py-0.5 font-medium text-foreground"
+                    >
+                      {provider.displayName ?? provider.key}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-muted-foreground italic">Chưa có provider nào được đăng ký.</span>
+                )}
               </div>
             </>
           ) : (

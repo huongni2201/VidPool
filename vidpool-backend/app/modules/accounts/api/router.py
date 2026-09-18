@@ -100,6 +100,9 @@ def _serialize_account(view: AccountView) -> AccountResponse:
         lastUsedAt=view.last_used_at,
         lastValidatedAt=view.last_validated_at,
         cooldownUntil=view.cooldown_until,
+        isLeased=view.is_leased,
+        leaseExpiresAt=view.lease_expires_at,
+        isAvailable=view.is_available,
     )
 
 

@@ -27,3 +27,7 @@ Status: Superseded by ADR-00XX
 and create a new ADR.
 
 Do not delete accepted ADRs.
+
+## Verification Claims
+
+Verification claims in `docs/CURRENT_STATUS.md` MUST refer to the exact commit or a descendant with equivalent tested source. Never claim automated verification on a newer commit until the full test suite has actually passed on that commit.

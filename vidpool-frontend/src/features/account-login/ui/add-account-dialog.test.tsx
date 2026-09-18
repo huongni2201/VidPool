@@ -102,6 +102,9 @@ describe("AddAccountDialog cleanup lifecycle", () => {
       lastUsedAt: null,
       lastValidatedAt: null,
       cooldownUntil: null,
+      isLeased: false,
+      leaseExpiresAt: null,
+      isAvailable: false,
     })
 
     const { onClose } = renderDialog({

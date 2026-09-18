@@ -133,3 +133,85 @@ def test_s4_acquire_recovers_account_when_cooldown_elapsed(
     acc_view = service.get_account(start.account_id)
     assert acc_view.status is AccountStatus.ACTIVE
     assert acc_view.cooldown_until is None
+
+
+def test_p1_02_relogin_must_preserve_active_cooldown(
+    sqlite_session_factory: sessionmaker[Session],
+) -> None:
+    """P1-02: Relogging into an account must NOT wipe an active rate-limit cooldown.
+    Valid session authentication does not imply rate limits have expired.
+    """
+    adapter = FakeProviderAuthAdapter(
+        provider_key="seedance",
+        valid_session=True,
+        display_name="Creator One",
+        external_identity="creator-1@seedance.ai",
+    )
+    service, _, _ = _build_sqlite_service(sqlite_session_factory, adapter)
+
+    # 1. Start and complete login
+    start = service.start_login("seedance", now=NOW)
+    service.complete_login(start.account_id, now=NOW)
+
+    # 2. Put account into 30-minute cooldown
+    cooldown_until = NOW + timedelta(minutes=30)
+    service.report_rate_limited(
+        start.account_id, now=NOW, retry_after=cooldown_until
+    )
+
+    # 3. Session requires relogin at t+10
+    t_relogin_need = NOW + timedelta(minutes=10)
+    service.report_auth_failure(start.account_id, now=t_relogin_need)
+    acc_pre = service.get_account(start.account_id)
+    assert acc_pre.status is AccountStatus.AUTH_REQUIRED
+    assert acc_pre.cooldown_until == cooldown_until
+
+    # 4. User starts and completes relogin at t+15 (cooldown still active for 15m)
+    t_relogin_done = NOW + timedelta(minutes=15)
+    service.start_relogin(start.account_id, now=t_relogin_done)
+    view = service.complete_login(start.account_id, now=t_relogin_done)
+
+    # Invariant: Status must be COOLDOWN, cooldown_until must be preserved!
+    assert view.status is AccountStatus.COOLDOWN
+    assert view.cooldown_until == cooldown_until
+    assert view.last_validated_at == t_relogin_done
+
+    # And attempting to acquire at t_relogin_done MUST fail
+    with pytest.raises(AccountUnavailable):
+        service.acquire("seedance", owner_id="job:1", ttl=timedelta(minutes=5), now=t_relogin_done)
+
+
+def test_p1_02_relogin_clears_elapsed_cooldown(
+    sqlite_session_factory: sessionmaker[Session],
+) -> None:
+    """P1-02: Relogging into an account when cooldown has already elapsed restores ACTIVE status."""
+    adapter = FakeProviderAuthAdapter(
+        provider_key="seedance",
+        valid_session=True,
+        display_name="Creator One",
+        external_identity="creator-1@seedance.ai",
+    )
+    service, _, _ = _build_sqlite_service(sqlite_session_factory, adapter)
+
+    # 1. Start and complete login
+    start = service.start_login("seedance", now=NOW)
+    service.complete_login(start.account_id, now=NOW)
+
+    # 2. Put account into 30-minute cooldown
+    cooldown_until = NOW + timedelta(minutes=30)
+    service.report_rate_limited(
+        start.account_id, now=NOW, retry_after=cooldown_until
+    )
+
+    # 3. Session requires relogin at t+10
+    t_relogin_need = NOW + timedelta(minutes=10)
+    service.report_auth_failure(start.account_id, now=t_relogin_need)
+
+    # 4. User completes relogin at t+35 (cooldown has elapsed)
+    t_relogin_done = NOW + timedelta(minutes=35)
+    service.start_relogin(start.account_id, now=t_relogin_done)
+    view = service.complete_login(start.account_id, now=t_relogin_done)
+
+    assert view.status is AccountStatus.ACTIVE
+    assert view.cooldown_until is None
+    assert view.last_validated_at == t_relogin_done

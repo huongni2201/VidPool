@@ -21,6 +21,9 @@ describe("account-pool-api and schemas", () => {
       lastUsedAt: null,
       lastValidatedAt: "2026-09-17T12:00:00Z",
       cooldownUntil: null,
+      isLeased: false,
+      leaseExpiresAt: null,
+      isAvailable: false,
     }
 
     expect(accountSummarySchema.parse(validData)).toEqual(validData)

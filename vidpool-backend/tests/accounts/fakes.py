@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import uuid
 from collections.abc import Sequence
 from datetime import datetime
@@ -122,17 +124,32 @@ class FakeAccountRepository(AccountRepositoryPort):
     def get_lease(self, lease_id: uuid.UUID) -> AccountLease | None:
         return self.leases.get(lease_id)
 
-    def has_active_lease(self, account_id: AccountId, now: datetime) -> bool:
+    def get_active_lease_for_account(
+        self, account_id: AccountId, now: datetime
+    ) -> AccountLease | None:
         for lease in self.leases.values():
             if lease.account_id == account_id and not lease.is_expired(now):
-                return True
-        return False
+                return lease
+        return None
+
+    def get_active_leases(
+        self, now: datetime
+    ) -> dict[AccountId, AccountLease]:
+        return {
+            lease.account_id: lease
+            for lease in self.leases.values()
+            if not lease.is_expired(now)
+        }
+
+    def has_active_lease(self, account_id: AccountId, now: datetime) -> bool:
+        return self.get_active_lease_for_account(account_id, now) is not None
 
 
 class FakeBrowserSessionManager(BrowserSessionPort):
     def __init__(self) -> None:
         self.open_profiles: set[str] = set()
         self.deleted_profiles: list[str] = []
+        self.delete_profile_error: Exception | None = None
 
     def open_login(
         self,
@@ -153,6 +170,8 @@ class FakeBrowserSessionManager(BrowserSessionPort):
         return profile_key in self.open_profiles
 
     def delete_profile(self, profile_key: str) -> None:
+        if self.delete_profile_error is not None:
+            raise self.delete_profile_error
         self.open_profiles.discard(profile_key)
         self.deleted_profiles.append(profile_key)
 
@@ -231,7 +250,7 @@ class FakeAccountUnitOfWork:
         self.committed = False
         self.rolled_back = False
 
-    def __enter__(self) -> "FakeAccountUnitOfWork":
+    def __enter__(self) -> FakeAccountUnitOfWork:
         return self
 
     def __exit__(self, exc_type, exc, traceback) -> None:

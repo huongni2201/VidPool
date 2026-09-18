@@ -44,6 +44,13 @@ class ProviderAccount:
         if self.status is AccountStatus.DISABLED:
             raise InvalidAccountStateError("Disabled account requires explicit enable")
 
+    def _restore_authenticated_status(self, now: datetime) -> None:
+        if self.cooldown_until is not None and self.cooldown_until > now:
+            self.status = AccountStatus.COOLDOWN
+        else:
+            self.status = AccountStatus.ACTIVE
+            self.cooldown_until = None
+
     def mark_authenticated(
         self,
         display_name: str | None = None,
@@ -52,14 +59,13 @@ class ProviderAccount:
     ) -> None:
         self._require_enabled()
         current_time = now or datetime.now(UTC)
-        self.status = AccountStatus.ACTIVE
+        self._restore_authenticated_status(current_time)
         if display_name is not None:
             self.display_name = display_name
         if external_identity is not None:
             self.external_identity = external_identity
         self.last_validated_at = current_time
         self.updated_at = current_time
-        self.cooldown_until = None
 
     def mark_auth_required(self, now: datetime | None = None) -> None:
         self._require_enabled()
@@ -113,11 +119,7 @@ class ProviderAccount:
         if valid:
             self.last_validated_at = current_time
             if self.status is not AccountStatus.DISABLED:
-                if self.cooldown_until is not None and self.cooldown_until > current_time:
-                    self.status = AccountStatus.COOLDOWN
-                else:
-                    self.status = AccountStatus.ACTIVE
-                    self.cooldown_until = None
+                self._restore_authenticated_status(current_time)
         else:
             if self.status is not AccountStatus.DISABLED:
                 self.status = AccountStatus.AUTH_REQUIRED

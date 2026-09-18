@@ -32,12 +32,17 @@ export function AccountsPage() {
 
   // Truthful derived metrics
   const totalCount = accounts.length
+  const availableCount = accounts.filter((a) => a.isAvailable).length
+  const inUseCount = accounts.filter((a) => a.isLeased).length
   const activeCount = accounts.filter((a) => a.status === "active").length
+  const readyCount = availableCount > 0 || totalCount === 0 ? availableCount : activeCount
 
   const poolMessage =
     totalCount === 0
       ? "Chưa có account nào trong pool."
-      : `${activeCount}/${totalCount} account đang sẵn sàng sử dụng.`
+      : inUseCount > 0
+        ? `${readyCount}/${totalCount} account sẵn sàng sử dụng (${inUseCount} đang được sử dụng).`
+        : `${readyCount}/${totalCount} account đang sẵn sàng sử dụng.`
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-[1600px] mx-auto select-none">
@@ -75,14 +80,14 @@ export function AccountsPage() {
       {/* Pool Health Banner */}
       <div className="flex items-center justify-between rounded-2xl border border-border/70 bg-card/70 px-4 py-3 text-xs shadow-sm backdrop-blur-md">
         <div className="flex items-center gap-2.5">
-          <span className={`size-2 rounded-full ${activeCount > 0 ? "bg-emerald-400 ring-4 ring-emerald-500/20 animate-pulse" : "bg-amber-400"}`} />
+          <span className={`size-2 rounded-full ${readyCount > 0 ? "bg-emerald-400 ring-4 ring-emerald-500/20 animate-pulse" : "bg-amber-400"}`} />
           <span className="text-foreground font-medium">{poolMessage}</span>
         </div>
         <div className="hidden sm:flex items-center gap-1.5 text-muted-foreground font-mono text-[11px]">
           <svg className="size-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
           </svg>
-          <span>OS Secure Credential Storage</span>
+          <span>Isolated Local Browser Profiles</span>
         </div>
       </div>
 

@@ -13,6 +13,9 @@ const sampleAccounts: AccountSummary[] = [
     lastUsedAt: null,
     lastValidatedAt: null,
     cooldownUntil: null,
+    isLeased: false,
+    leaseExpiresAt: null,
+    isAvailable: true,
   },
   {
     id: "2",
@@ -23,6 +26,9 @@ const sampleAccounts: AccountSummary[] = [
     lastUsedAt: null,
     lastValidatedAt: null,
     cooldownUntil: null,
+    isLeased: false,
+    leaseExpiresAt: null,
+    isAvailable: true,
   },
   {
     id: "3",
@@ -33,6 +39,9 @@ const sampleAccounts: AccountSummary[] = [
     lastUsedAt: null,
     lastValidatedAt: null,
     cooldownUntil: null,
+    isLeased: false,
+    leaseExpiresAt: null,
+    isAvailable: false,
   },
   {
     id: "4",
@@ -43,6 +52,9 @@ const sampleAccounts: AccountSummary[] = [
     lastUsedAt: null,
     lastValidatedAt: null,
     cooldownUntil: "2026-09-18T12:00:00Z",
+    isLeased: false,
+    leaseExpiresAt: null,
+    isAvailable: false,
   },
   {
     id: "5",
@@ -53,6 +65,9 @@ const sampleAccounts: AccountSummary[] = [
     lastUsedAt: null,
     lastValidatedAt: null,
     cooldownUntil: null,
+    isLeased: false,
+    leaseExpiresAt: null,
+    isAvailable: false,
   },
 ]
 

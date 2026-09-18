@@ -76,6 +76,15 @@ export function useChapters(activeChapterId?: string) {
     return newChapter
   }, [chapters.length])
 
+  const updateChapter = useCallback(
+    (chapterId: string, updater: (chapter: Chapter) => Chapter) => {
+      setChapters((prev) =>
+        prev.map((c) => (c.id === chapterId ? updater(c) : c))
+      )
+    },
+    []
+  )
+
   const saveChapter = useCallback(() => {
     setIsSaved(true)
   }, [])
@@ -89,6 +98,7 @@ export function useChapters(activeChapterId?: string) {
     searchQuery,
     setSearchQuery,
     updateSelectedChapter,
+    updateChapter,
     addChapter,
     saveChapter,
     isSaved,
