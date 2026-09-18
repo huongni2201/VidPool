@@ -25,8 +25,6 @@ from .uow import AccountUnitOfWorkPort
 
 logger = logging.getLogger(__name__)
 
-_to_view = account_to_view
-
 
 class AccountService:
     """Unified application facade and CRUD coordinator for Account Pool."""
@@ -65,14 +63,14 @@ class AccountService:
     def list_accounts(self, provider_key: str | None = None) -> list[AccountView]:
         with self._uow_factory() as uow:
             accounts = uow.accounts.list(provider_key)
-            return [_to_view(acc) for acc in accounts]
+            return [account_to_view(acc) for acc in accounts]
 
     def get_account(self, account_id: AccountId) -> AccountView:
         with self._uow_factory() as uow:
             account = uow.accounts.get(account_id)
             if account is None:
                 raise AccountNotFound(f"Account '{account_id}' not found")
-            return _to_view(account)
+            return account_to_view(account)
 
     # --- Lifecycle Actions ---
 
@@ -81,7 +79,7 @@ class AccountService:
         account_id: AccountId,
         now: datetime | None = None,
     ) -> AccountView:
-        with self._uow_factory() as uow:
+        with self._mutation_lock, self._uow_factory() as uow:
             account = uow.accounts.get(account_id)
             if account is None:
                 raise AccountNotFound(f"Account '{account_id}' not found")
@@ -89,7 +87,7 @@ class AccountService:
             account.enable(now=now)
             uow.accounts.save(account)
             uow.commit()
-            return _to_view(account)
+            return account_to_view(account)
 
     def disable_account(
         self,
@@ -112,7 +110,7 @@ class AccountService:
                 uow.accounts.save(account)
                 uow.commit()
                 logger.info("account_disabled account_id=%s", account_id)
-                return _to_view(account)
+                return account_to_view(account)
 
     def delete_account(
         self,
@@ -162,7 +160,8 @@ class AccountService:
         account_id: AccountId,
         now: datetime | None = None,
     ) -> AccountView:
-        return self._login_service.complete_login(account_id, now=now)
+        with self._mutation_lock:
+            return self._login_service.complete_login(account_id, now=now)
 
     def cancel_new_login(
         self,
@@ -175,13 +174,15 @@ class AccountService:
         self,
         account_id: AccountId,
     ) -> AccountView:
-        return self._login_service.cancel_relogin(account_id)
+        with self._mutation_lock:
+            return self._login_service.cancel_relogin(account_id)
 
     def cancel_login(
         self,
         account_id: AccountId,
     ) -> AccountView:
-        return self._login_service.cancel_login(account_id)
+        with self._mutation_lock:
+            return self._login_service.cancel_login(account_id)
 
     def start_relogin(
         self,
@@ -204,7 +205,8 @@ class AccountService:
             return self._lease_service.acquire(provider_key, owner_id, ttl, now=now)
 
     def release(self, lease_id: uuid.UUID) -> None:
-        return self._lease_service.release(lease_id)
+        with self._mutation_lock:
+            return self._lease_service.release(lease_id)
 
     # --- Delegations to Health Service ---
 
@@ -221,14 +223,16 @@ class AccountService:
         account_id: AccountId,
         now: datetime | None = None,
     ) -> AccountView:
-        return self._health_service.report_success(account_id, now=now)
+        with self._mutation_lock:
+            return self._health_service.report_success(account_id, now=now)
 
     def report_auth_failure(
         self,
         account_id: AccountId,
         now: datetime | None = None,
     ) -> AccountView:
-        return self._health_service.report_auth_failure(account_id, now=now)
+        with self._mutation_lock:
+            return self._health_service.report_auth_failure(account_id, now=now)
 
     def report_temporary_failure(
         self,
@@ -236,9 +240,10 @@ class AccountService:
         now: datetime | None = None,
         cooldown_until: datetime | None = None,
     ) -> AccountView:
-        return self._health_service.report_temporary_failure(
-            account_id, now=now, cooldown_until=cooldown_until
-        )
+        with self._mutation_lock:
+            return self._health_service.report_temporary_failure(
+                account_id, now=now, cooldown_until=cooldown_until
+            )
 
     def report_rate_limited(
         self,
@@ -246,6 +251,7 @@ class AccountService:
         now: datetime | None = None,
         retry_after: datetime | None = None,
     ) -> AccountView:
-        return self._health_service.report_rate_limited(
-            account_id, now=now, retry_after=retry_after
-        )
+        with self._mutation_lock:
+            return self._health_service.report_rate_limited(
+                account_id, now=now, retry_after=retry_after
+            )

@@ -291,3 +291,299 @@ def test_validate_is_serialized_against_acquire(tmp_path: Path) -> None:
     assert len(acquire_result) == 1
     assert acquire_errors == []
 
+
+def test_concurrent_complete_login_vs_disable(tmp_path: Path) -> None:
+    import time
+
+    db_path = tmp_path / "complete_vs_disable.db"
+    validation_started = threading.Event()
+    allow_validation = threading.Event()
+
+    class BlockingAuthAdapter(FakeProviderAuthAdapter):
+        def validate_active_session(self, profile_key: str):
+            validation_started.set()
+            assert allow_validation.wait(timeout=5)
+            return super().validate_active_session(profile_key)
+
+    adapter = BlockingAuthAdapter(provider_key="test-provider")
+    engine, service, _ = _setup_service(db_path, adapter=adapter)
+    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=UTC)
+
+    start = service.start_login("test-provider", now=now)
+    account_id = start.account_id
+
+    complete_result = []
+    disable_result = []
+
+    def worker_complete():
+        try:
+            view = service.complete_login(account_id, now=now)
+            complete_result.append(view)
+        except Exception as e:
+            complete_result.append(e)
+
+    def worker_disable():
+        try:
+            view = service.disable_account(account_id, now=now)
+            disable_result.append(view)
+        except Exception as e:
+            disable_result.append(e)
+
+    t_complete = threading.Thread(target=worker_complete)
+    t_disable = threading.Thread(target=worker_disable)
+
+    t_complete.start()
+    assert validation_started.wait(timeout=5)
+
+    # Disable is called while complete_login is in progress
+    t_disable.start()
+    time.sleep(0.1)
+
+    # Disable should be blocked behind complete_login's lock
+    assert disable_result == [], "Disable should be blocked by mutation lock while complete_login is running"
+
+    # Allow complete_login to finish, then disable can run
+    allow_validation.set()
+    t_complete.join(timeout=5)
+    t_disable.join(timeout=5)
+
+    # Invariant: After disable runs, account must NOT be ACTIVE
+    with Session(engine) as session:
+        acc_model = session.get(ProviderAccountModel, str(account_id))
+        assert acc_model is not None
+        assert acc_model.status == str(AccountStatus.DISABLED)
+
+
+def test_concurrent_complete_login_vs_delete(tmp_path: Path) -> None:
+    import time
+
+    db_path = tmp_path / "complete_vs_delete.db"
+    validation_started = threading.Event()
+    allow_validation = threading.Event()
+
+    class BlockingAuthAdapter(FakeProviderAuthAdapter):
+        def validate_active_session(self, profile_key: str):
+            validation_started.set()
+            assert allow_validation.wait(timeout=5)
+            return super().validate_active_session(profile_key)
+
+    adapter = BlockingAuthAdapter(provider_key="test-provider")
+    engine, service, _ = _setup_service(db_path, adapter=adapter)
+    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=UTC)
+
+    start = service.start_login("test-provider", now=now)
+    account_id = start.account_id
+
+    complete_result = []
+    delete_result = []
+
+    def worker_complete():
+        try:
+            view = service.complete_login(account_id, now=now)
+            complete_result.append(view)
+        except Exception as e:
+            complete_result.append(e)
+
+    def worker_delete():
+        try:
+            service.delete_account(account_id, now=now)
+            delete_result.append("deleted")
+        except Exception as e:
+            delete_result.append(e)
+
+    t_complete = threading.Thread(target=worker_complete)
+    t_delete = threading.Thread(target=worker_delete)
+
+    t_complete.start()
+    assert validation_started.wait(timeout=5)
+
+    t_delete.start()
+    time.sleep(0.1)
+
+    # Delete must be blocked while complete_login is running
+    assert delete_result == []
+
+    allow_validation.set()
+    t_complete.join(timeout=5)
+    t_delete.join(timeout=5)
+
+    # Invariant: If delete succeeds after complete_login, account must not be resurrected
+    with Session(engine) as session:
+        acc_model = session.get(ProviderAccountModel, str(account_id))
+        assert acc_model is None, "Account must be deleted and not resurrected"
+
+
+def test_concurrent_report_auth_failure_vs_disable(tmp_path: Path) -> None:
+    db_path = tmp_path / "auth_failure_vs_disable.db"
+    engine, service, _ = _setup_service(db_path)
+    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=UTC)
+
+    for _ in range(5):
+        start = service.start_login("test-provider", now=now)
+        service.complete_login(start.account_id, now=now)
+        account_id = start.account_id
+
+        barrier = threading.Barrier(2)
+
+        def worker_disable(b: threading.Barrier, acc_id) -> None:
+            try:
+                b.wait(timeout=5)
+                service.disable_account(acc_id, now=now)
+            except Exception:
+                pass
+
+        def worker_health(b: threading.Barrier, acc_id) -> None:
+            try:
+                b.wait(timeout=5)
+                service.report_auth_failure(acc_id, now=now)
+            except Exception:
+                pass
+
+        t1 = threading.Thread(target=worker_disable, args=(barrier, account_id))
+        t2 = threading.Thread(target=worker_health, args=(barrier, account_id))
+        t1.start()
+        t2.start()
+        t1.join(timeout=5)
+        t2.join(timeout=5)
+
+        with Session(engine) as session:
+            acc_model = session.get(ProviderAccountModel, str(account_id))
+            assert acc_model is not None
+            # If disable succeeded, it must NEVER be reverted to AUTH_REQUIRED by health report
+            if acc_model.status == str(AccountStatus.DISABLED):
+                service.report_auth_failure(account_id, now=now)
+                session.refresh(acc_model)
+                assert acc_model.status == str(AccountStatus.DISABLED)
+
+
+def test_concurrent_report_success_vs_disable(tmp_path: Path) -> None:
+    db_path = tmp_path / "success_vs_disable.db"
+    engine, service, _ = _setup_service(db_path)
+    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=UTC)
+
+    start = service.start_login("test-provider", now=now)
+    service.complete_login(start.account_id, now=now)
+    account_id = start.account_id
+
+    service.disable_account(account_id, now=now)
+
+    # Invariant: report_success must not revive a disabled account to ACTIVE
+    service.report_success(account_id, now=now)
+
+    with Session(engine) as session:
+        acc_model = session.get(ProviderAccountModel, str(account_id))
+        assert acc_model is not None
+        assert acc_model.status == str(AccountStatus.DISABLED)
+
+
+def test_release_acquire_consistency(tmp_path: Path) -> None:
+    db_path = tmp_path / "release_acquire_consistency.db"
+    engine, service, _ = _setup_service(db_path)
+    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=UTC)
+
+    start = service.start_login("test-provider", now=now)
+    service.complete_login(start.account_id, now=now)
+    account_id = start.account_id
+
+    # Acquire initial lease
+    initial_lease = service.acquire("test-provider", owner_id="initial", ttl=timedelta(minutes=5), now=now)
+
+    # Concurrent acquire and release
+    barrier = threading.Barrier(2)
+    acquire_result = []
+
+    def worker_release():
+        try:
+            barrier.wait(timeout=5)
+            service.release(initial_lease.id)
+        except Exception:
+            pass
+
+    def worker_acquire():
+        try:
+            barrier.wait(timeout=5)
+            lease = service.acquire("test-provider", owner_id="contender", ttl=timedelta(minutes=5), now=now)
+            acquire_result.append(lease)
+        except Exception:
+            pass
+
+    t1 = threading.Thread(target=worker_release)
+    t2 = threading.Thread(target=worker_acquire)
+    t1.start()
+    t2.start()
+    t1.join(timeout=5)
+    t2.join(timeout=5)
+
+    # Invariant: Exactly at most 1 unexpired lease can ever exist
+    with Session(engine) as session:
+        active_leases = session.scalars(
+            select(AccountLeaseModel).where(
+                AccountLeaseModel.account_id == str(account_id),
+                AccountLeaseModel.expires_at > now,
+            )
+        ).all()
+        assert len(active_leases) <= 1
+
+
+def test_complete_login_vs_acquire(tmp_path: Path) -> None:
+    import time
+
+    db_path = tmp_path / "complete_vs_acquire.db"
+    validation_started = threading.Event()
+    allow_validation = threading.Event()
+
+    class BlockingAuthAdapter(FakeProviderAuthAdapter):
+        def validate_active_session(self, profile_key: str):
+            validation_started.set()
+            assert allow_validation.wait(timeout=5)
+            return super().validate_active_session(profile_key)
+
+    adapter = BlockingAuthAdapter(provider_key="test-provider")
+    engine, service, _ = _setup_service(db_path, adapter=adapter)
+    now = datetime(2026, 9, 17, 12, 0, 0, tzinfo=UTC)
+
+    # Account starts login in AUTH_REQUIRED status
+    start = service.start_login("test-provider", now=now)
+    account_id = start.account_id
+
+    complete_result = []
+    acquire_result = []
+    acquire_errors = []
+
+    def worker_complete():
+        try:
+            view = service.complete_login(account_id, now=now)
+            complete_result.append(view)
+        except Exception as e:
+            complete_result.append(e)
+
+    def worker_acquire():
+        try:
+            lease = service.acquire("test-provider", owner_id="worker:early", ttl=timedelta(minutes=5), now=now)
+            acquire_result.append(lease)
+        except Exception as e:
+            acquire_errors.append(e)
+
+    t_complete = threading.Thread(target=worker_complete)
+    t_acquire = threading.Thread(target=worker_acquire)
+
+    t_complete.start()
+    assert validation_started.wait(timeout=5)
+
+    # Acquire attempted while login completion is in progress
+    t_acquire.start()
+    time.sleep(0.1)
+
+    # Acquire must be blocked because complete_login holds the mutation lock
+    assert acquire_result == []
+
+    # Let complete_login finish
+    allow_validation.set()
+    t_complete.join(timeout=5)
+    t_acquire.join(timeout=5)
+
+    assert len(complete_result) == 1
+    # Now acquire should have succeeded because account is ACTIVE
+    assert len(acquire_result) == 1
+    assert acquire_errors == []
+
