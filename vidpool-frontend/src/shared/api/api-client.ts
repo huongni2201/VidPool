@@ -2,13 +2,16 @@ import { z } from "zod"
 import type { RuntimeConfig } from "@/shared/config/runtime-config"
 
 export class ApiError extends Error {
-  constructor(
-    public readonly status: number,
-    public readonly detail: string,
-    public readonly path: string,
-  ) {
+  readonly status: number
+  readonly detail: string
+  readonly path: string
+
+  constructor(status: number, detail: string, path: string) {
     super(detail)
     this.name = "ApiError"
+    this.status = status
+    this.detail = detail
+    this.path = path
   }
 }
 

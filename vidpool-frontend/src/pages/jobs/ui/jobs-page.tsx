@@ -6,10 +6,7 @@ import {
   demoHistoryJobs as historyJobs,
   demoAvatars,
   type DemoQueueJob as QueueJob,
-  type DemoJobType as JobType,
 } from "@/shared/demo"
-
-export { type JobType }
 
 export function JobsPage() {
   const [statusFilter, setStatusFilter] = useState("all")

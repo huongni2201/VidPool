@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { describe, expect, it, vi } from "vitest"
 
 import { ApiClientProvider, type ApiClient } from "@/shared/api"
-import App from "./App"
+import { App } from "./App"
 
 describe("App", () => {
   it("renders the VidPool shell and connects to backend", async () => {

@@ -3,6 +3,7 @@ import { AppLayout } from "@/app/layouts/app-layout"
 import { DashboardPage } from "@/pages/dashboard/ui/dashboard-page"
 import { ProjectsPage } from "@/pages/projects/ui/projects-page"
 import { EditorPage } from "@/pages/editor/ui/editor-page"
+import { ChapterPage } from "@/pages/chapters/ui/chapter-page"
 import { VisualBeatPage } from "@/pages/visual-beat/ui/visual-beat-page"
 import { CharactersPage } from "@/pages/characters/ui/characters-page"
 import { VoicePage } from "@/pages/voice/ui/voice-page"
@@ -27,6 +28,14 @@ export const routes = [
       {
         path: "editor",
         element: <EditorPage />,
+      },
+      {
+        path: "chapters",
+        element: <ChapterPage />,
+      },
+      {
+        path: "chapters/:chapterId",
+        element: <ChapterPage />,
       },
       {
         path: "visual-beat",

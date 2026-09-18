@@ -1,0 +1,24 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/**/*.test.{ts,tsx}"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx}"
+  ],
+  "ignore": [
+    "src/app/providers/**/*.{ts,tsx}",
+    "src/entities/**/*.{ts,tsx}",
+    "src/features/**/*.{ts,tsx}",
+    "src/widgets/**/*.{ts,tsx}",
+    "src/shared/**/*.{ts,tsx}",
+    "src/test/fixtures/**/*.{ts,tsx}"
+  ],
+  "ignoreDependencies": [
+    "@fontsource-variable/inter",
+    "shadcn",
+    "tailwindcss",
+    "tw-animate-css"
+  ],
+  "ignoreExportsUsedInFile": true
+}
