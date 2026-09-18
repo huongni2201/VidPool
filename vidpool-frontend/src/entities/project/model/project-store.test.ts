@@ -35,4 +35,12 @@ describe("useProjectStore", () => {
     expect(useProjectStore.getState().isProjectOpen).toBe(false)
     expect(useProjectStore.getState().activeProject).toBeNull()
   })
+
+  it("toggles isCreateOpen state cleanly", () => {
+    expect(useProjectStore.getState().isCreateOpen).toBe(false)
+    useProjectStore.getState().setIsCreateOpen(true)
+    expect(useProjectStore.getState().isCreateOpen).toBe(true)
+    useProjectStore.getState().setIsCreateOpen(false)
+    expect(useProjectStore.getState().isCreateOpen).toBe(false)
+  })
 })

@@ -163,7 +163,7 @@ export function Sidebar({
 
   const launcherNavItems: NavItem[] = [
     {
-      to: ROUTES.DASHBOARD,
+      to: ROUTES.PROJECTS,
       label: "Dự án của tôi",
       icon: (active) => (
         <svg
@@ -227,7 +227,7 @@ export function Sidebar({
             <button
               onClick={() => {
                 closeProject()
-                navigate(ROUTES.DASHBOARD)
+                navigate(ROUTES.PROJECTS)
               }}
               className="group mb-2 flex items-center gap-2.5 rounded-xl border border-border bg-card/60 px-3 py-2 text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:bg-card hover:text-foreground transition-all cursor-pointer w-full text-left"
             >
@@ -301,8 +301,10 @@ export function Sidebar({
             {/* Launcher Mode Navigation */}
             {launcherNavItems.map((item) => {
               const isActive =
-                item.to === "/"
-                  ? location.pathname === "/" || location.pathname.startsWith(ROUTES.PROJECTS)
+                item.to === "/" || item.to === ROUTES.PROJECTS
+                  ? location.pathname === "/" ||
+                    location.pathname === "/projects" ||
+                    location.pathname.startsWith("/projects")
                   : location.pathname.startsWith(item.to)
               return (
                 <Link

@@ -1,6 +1,5 @@
 export const ROUTES = {
-  DASHBOARD: "/",
-  PROJECTS: "/projects",
+  PROJECTS: "/",
   EDITOR: "/editor",
   CHAPTERS: "/chapters",
   VISUAL_BEAT: "/visual-beat",

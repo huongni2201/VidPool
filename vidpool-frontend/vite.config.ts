@@ -9,6 +9,12 @@ export default defineConfig({
     tailwindcss(),
   ],
 
+  server: {
+    watch: {
+      ignored: ["**/src-tauri/**"],
+    },
+  },
+
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "./src"),

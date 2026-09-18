@@ -8,10 +8,9 @@ import { demoProjectsList as projects } from "@/shared/demo"
 
 export function ProjectsPage() {
   const navigate = useNavigate()
-  const { openProject: storeOpenProject } = useProjectStore()
+  const { openProject: storeOpenProject, isCreateOpen, setIsCreateOpen } = useProjectStore()
   const [filter, setFilter] = useState<string>("all")
   const [search, setSearch] = useState("")
-  const [isCreateOpen, setIsCreateOpen] = useState(false)
 
   const filteredProjects = projects.filter((p) => {
     if (filter === "running" && p.status !== "Đang xử lý") return false

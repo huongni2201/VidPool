@@ -30,16 +30,6 @@ export interface DemoWorker {
   jobs: string
 }
 
-export interface DemoRecentJob {
-  id: string
-  title: string
-  project: string
-  percent: number
-  time: string
-  status: string
-  thumb: string
-}
-
 export interface DemoHistoryJob {
   name: string
   task: string
@@ -89,36 +79,6 @@ export const demoHistoryJobs: DemoHistoryJob[] = [
     time: "Hôm nay, 12:48",
     duration: "00:12",
     status: "Hoàn thành",
-  },
-]
-
-export const demoRecentJobs: DemoRecentJob[] = [
-  {
-    id: "j1",
-    title: "Tạo video từ kịch bản",
-    project: "Thanh Xuân Trở Lại",
-    percent: 78,
-    time: "2 phút trước",
-    status: "Đang chạy",
-    thumb: demoProjects[0],
-  },
-  {
-    id: "j2",
-    title: "Phân tích Visual Beat",
-    project: "Đường Về Nhà",
-    percent: 100,
-    time: "12 phút trước",
-    status: "Hoàn thành",
-    thumb: demoProjects[1],
-  },
-  {
-    id: "j3",
-    title: "Tạo phụ đề (TTS)",
-    project: "Một Ngày Khác",
-    percent: 45,
-    time: "28 phút trước",
-    status: "Đang xử lý",
-    thumb: demoProjects[2],
   },
 ]
 

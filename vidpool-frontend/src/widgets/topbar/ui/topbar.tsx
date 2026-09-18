@@ -15,13 +15,19 @@ export function Topbar({
 }: TopbarProps) {
   const location = useLocation()
   const navigate = useNavigate()
-  const { projectName: storeProjectName, savedTime: storeSavedTime, closeProject } = useProjectStore()
+  const {
+    projectName: storeProjectName,
+    savedTime: storeSavedTime,
+    closeProject,
+    setIsCreateOpen,
+  } = useProjectStore()
 
   const activeProjectName = propProjectName || storeProjectName || "Thanh Xuân Trở Lại"
   const activeSavedTime = propSavedTime || storeSavedTime || "15:24"
 
   const isWorkspace =
     location.pathname.startsWith(ROUTES.EDITOR) ||
+    location.pathname.startsWith(ROUTES.CHAPTERS) ||
     location.pathname.startsWith(ROUTES.VISUAL_BEAT) ||
     location.pathname.startsWith(ROUTES.CHARACTERS) ||
     location.pathname.startsWith(ROUTES.VOICE) ||
@@ -37,11 +43,14 @@ export function Topbar({
         action: () => onPrimaryAction?.(),
       }
     }
-    if (path.startsWith(ROUTES.PROJECTS)) {
+    if (path === "/" || path === "/projects" || path.startsWith("/projects")) {
       return {
         title: "Dự án",
         primaryLabel: "+ Dự án mới",
-        action: () => onPrimaryAction?.(),
+        action: () => {
+          setIsCreateOpen(true)
+          onPrimaryAction?.()
+        },
       }
     }
     if (path.startsWith(ROUTES.EDITOR)) {
@@ -108,9 +117,12 @@ export function Topbar({
       }
     }
     return {
-      title: "Tổng quan",
+      title: "Dự án",
       primaryLabel: "+ Dự án mới",
-      action: () => navigate(ROUTES.PROJECTS),
+      action: () => {
+        setIsCreateOpen(true)
+        onPrimaryAction?.()
+      },
     }
   }
 
@@ -124,7 +136,7 @@ export function Topbar({
           <button
             onClick={() => {
               closeProject()
-              navigate(ROUTES.DASHBOARD)
+              navigate(ROUTES.PROJECTS)
             }}
             className="group flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:border-primary/50 hover:bg-studio-hover hover:text-foreground transition-all cursor-pointer shadow-sm"
             title="Đóng dự án và quay về danh sách"

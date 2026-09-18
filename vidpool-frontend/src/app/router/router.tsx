@@ -1,6 +1,5 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
 import { AppLayout } from "@/app/layouts/app-layout"
-import { DashboardPage } from "@/pages/dashboard/ui/dashboard-page"
 import { ProjectsPage } from "@/pages/projects/ui/projects-page"
 import { EditorPage } from "@/pages/editor/ui/editor-page"
 import { ChapterPage } from "@/pages/chapters/ui/chapter-page"
@@ -19,7 +18,7 @@ export const routes = [
     children: [
       {
         index: true,
-        element: <DashboardPage />,
+        element: <ProjectsPage />,
       },
       {
         path: "projects",
@@ -67,7 +66,7 @@ export const routes = [
       },
       {
         path: "*",
-        element: <DashboardPage />,
+        element: <ProjectsPage />,
       },
     ],
   },

@@ -1,4 +1,4 @@
-﻿import { demoProjects } from "@/assets/demo"
+import { demoProjects } from "@/assets/demo"
 
 export interface DemoProjectItem {
   id: string
@@ -12,14 +12,6 @@ export interface DemoProjectItem {
   characters: number
   updated: string
   tags: string[]
-  cover: string
-}
-
-export interface DemoRecentProject {
-  id: string
-  name: string
-  meta: string
-  status: string
   cover: string
 }
 
@@ -136,44 +128,6 @@ export const demoProjectsList: DemoProjectItem[] = [
     characters: 2,
     updated: "Cập nhật 4 giờ trước",
     tags: ["Tình cảm", "Mưa", "Tâm trạng"],
-    cover: demoProjects[0],
-  },
-]
-
-export const demoRecentProjects: DemoRecentProject[] = [
-  {
-    id: "p1",
-    name: "Thanh Xuân Trở Lại",
-    meta: "12 video • Cập nhật 2 giờ trước",
-    status: "Đang chỉnh sửa",
-    cover: demoProjects[0],
-  },
-  {
-    id: "p2",
-    name: "Những Ngày Bình Yên",
-    meta: "8 video • Cập nhật 1 ngày trước",
-    status: "Đã hoàn thành",
-    cover: demoProjects[1],
-  },
-  {
-    id: "p3",
-    name: "Đường Về Nhà",
-    meta: "6 video • Cập nhật 2 ngày trước",
-    status: "Đang xử lý",
-    cover: demoProjects[2],
-  },
-  {
-    id: "p4",
-    name: "Thành Phố Lên Đèn",
-    meta: "10 video • Cập nhật 3 ngày trước",
-    status: "Tạm dừng",
-    cover: demoProjects[3],
-  },
-  {
-    id: "p5",
-    name: "Một Ngày Khác",
-    meta: "4 video • Cập nhật 5 ngày trước",
-    status: "Đã hoàn thành",
     cover: demoProjects[0],
   },
 ]

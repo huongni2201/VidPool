@@ -1,12 +1,16 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { createMemoryRouter, RouterProvider } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { ApiClientProvider, type ApiClient } from "@/shared/api"
 import { routes } from "./router"
 
 describe("Router Navigation", () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   function renderWithRouter(initialEntry = "/accounts") {
     const queryClient = new QueryClient({
       defaultOptions: {
@@ -38,6 +42,27 @@ describe("Router Navigation", () => {
     )
   }
 
+  it("renders ProjectsPage at / as the default landing screen and highlights 'Dự án của tôi'", async () => {
+    renderWithRouter("/")
+
+    // ProjectsPage title and description
+    expect(await screen.findByRole("heading", { name: "Dự án" })).toBeInTheDocument()
+    expect(
+      screen.getByText(/Quản lý tất cả dự án AI video của bạn/i),
+    ).toBeInTheDocument()
+
+    // Create new project action is present
+    expect(screen.getByText("+ Tạo dự án mới")).toBeInTheDocument()
+
+    // Active project cards are rendered
+    expect(screen.getByText("Thanh Xuân Trở Lại")).toBeInTheDocument()
+
+    // Sidebar highlights "Dự án của tôi"
+    const projectsLink = screen.getByRole("link", { name: /Dự án của tôi/i })
+    expect(projectsLink).toBeInTheDocument()
+    expect(projectsLink.className).toContain("border-blue-500/35")
+  })
+
   it("renders Account Pool at /accounts and highlights active navigation link", async () => {
     renderWithRouter("/accounts")
 
@@ -49,12 +74,12 @@ describe("Router Navigation", () => {
     expect(accountsLink).toBeInTheDocument()
     expect(accountsLink.className).toContain("border-blue-500/35")
 
-    // Click on "Dự án của tôi" (Dashboard/Projects route)
-    const dashboardLink = screen.getByRole("link", { name: /Dự án của tôi/i })
-    fireEvent.click(dashboardLink)
+    // Click on "Dự án của tôi" (Projects route)
+    const projectsNav = screen.getByRole("link", { name: /Dự án của tôi/i })
+    fireEvent.click(projectsNav)
 
-    // Should navigate to dashboard/projects
-    expect(dashboardLink.className).toContain("border-blue-500/35")
+    // Should navigate to projects
+    expect(projectsNav.className).toContain("border-blue-500/35")
   })
 
   it("renders workspace mode when in /editor with CapCut exit button and project tools", async () => {
