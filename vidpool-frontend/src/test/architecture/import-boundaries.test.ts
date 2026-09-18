@@ -57,16 +57,41 @@ describe("Architecture Import Boundaries", () => {
     expect(violations).toEqual([])
   })
 
-  it("ensures legacy src/features/accounts directory does not exist", async () => {
-    const legacyAccountsDir = path.join(srcRoot, "features", "accounts")
+  it("ensures legacy src/features/accounts and page-shaped feature directories do not exist", async () => {
+    const forbiddenFeatureDirs = [
+      "accounts",
+      "dashboard",
+      "projects",
+      "editor",
+      "characters",
+      "jobs",
+      "settings",
+      "visual-beat",
+      "voice",
+    ]
+    for (const subDir of forbiddenFeatureDirs) {
+      const fullDir = path.join(srcRoot, "features", subDir)
+      let exists = false
+      try {
+        await fs.access(fullDir)
+        exists = true
+      } catch {
+        exists = false
+      }
+      expect(exists, `features/${subDir} should not exist`).toBe(false)
+    }
+  })
+
+  it("ensures legacy src/components directory does not exist", async () => {
+    const componentsDir = path.join(srcRoot, "components")
     let exists = false
     try {
-      await fs.access(legacyAccountsDir)
+      await fs.access(componentsDir)
       exists = true
     } catch {
       exists = false
     }
-    expect(exists).toBe(false)
+    expect(exists, "src/components should not exist").toBe(false)
   })
 
   it("ensures legacy src/app/shell and src/app/store directories do not exist", async () => {

@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 import { renderWithProviders } from "@/test/utils"
-import { ProjectsPage } from "./projects-page"
+import { ProjectsPage } from "./ui/projects-page"
 
 describe("ProjectsPage", () => {
   it("renders projects list and create action", () => {

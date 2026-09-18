@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 import { renderWithProviders } from "@/test/utils"
-import { DashboardPage } from "./dashboard-page"
+import { DashboardPage } from "./ui/dashboard-page"
 
 describe("DashboardPage", () => {
   it("renders welcome banner, KPI cards, and project overview", () => {
