@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { ROUTES } from "@/shared/constants"
 import { useProjectStore } from "@/entities/project"
-import { avatar1 } from "@/assets/demo"
+import { getVersion } from "@tauri-apps/api/app"
+import { isTauri } from "@tauri-apps/api/core"
 
 export interface SidebarProps {
   backendStatus?: "ok" | "pending" | "error"
@@ -22,7 +24,16 @@ export function Sidebar({
   const location = useLocation()
   const navigate = useNavigate()
   const { projectName: storeProjectName, closeProject } = useProjectStore()
-  const projectName = propProjectName || storeProjectName || "Thanh Xuân Trở Lại"
+  const projectName = propProjectName || storeProjectName || "Dự án mẫu"
+  const [appVersion, setAppVersion] = useState("0.1.0")
+
+  useEffect(() => {
+    if (isTauri()) {
+      getVersion()
+        .then((v) => setAppVersion(v))
+        .catch(() => {})
+    }
+  }, [])
 
   const isWorkspace =
     location.pathname.startsWith(ROUTES.EDITOR) ||
@@ -112,7 +123,6 @@ export function Sidebar({
     {
       to: ROUTES.JOBS,
       label: "Hàng đợi & Render",
-      badge: "3",
       icon: (active) => (
         <svg
           className={`size-4.5 ${active ? "text-primary-foreground" : "text-muted-foreground"}`}
@@ -154,7 +164,6 @@ export function Sidebar({
     {
       to: ROUTES.ACCOUNTS,
       label: "Tài khoản AI",
-      badge: "8",
       icon: (active) => (
         <svg
           className={`size-4.5 ${active ? "text-primary-foreground" : "text-muted-foreground"}`}
@@ -375,33 +384,7 @@ export function Sidebar({
               </>
             )}
           </div>
-          <span className="font-mono text-[10px] text-studio-subtle">v0.2.0</span>
-        </div>
-
-        {/* User profile card */}
-        <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 transition-all hover:bg-studio-hover">
-          <div className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 ring-2 ring-indigo-500/30">
-            <img
-              src={avatar1}
-              alt="Avatar"
-              className="size-full object-cover"
-              onError={(e) => {
-                ;(e.currentTarget as HTMLElement).style.display = "none"
-              }}
-            />
-            <span className="text-xs font-bold text-white uppercase absolute">TX</span>
-          </div>
-          <div className="flex flex-col overflow-hidden leading-tight min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <span className="truncate text-xs font-semibold text-foreground">
-                Thanh Xuân Trở Lại
-              </span>
-              <span className="rounded bg-blue-600 px-1 py-0.2 text-[9px] font-bold text-white">
-                Pro
-              </span>
-            </div>
-            <span className="truncate text-[10.5px] text-studio-subtle">user@vidpool.ai</span>
-          </div>
+          <span className="font-mono text-[10px] text-studio-subtle">{`v${appVersion}`}</span>
         </div>
       </div>
     </aside>

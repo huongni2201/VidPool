@@ -14,6 +14,6 @@
   <rect width="600" height="340" fill="url(#r3)" />
   <circle cx="300" cy="160" r="44" fill="#ffffff" fill-opacity="0.08" stroke="#34d399" stroke-width="2" />
   <polygon points="292,142 316,160 292,178" fill="#34d399" />
-  <text x="300" y="240" fill="#a7f3d0" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" text-anchor="middle" letter-spacing="1">NATURE & ATMOSPHERE</text>
+  <text x="300" y="240" fill="#a7f3d0" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" text-anchor="middle" letter-spacing="1">NATURE &amp; ATMOSPHERE</text>
   <text x="300" y="260" fill="#34d399" font-family="system-ui, -apple-system, sans-serif" font-size="11" text-anchor="middle">Cinematic Drone 4K</text>
 </svg>

@@ -5,7 +5,11 @@ import { StatCard, StatusBadge } from "@/shared/ui"
 import { CreateProjectDialog } from "@/features/project-create"
 import { useAccounts } from "@/features/account-pool"
 import { AccountPoolSummary } from "@/widgets/account-pool-summary"
-import { demoProjects, demoAvatars } from "@/assets/demo"
+import {
+  demoRecentProjects as recentProjects,
+  demoCharacterList as characters,
+  demoRecentJobs as recentJobs,
+} from "@/shared/demo"
 
 export function DashboardPage() {
   const navigate = useNavigate()
@@ -19,101 +23,6 @@ export function DashboardPage() {
   const openProject = (_title?: string) => {
     navigate(ROUTES.EDITOR)
   }
-
-  const recentProjects = [
-    {
-      id: "p1",
-      name: "Thanh Xuân Trở Lại",
-      meta: "12 video • Cập nhật 2 giờ trước",
-      status: "Đang chỉnh sửa",
-      cover: demoProjects[0],
-    },
-    {
-      id: "p2",
-      name: "Những Ngày Bình Yên",
-      meta: "8 video • Cập nhật 1 ngày trước",
-      status: "Đã hoàn thành",
-      cover: demoProjects[1],
-    },
-    {
-      id: "p3",
-      name: "Đường Về Nhà",
-      meta: "6 video • Cập nhật 2 ngày trước",
-      status: "Đang xử lý",
-      cover: demoProjects[2],
-    },
-    {
-      id: "p4",
-      name: "Thành Phố Lên Đèn",
-      meta: "10 video • Cập nhật 3 ngày trước",
-      status: "Tạm dừng",
-      cover: demoProjects[3],
-    },
-    {
-      id: "p5",
-      name: "Một Ngày Khác",
-      meta: "4 video • Cập nhật 5 ngày trước",
-      status: "Đã hoàn thành",
-      cover: demoProjects[0],
-    },
-  ]
-
-  const characters = [
-    {
-      name: "Mai",
-      role: "Nữ • Trẻ trung",
-      count: "12 video",
-      avatar: demoAvatars[0],
-    },
-    {
-      name: "Linh",
-      role: "Nữ • Hiện đại",
-      count: "8 video",
-      avatar: demoAvatars[1],
-    },
-    {
-      name: "Minh",
-      role: "Nam • Trầm",
-      count: "6 video",
-      avatar: demoAvatars[2],
-    },
-    {
-      name: "Bạch Thanh Hạ",
-      role: "Custom Clone",
-      count: "4 video",
-      avatar: demoAvatars[3],
-    },
-  ]
-
-  const recentJobs = [
-    {
-      id: "j1",
-      title: "Tạo video từ kịch bản",
-      project: "Thanh Xuân Trở Lại",
-      percent: 78,
-      time: "2 phút trước",
-      status: "Đang chạy",
-      thumb: demoProjects[0],
-    },
-    {
-      id: "j2",
-      title: "Phân tích Visual Beat",
-      project: "Đường Về Nhà",
-      percent: 100,
-      time: "12 phút trước",
-      status: "Hoàn thành",
-      thumb: demoProjects[1],
-    },
-    {
-      id: "j3",
-      title: "Tạo phụ đề (TTS)",
-      project: "Một Ngày Khác",
-      percent: 45,
-      time: "28 phút trước",
-      status: "Đang xử lý",
-      thumb: demoProjects[2],
-    },
-  ]
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-[1600px] mx-auto select-none">

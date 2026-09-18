@@ -22,15 +22,9 @@ export interface ProjectStoreState {
 }
 
 export const useProjectStore = create<ProjectStoreState>((set) => ({
-  activeProject: {
-    id: "p1",
-    name: "Thanh Xuân Trở Lại",
-    title: "Thanh Xuân Trở Lại",
-    aspectRatio: "16:9",
-    duration: "00:02:28",
-  },
-  projectName: "Thanh Xuân Trở Lại",
-  savedTime: "15:24",
+  activeProject: null,
+  projectName: "",
+  savedTime: "",
   isProjectOpen: false,
   openProject: (project) => {
     const proj: ActiveProjectInfo =

@@ -1,16 +1,6 @@
 import { useState } from "react"
 import { WaveformVisualizer } from "@/shared/ui"
-import { demoAvatars } from "@/assets/demo"
-
-interface VoiceItem {
-  id: string
-  name: string
-  gender: "Nam" | "Nữ" | "Custom"
-  language: string
-  style: string
-  avatar?: string
-  isNarrator?: boolean
-}
+import { demoVoicesList as voices, demoAvatars } from "@/shared/demo"
 
 export function VoicePage() {
   const [selectedVoice, setSelectedVoice] = useState("v1")
@@ -18,73 +8,6 @@ export function VoicePage() {
   const [speed, setSpeed] = useState(1.0)
   const [pitch, setPitch] = useState(0)
   const [ttsTab, setTtsTab] = useState<"new" | "history">("new")
-
-  const voices: VoiceItem[] = [
-    {
-      id: "v1",
-      name: "Mai - Nữ tự nhiên",
-      gender: "Nữ",
-      language: "Vietnamese",
-      style: "Tự nhiên",
-      avatar: demoAvatars[0],
-    },
-    {
-      id: "v2",
-      name: "Minh - Nam trầm",
-      gender: "Nam",
-      language: "Vietnamese",
-      style: "Chín chắn",
-      avatar: demoAvatars[1],
-    },
-    {
-      id: "v3",
-      name: "Linh - Nữ trẻ",
-      gender: "Nữ",
-      language: "Vietnamese",
-      style: "Trẻ trung",
-      avatar: demoAvatars[2],
-    },
-    {
-      id: "v4",
-      name: "Bạch Thanh Hạ",
-      gender: "Custom",
-      language: "Vietnamese",
-      style: "Cinematic",
-      avatar: demoAvatars[3],
-    },
-    {
-      id: "v5",
-      name: "Lục Viễn Thu",
-      gender: "Custom",
-      language: "Vietnamese",
-      style: "Trầm ấm",
-      avatar: demoAvatars[1],
-    },
-    {
-      id: "v6",
-      name: "David - Nam quốc tế",
-      gender: "Nam",
-      language: "English",
-      style: "Chuyên nghiệp",
-      avatar: demoAvatars[2],
-    },
-    {
-      id: "v7",
-      name: "Emma - Nữ quốc tế",
-      gender: "Nữ",
-      language: "English",
-      style: "Tự nhiên",
-      avatar: demoAvatars[3],
-    },
-    {
-      id: "v8",
-      name: "Người dẫn chuyện",
-      gender: "Nam",
-      language: "Vietnamese",
-      style: "Thuyết minh",
-      isNarrator: true,
-    },
-  ]
 
   const currentVoice = voices.find((v) => v.id === selectedVoice) || voices[0]
 

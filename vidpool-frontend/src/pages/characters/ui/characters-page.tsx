@@ -1,50 +1,10 @@
 import { useState } from "react"
 import { WaveformVisualizer } from "@/shared/ui"
-import { demoAvatars } from "@/assets/demo"
+import { demoAvatars, demoCharacterList as characterList } from "@/shared/demo"
 
 export function CharactersPage() {
   const [selectedCharacter, setSelectedCharacter] = useState("Mai")
   const [isLocked, setIsLocked] = useState(true)
-
-  const characterList = [
-    {
-      id: "c1",
-      name: "Mai",
-      role: "Nhân vật chính",
-      avatar: demoAvatars[0],
-    },
-    {
-      id: "c2",
-      name: "Linh",
-      role: "Nhân vật chính",
-      avatar: demoAvatars[1],
-    },
-    {
-      id: "c3",
-      name: "Minh",
-      role: "Nhân vật chính",
-      avatar: demoAvatars[2],
-    },
-    {
-      id: "c4",
-      name: "Bạch Thanh Hạ",
-      role: "Phụ",
-      avatar: demoAvatars[3],
-    },
-    {
-      id: "c5",
-      name: "Lục Viễn Thu",
-      role: "Phụ",
-      avatar: demoAvatars[1],
-    },
-    {
-      id: "c6",
-      name: "Người dẫn chuyện",
-      role: "Khác",
-      isNarrator: true,
-      avatar: demoAvatars[0],
-    },
-  ]
 
   const turnaroundSlots = [
     {
