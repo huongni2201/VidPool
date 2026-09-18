@@ -30,6 +30,31 @@ export interface AnalyzedScene {
   visualBeatCount: number
 }
 
+export type BeatStatus = "Đã tạo" | "Đang tạo" | "Chờ tạo" | "Lỗi"
+export type CameraShot = "Cận cảnh" | "Trung cảnh" | "Toàn cảnh" | "Đặc tả" | "Toàn cảnh rộng"
+export type CameraMovement = "Tĩnh" | "Pan trái" | "Pan phải" | "Zoom in" | "Zoom out" | "Dolly" | "Tracking"
+export type GenerationStrategy = "TEXT_TO_VIDEO" | "IMAGE_TO_VIDEO" | "STILL_IMAGE"
+
+export interface VisualBeat {
+  id: string
+  sceneId: string
+  chapterId: string
+  beatNumber: number
+  title: string
+  prompt: string
+  dialogue: string
+  character: string
+  characterAvatar?: string
+  location: string
+  duration: string
+  cameraShot: CameraShot
+  cameraMovement: CameraMovement
+  generationStrategy: GenerationStrategy
+  status: BeatStatus
+  thumb: string
+  lighting?: string
+}
+
 export type VideoStyle = "donghua" | "cinematic" | "3d_animation" | "realistic"
 export type PacingType = "fast" | "medium" | "slow"
 export type DetailLevel = "low" | "medium" | "high" | "very_high"

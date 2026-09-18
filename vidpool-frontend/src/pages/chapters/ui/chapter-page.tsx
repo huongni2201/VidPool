@@ -114,7 +114,12 @@ export function ChapterPage() {
 
             <AnalyzedSceneList
               scenes={currentScenes}
-              onOpenVisualBeat={() => navigate(ROUTES.VISUAL_BEAT)}
+              onOpenVisualBeat={(sceneId) => {
+                const search = sceneId
+                  ? `?chapterId=${selectedChapter.id}&sceneId=${sceneId}`
+                  : `?chapterId=${selectedChapter.id}`
+                navigate(`${ROUTES.VISUAL_BEAT}${search}`)
+              }}
             />
           </div>
         )}
@@ -140,7 +145,12 @@ export function ChapterPage() {
             <ChapterAnalysisResult result={result} />
             <AnalyzedSceneList
               scenes={currentScenes}
-              onOpenVisualBeat={() => navigate(ROUTES.VISUAL_BEAT)}
+              onOpenVisualBeat={(sceneId) => {
+                const search = sceneId
+                  ? `?chapterId=${selectedChapter.id}&sceneId=${sceneId}`
+                  : `?chapterId=${selectedChapter.id}`
+                navigate(`${ROUTES.VISUAL_BEAT}${search}`)
+              }}
             />
           </div>
         )}
