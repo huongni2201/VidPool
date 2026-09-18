@@ -32,6 +32,14 @@ class AccountLeaseService:
         expires_at = current_time + ttl
 
         with self._uow_factory() as uow:
+            elapsed_accounts = uow.accounts.list_elapsed_cooldowns(
+                now=current_time,
+                provider_key=provider_key,
+            )
+            for acc in elapsed_accounts:
+                if acc.clear_elapsed_cooldown(now=current_time):
+                    uow.accounts.save(acc)
+
             result = uow.accounts.acquire_lru(
                 provider_key=provider_key,
                 owner_id=owner_id,

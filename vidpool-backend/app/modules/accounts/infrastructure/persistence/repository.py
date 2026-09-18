@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import uuid
 from collections.abc import Sequence
 from datetime import datetime
@@ -56,6 +58,25 @@ class SQLAlchemyAccountRepository(AccountRepositoryPort):
         if provider_key is not None:
             stmt = stmt.where(ProviderAccountModel.provider_key == provider_key)
         stmt = stmt.order_by(ProviderAccountModel.created_at.asc())
+        models = self._session.scalars(stmt).all()
+        return [account_from_model(m) for m in models]
+
+    def list_elapsed_cooldowns(
+        self, now: datetime, provider_key: str | None = None
+    ) -> list[ProviderAccount]:
+        conditions = [
+            ProviderAccountModel.status == str(AccountStatus.COOLDOWN),
+            (ProviderAccountModel.cooldown_until.is_(None))
+            | (ProviderAccountModel.cooldown_until <= now),
+        ]
+        if provider_key is not None:
+            conditions.append(ProviderAccountModel.provider_key == provider_key)
+
+        stmt = (
+            select(ProviderAccountModel)
+            .where(*conditions)
+            .order_by(ProviderAccountModel.created_at.asc())
+        )
         models = self._session.scalars(stmt).all()
         return [account_from_model(m) for m in models]
 

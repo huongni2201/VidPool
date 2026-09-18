@@ -135,6 +135,29 @@ def test_cooldown_and_elapsed_cooldown() -> None:
     assert account.cooldown_until is None
 
 
+def test_record_validation_preserves_active_cooldown() -> None:
+    account = ProviderAccount.create(
+        provider_key="fake-provider",
+        profile_key="browser-profile/fake-provider/account-1",
+        now=NOW,
+    )
+    account.mark_authenticated("User One", "user-1", now=NOW)
+    cooldown_until = NOW + timedelta(minutes=15)
+    account.mark_cooldown(cooldown_until=cooldown_until, now=NOW)
+
+    # Validating session before cooldown expires must keep COOLDOWN
+    account.record_validation(valid=True, now=NOW + timedelta(minutes=2))
+    assert account.status is AccountStatus.COOLDOWN
+    assert account.cooldown_until == cooldown_until
+    assert account.last_validated_at == NOW + timedelta(minutes=2)
+
+    # Validating session after cooldown expires transitions to ACTIVE
+    account.record_validation(valid=True, now=NOW + timedelta(minutes=16))
+    assert account.status is AccountStatus.ACTIVE
+    assert account.cooldown_until is None
+    assert account.last_validated_at == NOW + timedelta(minutes=16)
+
+
 def test_record_success_and_failure() -> None:
     account = ProviderAccount.create(
         provider_key="fake-provider",

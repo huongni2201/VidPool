@@ -80,8 +80,7 @@ class ProviderAccount:
         current_time = now or datetime.now(UTC)
         if (
             self.status is AccountStatus.COOLDOWN
-            and self.cooldown_until is not None
-            and self.cooldown_until <= current_time
+            and (self.cooldown_until is None or self.cooldown_until <= current_time)
         ):
             self.status = AccountStatus.ACTIVE
             self.cooldown_until = None
@@ -114,8 +113,11 @@ class ProviderAccount:
         if valid:
             self.last_validated_at = current_time
             if self.status is not AccountStatus.DISABLED:
-                self.status = AccountStatus.ACTIVE
-                self.cooldown_until = None
+                if self.cooldown_until is not None and self.cooldown_until > current_time:
+                    self.status = AccountStatus.COOLDOWN
+                else:
+                    self.status = AccountStatus.ACTIVE
+                    self.cooldown_until = None
         else:
             if self.status is not AccountStatus.DISABLED:
                 self.status = AccountStatus.AUTH_REQUIRED

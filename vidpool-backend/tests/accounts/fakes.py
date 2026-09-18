@@ -41,6 +41,19 @@ class FakeAccountRepository(AccountRepositoryPort):
             return list(self.accounts.values())
         return [acc for acc in self.accounts.values() if acc.provider_key == provider_key]
 
+    def list_elapsed_cooldowns(
+        self, now: datetime, provider_key: str | None = None
+    ) -> list[ProviderAccount]:
+        results: list[ProviderAccount] = []
+        for acc in self.accounts.values():
+            if provider_key is not None and acc.provider_key != provider_key:
+                continue
+            if acc.status == AccountStatus.COOLDOWN and (
+                acc.cooldown_until is None or acc.cooldown_until <= now
+            ):
+                results.append(acc)
+        return results
+
     def save(self, account: ProviderAccount) -> None:
         self.accounts[account.id] = account
 
