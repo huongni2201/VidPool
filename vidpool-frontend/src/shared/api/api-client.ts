@@ -1,10 +1,26 @@
 import { z } from "zod"
 import type { RuntimeConfig } from "@/shared/config/runtime-config"
 
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly detail: string,
+    public readonly path: string,
+  ) {
+    super(detail)
+    this.name = "ApiError"
+  }
+}
+
 export type ApiClient = {
   get<T>(path: string, schema: z.ZodType<T>): Promise<T>
   post<T>(path: string, body?: unknown, schema?: z.ZodType<T>): Promise<T>
   delete(path: string): Promise<void>
+}
+
+interface RequestOptions<T> {
+  body?: unknown
+  schema?: z.ZodType<T>
 }
 
 export function createApiClient(config: RuntimeConfig): ApiClient {
@@ -26,58 +42,51 @@ export function createApiClient(config: RuntimeConfig): ApiClient {
     return headers
   }
 
-  return {
-    async get<T>(path: string, schema: z.ZodType<T>): Promise<T> {
-      const url = buildUrl(path)
-      const response = await fetch(url, { headers: buildHeaders() })
+  async function request<T>(
+    method: "GET" | "POST" | "DELETE",
+    path: string,
+    options?: RequestOptions<T>,
+  ): Promise<T> {
+    const url = buildUrl(path)
+    const hasBody = options?.body !== undefined
+    const response = await fetch(url, {
+      method,
+      headers: buildHeaders(hasBody),
+      body: hasBody ? JSON.stringify(options.body) : undefined,
+    })
 
-      if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}: ${url}`)
-      }
-
-      const data = await response.json()
-      return schema.parse(data)
-    },
-
-    async post<T>(path: string, body?: unknown, schema?: z.ZodType<T>): Promise<T> {
-      const url = buildUrl(path)
-      const hasBody = body !== undefined
-      const response = await fetch(url, {
-        method: "POST",
-        headers: buildHeaders(hasBody),
-        body: hasBody ? JSON.stringify(body) : undefined,
-      })
-
-      if (!response.ok) {
-        let detail = `status ${response.status}`
-        try {
-          const errData = await response.json()
-          if (errData && typeof errData === "object" && "detail" in errData) {
-            detail = String(errData.detail)
-          }
-        } catch {
-          // ignore json parse error
+    if (!response.ok) {
+      let detail = `API request failed with status ${response.status}: ${path}`
+      try {
+        const errData = await response.json()
+        if (errData && typeof errData === "object" && "detail" in errData && errData.detail) {
+          detail = typeof errData.detail === "string" ? errData.detail : JSON.stringify(errData.detail)
         }
-        throw new Error(`API request failed (${detail}): ${url}`)
+      } catch {
+        // ignore json parse error
       }
+      throw new ApiError(response.status, detail, path)
+    }
 
-      if (schema) {
-        const data = await response.json()
-        return schema.parse(data)
-      }
-      return undefined as unknown as T
+    if (options?.schema) {
+      const data = await response.json()
+      return options.schema.parse(data)
+    }
+
+    return undefined as unknown as T
+  }
+
+  return {
+    get<T>(path: string, schema: z.ZodType<T>): Promise<T> {
+      return request<T>("GET", path, { schema })
     },
 
-    async delete(path: string): Promise<void> {
-      const url = buildUrl(path)
-      const response = await fetch(url, {
-        method: "DELETE",
-        headers: buildHeaders(),
-      })
+    post<T>(path: string, body?: unknown, schema?: z.ZodType<T>): Promise<T> {
+      return request<T>("POST", path, { body, schema })
+    },
 
-      if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}: ${url}`)
-      }
+    delete(path: string): Promise<void> {
+      return request<void>("DELETE", path)
     },
   }
 }
