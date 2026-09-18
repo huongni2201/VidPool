@@ -5,7 +5,8 @@ from sqlalchemy import Engine
 from sqlalchemy.orm import sessionmaker
 
 from app.core.config import AppConfig
-from app.infrastructure.persistence.database import create_engine_for_path
+from app.infrastructure.persistence.database import build_sqlite_url, create_engine_for_path
+from app.infrastructure.persistence.migrations import migrate_database
 from app.infrastructure.persistence.paths import get_data_dir, get_database_path
 from app.modules.accounts.application.ports import (
     BrowserSessionPort,
@@ -54,7 +55,9 @@ def build_container(
     if uow_factory is not None:
         resolved_uow_factory = uow_factory
     else:
-        engine = create_engine_for_path(get_database_path())
+        db_path = get_database_path()
+        migrate_database(build_sqlite_url(db_path))
+        engine = create_engine_for_path(db_path)
         session_factory = sessionmaker(bind=engine, expire_on_commit=False)
 
         def default_uow_factory() -> SQLAlchemyAccountUnitOfWork:

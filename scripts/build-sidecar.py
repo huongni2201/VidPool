@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Build and package the FastAPI backend as a Tauri sidecar executable."""
 
+import os
 from pathlib import Path
 import platform
 import shutil
@@ -96,6 +97,9 @@ def main() -> None:
         "--hidden-import=uvicorn.protocols.websockets.auto",
         "--hidden-import=uvicorn.lifespan",
         "--hidden-import=uvicorn.lifespan.on",
+        f"--add-data={backend_dir / 'alembic.ini'}{os.pathsep}.",
+        f"--add-data={backend_dir / 'migrations'}{os.pathsep}migrations",
+        "--collect-all=alembic",
         "--collect-all=playwright",
         "--distpath",
         str(dist_dir),

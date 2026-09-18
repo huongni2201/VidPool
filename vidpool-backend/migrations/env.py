@@ -21,11 +21,13 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 target_metadata = Base.metadata
 
-# Set dynamic SQLite URL based on application persistence paths
-config.set_main_option(
-    "sqlalchemy.url",
-    build_sqlite_url(get_database_path()),
-)
+# Set dynamic SQLite URL based on application persistence paths if not provided
+current_url = config.get_main_option("sqlalchemy.url")
+if not current_url or current_url == "driver://user:pass@localhost/dbname":
+    config.set_main_option(
+        "sqlalchemy.url",
+        build_sqlite_url(get_database_path()),
+    )
 
 
 def run_migrations_offline() -> None:
