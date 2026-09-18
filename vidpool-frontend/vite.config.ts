@@ -9,6 +9,10 @@ export default defineConfig({
     tailwindcss(),
   ],
 
+  build: {
+    emptyOutDir: false,
+  },
+
   server: {
     watch: {
       ignored: ["**/src-tauri/**"],

@@ -35,3 +35,5 @@ vidpool-frontend/src-tauri/binaries/*
 Thumbs.db
 .idea/
 .vscode/
+.playwright-mcp/
+
