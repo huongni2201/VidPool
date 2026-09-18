@@ -3,11 +3,14 @@ import { useNavigate } from "react-router-dom"
 import { ROUTES, type AppRoute } from "@/shared/constants"
 import { StatCard, StatusBadge } from "@/shared/ui"
 import { CreateProjectDialog } from "@/features/project-create"
+import { useAccounts } from "@/features/account-pool"
+import { AccountPoolSummary } from "@/widgets/account-pool-summary"
 import { demoProjects, demoAvatars } from "@/assets/demo"
 
 export function DashboardPage() {
   const navigate = useNavigate()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const { accounts } = useAccounts()
 
   const handleNavigate = (route: AppRoute) => {
     navigate(route)
@@ -320,87 +323,11 @@ export function DashboardPage() {
           </div>
 
           {/* Account Pool Mini Summary */}
-          <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">Account Pool</h3>
-              <button
-                onClick={() => navigate(ROUTES.ACCOUNTS)}
-                className="text-[11.5px] font-medium text-blue-400 hover:text-blue-300 transition-colors"
-              >
-                Xem chi tiết →
-              </button>
-            </div>
-
-            <div className="flex items-center gap-5 mt-1">
-              {/* Donut Chart representation */}
-              <div className="relative flex size-24 shrink-0 items-center justify-center">
-                <svg className="size-full -rotate-90" viewBox="0 0 36 36">
-                  <path
-                    className="text-emerald-500"
-                    strokeWidth="4"
-                    strokeDasharray="60, 100"
-                    stroke="currentColor"
-                    fill="none"
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                  />
-                  <path
-                    className="text-blue-500"
-                    strokeWidth="4"
-                    strokeDasharray="20, 100"
-                    strokeDashoffset="-60"
-                    stroke="currentColor"
-                    fill="none"
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                  />
-                  <path
-                    className="text-amber-500"
-                    strokeWidth="4"
-                    strokeDasharray="20, 100"
-                    strokeDashoffset="-80"
-                    stroke="currentColor"
-                    fill="none"
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                  />
-                </svg>
-                <div className="absolute flex flex-col items-center justify-center">
-                  <span className="text-xl font-bold text-foreground">5</span>
-                  <span className="text-[9px] text-studio-subtle">Tổng account</span>
-                </div>
-              </div>
-
-              {/* Breakdown Legend */}
-              <div className="flex flex-1 flex-col gap-1.5 text-xs">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="size-2 rounded-full bg-emerald-400" />
-                    <span className="text-muted-foreground">Đang hoạt động</span>
-                  </div>
-                  <span className="font-semibold text-foreground">3</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="size-2 rounded-full bg-blue-400" />
-                    <span className="text-muted-foreground">Sẵn sàng</span>
-                  </div>
-                  <span className="font-semibold text-foreground">1</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="size-2 rounded-full bg-amber-400" />
-                    <span className="text-muted-foreground">Cần chú ý</span>
-                  </div>
-                  <span className="font-semibold text-foreground">1</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="size-2 rounded-full bg-rose-400" />
-                    <span className="text-muted-foreground">Đã hết stamina</span>
-                  </div>
-                  <span className="font-semibold text-foreground">0</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <AccountPoolSummary
+            accounts={accounts}
+            variant="compact"
+            onViewDetails={() => navigate(ROUTES.ACCOUNTS)}
+          />
         </div>
 
         {/* Column 2: Characters & Voice Library (4 cols) */}
